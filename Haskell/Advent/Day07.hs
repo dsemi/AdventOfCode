@@ -3,59 +3,37 @@ module Advent.Day07
     , part2
     ) where
 
-import Control.Monad
 import Data.Bits
-import Data.Either
-import Data.Function.Memoize
-import Data.HashMap.Strict (HashMap, (!))
-import qualified Data.HashMap.Strict as M
-import Data.Tuple
-import Text.ParserCombinators.Parsec
+import Data.HashMap.Lazy (HashMap, (!))
+import qualified Data.HashMap.Lazy as M
+import Data.List (foldl')
+import Data.Maybe
+import Data.String.Utils
+import Debug.Trace
+import Text.Regex.PCRE
 
-data Atom = Value Int | Var String deriving (Show)
+ops :: HashMap String (Int -> Int -> Int)
+ops = M.fromList [ ( "NOT", const complement )
+                 , ( "AND", (.&.) )
+                 , ( "OR", (.|.) )
+                 , ( "LSHIFT", shiftL )
+                 , ( "RSHIFT", shiftR )
+                 ]
 
-data Node = Singleton Atom
-          | Not Atom
-          | And Atom Atom
-          | Or Atom Atom
-          | LShift Atom Atom
-          | RShift Atom Atom deriving (Show)
-
-eval :: HashMap String Node -> String -> Int
-eval m = me
-    where e :: String -> Int
-          e k = case m ! k of
-                  (Singleton a)  -> getAtom a
-                  (Not a)        -> complement $ getAtom a
-                  (And a1 a2)    -> getAtom a1 .&. getAtom a2
-                  (Or a1 a2)     -> getAtom a1 .|. getAtom a2
-                  (LShift a1 a2) -> getAtom a1 `shiftL` getAtom a2
-                  (RShift a1 a2) -> getAtom a1 `shiftR` getAtom a2
-          me = memoize e
-          getAtom (Value i) = i
-          getAtom (Var s)   = me s
-
-readData :: [String] ->  HashMap String Node
-readData mappings = M.fromList . rights $ map (parse parseLine "") mappings
-    where parseLine = fmap swap $ (,) <$> parseNode <* string " -> " <*> many1 letter
-          parseNode = try parseNot <|> try parseAnd <|> try parseOr
-                      <|> try parseLShift <|> try parseRShift
-                      <|> parseSingleton
-          parseAtom = try parseValue <|> parseVar
-          parseValue = Value . read <$> many1 digit
-          parseVar = Var <$> many1 letter
-          parseSingleton = Singleton <$> parseAtom
-          parseNot = Not <$> (string "NOT " *> parseAtom)
-          parseAnd = And <$> parseAtom <* string " AND " <*> parseAtom
-          parseOr = Or <$> parseAtom <* string " OR " <*> parseAtom
-          parseLShift = LShift <$> parseAtom <* string " LSHIFT " <*> parseAtom
-          parseRShift = RShift <$> parseAtom <* string " RSHIFT " <*> parseAtom
+buildWires :: [String] -> HashMap String Int
+buildWires input = wires
+    where wires = foldl' addWire M.empty input
+          pattern = "(?:(?:(\\S+) )?(\\S+) )?(\\S+) -> (\\S+)"
+          addWire :: HashMap String Int -> String -> HashMap String Int
+          addWire m s = let [_, a, op, b, w] = getAllTextSubmatches $ s =~ pattern
+                            op' = fromMaybe (flip const) $ M.lookup op ops
+                            a'  = fromMaybe (if null a then 0 else wires ! a) $ maybeRead a
+                            b'  = fromMaybe (wires ! b) $ maybeRead b
+                        in M.insert w (op' a' b') m
 
 part1 :: String -> String
-part1 = show . (`eval` "a") . readData . lines
+part1 = show . (! "a") . buildWires . lines
 
 part2 :: String -> String
-part2 input = let wiring = readData $ lines input
-                  ans1 = eval wiring "a"
-                  wiring' = M.insert "b" (Singleton $ Value ans1) wiring
-              in show $ eval wiring' "a"
+part2 input = let wires = buildWires $ lines input ++ [part1 input ++ " -> b"]
+              in show $ wires ! "a"

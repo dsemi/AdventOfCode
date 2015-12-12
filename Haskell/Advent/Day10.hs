@@ -3,10 +3,11 @@ module Advent.Day10
     , part2
     ) where
 
+import Control.Monad
 import Data.List (group)
 
 lookAndSay :: String -> String
-lookAndSay = concatMap (\x -> show (length x) ++ [head x]) . group
+lookAndSay = concatMap (liftM2 (++) (show . length) (take 1)) . group
 
 part1 :: String -> String
 part1 = show . length . (!! 40) . iterate lookAndSay

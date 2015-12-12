@@ -19,7 +19,8 @@ executable Advent
   main-is:             Main.hs
   other-modules:       Advent.Days,
                        Advent.Day01, Advent.Day02, Advent.Day03, Advent.Day04, Advent.Day05,
-                       Advent.Day06, Advent.Day07, Advent.Day08, Advent.Day09, Advent.Day10
+                       Advent.Day06, Advent.Day07, Advent.Day08, Advent.Day09, Advent.Day10,
+                       Advent.Day11
   other-extensions:    TemplateHaskell
   build-depends:       base >=4.8 && <4.9, deepseq >=1.4 && <1.5, split >=0.2 && <0.3, template-haskell >=2.10 && <2.11, ansi-terminal >=0.6 && <0.7, unordered-containers >=0.2 && <0.3, parsec >=3.1 && <3.2, array >=0.5 && <0.6, MissingH, lens, regex-pcre, memoize
   ghc-options:         -O2
