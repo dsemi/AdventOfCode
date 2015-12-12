@@ -14,7 +14,7 @@ import Advent.Day08
 import Advent.Day09
 import Advent.Day10
 import Advent.Day11
--- import Advent.Day12
+import Advent.Day12
 -- import Advent.Day13
 -- import Advent.Day14
 -- import Advent.Day15
