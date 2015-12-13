@@ -3,11 +3,11 @@ module Advent.Day09
     , part2
     ) where
 
-import Text.Regex.PCRE
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (foldl', permutations)
 import Data.Maybe
+import Text.Regex.PCRE
 
 data Edge = Edge String String Int
 

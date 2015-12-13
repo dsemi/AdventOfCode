@@ -1,0 +1,39 @@
+module Advent.Day13
+    ( part1
+    , part2
+    ) where
+
+import Data.HashMap.Strict (HashMap, (!))
+import qualified Data.HashMap.Strict as M
+import Data.List (foldl', permutations)
+import Data.Maybe
+import Text.Regex.PCRE
+
+data Edge = Edge String String Int
+
+parseLine :: String -> Edge
+parseLine line = let [_, p1, op, hap, p2] = getAllTextSubmatches $ line =~ pattern
+                     op' = if op == "lose" then negate else id
+                 in Edge p1 p2 . op' $ read hap
+    where pattern = "(\\S+) would (lose|gain) (\\d+) .* (\\S+)\\."
+
+
+constructMap :: [Edge] -> HashMap String (HashMap String Int)
+constructMap = foldl' addEdgeToMap M.empty
+    where addEdgeToMap m (Edge p1 p2 n) = let m' = fromMaybe M.empty $ M.lookup p1 m
+                                          in M.insert p1 (M.insert p2 n m') m
+
+maxHappinessOrdering :: HashMap String (HashMap String Int) -> Int
+maxHappinessOrdering m = maximum $ map (\p -> happinessDiff (head p) (last p)
+                                              + sum (zipWith happinessDiff p $ tail p)) orders
+    where orders = permutations $ M.keys m
+          happinessDiff a b = m ! a ! b + m ! b ! a
+
+part1 :: String -> String
+part1 = show . maxHappinessOrdering . constructMap . map parseLine . lines
+
+part2 :: String -> String
+part2 input = let m = constructMap . map parseLine $ lines input
+                  meMap = M.fromList . zip (M.keys m) $ repeat 0
+                  m' = M.insert "me" meMap $ M.map (M.insert "me" 0) m
+              in show $ maxHappinessOrdering m'
