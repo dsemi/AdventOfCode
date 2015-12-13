@@ -3,13 +3,17 @@ module Advent.Day11
     , part2
     ) where
 
+import Data.Char
 import Data.List (isInfixOf, zipWith3)
 import Text.Regex.PCRE
 
 incrStr :: String -> String
-incrStr = snd . foldr (\x (c, s) -> (x == 'z' && c, (if c then incr x else x) : s)) (True, "")
-    where incr c = dropWhile (/= c) letters !! 1
-          letters = cycle ['a'..'z']
+incrStr = snd . foldr f (1, "")
+    where lowerLimit = ord 'a'
+          upperLimit = ord 'z' + 1
+          f x (c, s) = let code = ord x + c
+                       in ( code `div` upperLimit
+                          , chr (max lowerLimit $ code `mod` upperLimit) : s)
 
 isValid :: String -> Bool
 isValid s = not (any (`elem` s) "iol")
