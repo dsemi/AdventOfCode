@@ -17,17 +17,17 @@ import Advent.Day11
 import Advent.Day12
 import Advent.Day13
 import Advent.Day14
--- import Advent.Day15
--- import Advent.Day16
--- import Advent.Day17
--- import Advent.Day18
--- import Advent.Day19
--- import Advent.Day20
--- import Advent.Day21
--- import Advent.Day22
--- import Advent.Day23
--- import Advent.Day24
--- import Advent.Day25
+import Advent.Day15
+import Advent.Day16
+import Advent.Day17
+import Advent.Day18
+import Advent.Day19
+import Advent.Day20
+import Advent.Day21
+import Advent.Day22
+import Advent.Day23
+import Advent.Day24
+import Advent.Day25
 
 import Control.DeepSeq
 import Control.Monad
