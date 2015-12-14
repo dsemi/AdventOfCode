@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Advent.Day11
     ( part1
     , part2
@@ -5,7 +7,7 @@ module Advent.Day11
 
 import Data.Char
 import Data.List (isInfixOf, zipWith3)
-import Text.Regex.PCRE
+import Text.Regex.PCRE.Heavy (re, scan)
 
 incrStr :: String -> String
 incrStr = snd . foldr f (1, "")
@@ -18,7 +20,7 @@ incrStr = snd . foldr f (1, "")
 isValid :: String -> Bool
 isValid s = not (any (`elem` s) "iol")
             && any (`isInfixOf` s) (zipWith3 (\a b c -> [a, b, c]) letters (tail letters) (drop 2 letters))
-            && length (getAllTextMatches $ s =~ "(.)\\1" :: [String]) > 1
+            && length (scan [re|(.)\1|] s) > 1
     where letters = ['a'..'z']
 
 part1 :: String -> String

@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Advent.Day09
     ( part1
     , part2
@@ -7,7 +9,7 @@ import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (foldl', permutations)
 import Data.Maybe
-import Text.Regex.PCRE
+import Text.Regex.PCRE.Heavy (re, scan)
 
 data Edge = Edge String String Int
 
@@ -15,9 +17,9 @@ opposite :: Edge -> Edge
 opposite (Edge p1 p2 d) = Edge p2 p1 d
 
 parseLine :: String -> Edge
-parseLine line = let [_, p1, p2, d] = getAllTextSubmatches $ line =~ pattern
+parseLine line = let [p1, p2, d] = snd . head $ scan regex line
                  in Edge p1 p2 $ read d
-    where pattern = "(\\S+) to (\\S+) = (\\d+)"
+    where regex = [re|(\S+) to (\S+) = (\d+)|]
 
 allPathDistances :: [String] -> [Int]
 allPathDistances input = let m = constructMap $ map parseLine input

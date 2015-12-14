@@ -1,10 +1,12 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Advent.Day05
     ( part1
     , part2
     ) where
 
 import Data.List (group, isInfixOf)
-import Text.Regex.PCRE
+import Text.Regex.PCRE.Heavy (re, (=~))
 
 part1 :: String -> String
 part1 = show . length . filter isNice . lines
@@ -15,5 +17,4 @@ part1 = show . length . filter isNice . lines
 
 part2 :: String -> String
 part2 = show . length . filter isNice2 .lines
-    where isNice2 :: String -> Bool
-          isNice2 s = s =~ "(..).*\\1" && s =~ "(.).\\1"
+    where isNice2 s = s =~ [re|(..).*\1|] && s =~ [re|(.).\1|]

@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Advent.Day13
     ( part1
     , part2
@@ -7,15 +9,15 @@ import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (foldl', permutations)
 import Data.Maybe
-import Text.Regex.PCRE
+import Text.Regex.PCRE.Heavy (re, scan)
 
 data Edge = Edge String String Int
 
 parseLine :: String -> Edge
-parseLine line = let [_, p1, op, hap, p2] = getAllTextSubmatches $ line =~ pattern
+parseLine line = let [p1, op, hap, p2] = snd . head $ scan regex line
                      op' = if op == "lose" then negate else id
                  in Edge p1 p2 . op' $ read hap
-    where pattern = "(\\S+) would (lose|gain) (\\d+) .* (\\S+)\\."
+    where regex = [re|(\S+) would (lose|gain) (\d+) .* (\S+)\.|]
 
 
 constructMap :: [Edge] -> HashMap String (HashMap String Int)

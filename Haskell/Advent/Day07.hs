@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Advent.Day07
     ( part1
     , part2
@@ -10,7 +12,7 @@ import Data.List (foldl')
 import Data.Maybe
 import Data.String.Utils
 import Debug.Trace
-import Text.Regex.PCRE
+import Text.Regex.PCRE.Heavy (re, scan)
 
 ops :: HashMap String (Int -> Int -> Int)
 ops = M.fromList [ ( "NOT", const complement )
@@ -19,13 +21,12 @@ ops = M.fromList [ ( "NOT", const complement )
                  , ( "LSHIFT", shiftL )
                  , ( "RSHIFT", shiftR )
                  ]
-
 buildWires :: [String] -> HashMap String Int
 buildWires input = wires
     where wires = foldl' addWire M.empty input
-          pattern = "(?:(?:(\\S+) )?(\\S+) )?(\\S+) -> (\\S+)"
+          regex = [re|(?:(?:(\S+) )?(\S+) )?(\S+) -> (\S+)|]
           addWire :: HashMap String Int -> String -> HashMap String Int
-          addWire m s = let [_, a, op, b, w] = getAllTextSubmatches $ s =~ pattern
+          addWire m s = let [a, op, b, w] = snd . head $ scan regex s
                             op' = fromMaybe (flip const) $ M.lookup op ops
                             a'  = fromMaybe (if null a then 0 else wires ! a) $ maybeRead a
                             b'  = fromMaybe (wires ! b) $ maybeRead b
