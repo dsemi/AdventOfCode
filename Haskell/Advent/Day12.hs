@@ -5,6 +5,8 @@ module Advent.Day12
     , part2
     ) where
 
+import Advent.Problem
+
 import Control.Lens
 import Data.Aeson
 import Data.Aeson.Lens
@@ -17,8 +19,8 @@ removeReds v
     | elemOf (_Object . folded . _String) "red" v = Number 0
     | otherwise = v
 
-part1 :: String -> String
-part1 = show . sumNumbers . (^?! _Value)
+part1 :: Problem
+part1 = Pure $ sumNumbers . (^?! _Value)
 
-part2 :: String -> String
-part2 = show . sumNumbers . transform removeReds . (^?! _Value)
+part2 :: Problem
+part2 = Pure $ sumNumbers . transform removeReds . (^?! _Value)

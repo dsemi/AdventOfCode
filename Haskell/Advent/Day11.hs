@@ -5,26 +5,32 @@ module Advent.Day11
     , part2
     ) where
 
-import Data.Char
-import Data.List (isInfixOf, zipWith3)
+import Advent.Problem
+
+import Data.List (tails)
 import Text.Regex.PCRE.Heavy (re, scan)
 
 incrStr :: String -> String
-incrStr = snd . foldr f (1, "")
-    where lowerLimit = ord 'a'
-          upperLimit = ord 'z' + 1
-          f x (c, s) = let code = ord x + c
-                       in ( code `div` upperLimit
-                          , chr (max lowerLimit $ code `mod` upperLimit) : s)
+incrStr = reverse . step . reverse
+    where step [] = []
+          step (x:xs)
+              | x == 'z' = 'a' : step xs
+              | otherwise = succ x : xs
 
 isValid :: String -> Bool
-isValid s = not (any (`elem` s) "iol")
-            && any (`isInfixOf` s) (zipWith3 (\a b c -> [a, b, c]) letters (tail letters) (drop 2 letters))
+isValid s = not (any (`elem` s) "iol") && isSuccessive s
             && length (scan [re|(.)\1|] s) > 1
-    where letters = ['a'..'z']
+    where isSuccessive = any ordered . windows 3
+              where ordered []  = True
+                    ordered [_] = True
+                    ordered (x:y:xs)
+                        | y == succ x = ordered $ y : xs
+                        | otherwise   = False
+                    windows n = takeWhile ((==n) . length)
+                                . map (take n) . tails
 
-part1 :: String -> String
-part1 = head . filter isValid . tail . iterate incrStr
+part1 :: Problem
+part1 = PureS $ head . filter isValid . tail . iterate incrStr
 
-part2 :: String -> String
-part2 = (!! 1) . filter isValid . tail . iterate incrStr
+part2 :: Problem
+part2 = PureS $ (!! 1) . filter isValid . tail . iterate incrStr

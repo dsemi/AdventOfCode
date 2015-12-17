@@ -5,6 +5,8 @@ module Advent.Day09
     , part2
     ) where
 
+import Advent.Problem
+
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (foldl', permutations)
@@ -29,8 +31,8 @@ allPathDistances input = let m = constructMap $ map parseLine input
           addEdgeToMap (Edge p1 p2 d) m = let m' = fromMaybe M.empty $ M.lookup p1 m
                                           in M.insert p1 (M.insert p2 d m') m
 
-part1 :: String -> String
-part1 = show . minimum . allPathDistances . lines
+part1 :: Problem
+part1 = Pure $ minimum . allPathDistances . lines
 
-part2 :: String -> String
-part2 = show . maximum . allPathDistances . lines
+part2 :: Problem
+part2 = Pure $ maximum . allPathDistances . lines

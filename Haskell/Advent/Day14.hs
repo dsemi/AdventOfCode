@@ -5,6 +5,8 @@ module Advent.Day14
     , part2
     ) where
 
+import Advent.Problem
+
 import Data.Ord
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
@@ -31,11 +33,14 @@ maxesBy :: Ord b => (a -> b) -> [a] -> [a]
 maxesBy cmp xs = let ms = sortBy (flip $ comparing cmp) xs
                  in takeWhile ((== cmp (head ms)) . cmp) ms
 
-part1 :: String -> String
-part1 = show . maximum . map last . M.elems . getDistancesAtEachSecond
+part1 :: Problem
+part1 = Pure $ maximum . map last . M.elems . getDistancesAtEachSecond
 
-part2 :: String -> String
-part2 input = let dists = getDistancesAtEachSecond input
-                  counts = MS.fromList . concatMap (map fst . maxesBy snd . zip [1..])
-                           . transpose $ M.elems dists
-              in show . snd . last $ MS.toAscOccurList counts
+p2 :: String -> Int
+p2 input = let dists = getDistancesAtEachSecond input
+               counts = MS.fromList . concatMap (map fst . maxesBy snd . zip [1..])
+                        . transpose $ M.elems dists
+           in snd . last $ MS.toAscOccurList counts
+
+part2 :: Problem
+part2 = Pure p2

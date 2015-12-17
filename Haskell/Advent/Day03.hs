@@ -3,6 +3,8 @@ module Advent.Day03
     , part2
     ) where
 
+import Advent.Problem
+
 import Control.Arrow
 import Control.Lens
 import Data.HashSet (HashSet)
@@ -18,11 +20,11 @@ dirFun  _  = undefined
 visitedSquares :: String -> HashSet (Int, Int)
 visitedSquares = HS.fromList . scanl (flip ($)) (0,0) . map dirFun
 
-part1 :: String -> String
-part1 = show . HS.size . visitedSquares
+part1 :: Problem
+part1 = Pure $ HS.size . visitedSquares
 
-part2 :: String -> String
-part2 = show . HS.size . uncurry HS.union . (both %~ visitedSquares) . everyOther
+part2 :: Problem
+part2 = Pure $ HS.size . uncurry HS.union . (both %~ visitedSquares) . everyOther
     where everyOther :: [a] -> ([a], [a])
           everyOther (x:y:xs) = (x:) *** (y:) $ everyOther xs
           everyOther (x:xs) = first (x:) $ everyOther xs

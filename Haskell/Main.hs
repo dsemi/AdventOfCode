@@ -28,6 +28,7 @@ import Advent.Day22
 import Advent.Day23
 import Advent.Day24
 import Advent.Day25
+import Advent.Problem
 
 import Control.DeepSeq
 import Control.Monad
@@ -77,11 +78,15 @@ maybeRun n = maybe notfound run $ lookup n problems
           run (p1, p2) = do
             input <- findInput n
             putStrLn $ "Day " ++ show n
-            (ans1, elapsedTime1) <- timeFunc . return $ p1 input
+            (ans1, elapsedTime1) <- timeFunc $ switch p1 input
             printf str (1 :: Int) ans1 $ colorizeTime elapsedTime1
-            (ans2, elapsedTime2) <- timeFunc . return $ p2 input
+            (ans2, elapsedTime2) <- timeFunc $ switch p2 input
             printf str (2 :: Int) ans2 $ colorizeTime elapsedTime2
             return $ elapsedTime1 + elapsedTime2
+          switch p inp = case p of
+                       Pure prob -> return . show $ prob inp
+                       PureS prob -> return $ prob inp
+                       Impure prob -> show <$> prob inp
 
 main :: IO ()
 main = do

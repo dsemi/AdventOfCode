@@ -5,6 +5,8 @@ module Advent.Day15
     , part2
     ) where
 
+import Advent.Problem
+
 import Control.Applicative
 import Data.List (transpose)
 import Text.Regex.PCRE.Heavy (re, scan)
@@ -34,8 +36,8 @@ scores total calFilter ings =
     ]
     where scorings = [capacity, durability, flavor, texture]
 
-part1 :: String -> String
-part1 = show . maximum . scores 100 (const True). map parseIngredient . lines
+part1 :: Problem
+part1 = Pure $ maximum . scores 100 (const True). map parseIngredient . lines
 
-part2 :: String -> String
-part2 = show . maximum . scores 100 ((==500) . sum). map parseIngredient . lines
+part2 :: Problem
+part2 = Pure $ maximum . scores 100 ((==500) . sum). map parseIngredient . lines

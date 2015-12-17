@@ -5,6 +5,8 @@ module Advent.Day07
     , part2
     ) where
 
+import Advent.Problem
+
 import Data.Bits
 import Data.HashMap.Lazy (HashMap, (!))
 import qualified Data.HashMap.Lazy as M
@@ -32,9 +34,15 @@ buildWires input = wires
                             b'  = fromMaybe (wires ! b) $ maybeRead b
                         in M.insert w (op' a' b') m
 
-part1 :: String -> String
-part1 = show . (! "a") . buildWires . lines
+p1 :: String -> Int
+p1 = (! "a") . buildWires . lines
 
-part2 :: String -> String
-part2 input = let wires = buildWires $ lines input ++ [part1 input ++ " -> b"]
-              in show $ wires ! "a"
+part1 :: Problem
+part1 = Pure p1
+
+p2 :: String -> Int
+p2 input = let wires = buildWires $ lines input ++ [show (p1 input) ++ " -> b"]
+           in wires ! "a"
+
+part2 :: Problem
+part2 = Pure p2

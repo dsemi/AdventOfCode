@@ -3,6 +3,8 @@ module Advent.Day06
     , part2
     ) where
 
+import Advent.Problem
+
 import Control.Lens
 import Control.Monad
 import Data.Array.ST
@@ -56,11 +58,11 @@ runCommands f1 f2 f3 grid commands =
 emptyGrid :: UArray (Int, Int) Int
 emptyGrid = array ((0,0), (999,999)) [((x,y), 0) | x <- [0..999], y <- [0..999]]
 
-part1 :: String -> String
-part1 = show . sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
+part1 :: Problem
+part1 = Pure $ sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
         . rights . map (parse command "") . lines
 
-part2 :: String -> String
-part2 = show . sum . elems . runCommands f (+1) (+2) emptyGrid
+part2 :: Problem
+part2 = Pure $ sum . elems . runCommands f (+1) (+2) emptyGrid
         . rights . map (parse command "") . lines
     where f n = max 0 $ n-1

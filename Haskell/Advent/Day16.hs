@@ -5,6 +5,8 @@ module Advent.Day16
     , part2
     ) where
 
+import Advent.Problem
+
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Text.Regex.PCRE.Heavy (re, scan)
@@ -34,13 +36,13 @@ parseLines s = [ M.fromList [(k1, a1'), (k2, a2'), (k3, a3')]
 couldMatch :: HashMap String (Int -> Bool) -> HashMap String Int -> Bool
 couldMatch tape = all (uncurry (tape !)) . M.toList
 
-solve :: HashMap String (Int -> Bool) -> String -> String
-solve tape' = show . fst . head . filter (couldMatch tape' . snd) . zip [1..] . parseLines
+solve :: HashMap String (Int -> Bool) -> Problem
+solve tape' = Pure $ fst . head . filter (couldMatch tape' . snd) . zip [1..] . parseLines
 
-part1 :: String -> String
+part1 :: Problem
 part1 = solve tape
 
-part2 :: String -> String
+part2 :: Problem
 part2 = solve tape'
     where tape' = M.fromList [ ("cats", (>7))
                              , ("pomeranians", (<3))

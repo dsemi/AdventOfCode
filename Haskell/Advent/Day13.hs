@@ -5,6 +5,8 @@ module Advent.Day13
     , part2
     ) where
 
+import Advent.Problem
+
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (foldl', permutations)
@@ -31,11 +33,14 @@ maxHappinessOrdering m = maximum $ map (\p -> happinessDiff (head p) (last p)
     where orders = permutations $ M.keys m
           happinessDiff a b = m ! a ! b + m ! b ! a
 
-part1 :: String -> String
-part1 = show . maxHappinessOrdering . constructMap . map parseLine . lines
+part1 :: Problem
+part1 = Pure $ maxHappinessOrdering . constructMap . map parseLine . lines
 
-part2 :: String -> String
-part2 input = let m = constructMap . map parseLine $ lines input
-                  meMap = M.fromList . zip (M.keys m) $ repeat 0
-                  m' = M.insert "me" meMap $ M.map (M.insert "me" 0) m
-              in show $ maxHappinessOrdering m'
+p2 :: String -> Int
+p2 input = let m = constructMap . map parseLine $ lines input
+               meMap = M.fromList . zip (M.keys m) $ repeat 0
+               m' = M.insert "me" meMap $ M.map (M.insert "me" 0) m
+           in maxHappinessOrdering m'
+
+part2 :: Problem
+part2 = Pure p2

@@ -3,8 +3,10 @@ module Advent.Day25
     , part2
     ) where
 
-part1 :: String -> String
-part1 = const ""
+import Advent.Problem
 
-part2 :: String -> String
-part2 = const ""
+part1 :: Problem
+part1 = Pure $ const 0
+
+part2 :: Problem
+part2 = Pure $ const 0
