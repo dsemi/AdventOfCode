@@ -1,4 +1,4 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes, FlexibleContexts #-}
 
 module Advent.Day05
     ( part1
