@@ -15,23 +15,23 @@ import Data.String.Utils
 import Text.Regex.PCRE.Heavy (re, scan)
 
 parseMapping :: String -> (String, String)
-parseMapping s = let [k, v] = snd . head $ scan regex s
-             in (k, v)
+parseMapping s = (k, v)
     where regex = [re|(\w+) => (\w+)|]
+          [k, v] = snd . head $ scan regex s
 
--- E.g. singlereplacements "aa" "xx" "abskaalkjdsaajlkdaa" ->
+-- E.g. singleReplacements "aa" "xx" "abskaalkjdsaajlkdaa" ->
 --   ["abskxxlkjdsaajlkdaa", "abskaalkjdsxxjlkdaa", "abskaalkjdsaajlkdxx"]
 singleReplacements :: String -> String -> String -> [String]
-singleReplacements k v src = let pieces = split k src
-                                 parts = [ snd $ foldr (\p (i, s) ->
-                                                            ( i-1
-                                                            , if i == 0
-                                                              then (p ++ v ++ head s) : tail s
-                                                              else p : s
-                                                            )) (i, []) pieces
-                                         | i <- [ 1 .. length pieces - 1 ]
-                                         ]
-                        in map (intercalate k) parts
+singleReplacements k v src = map (intercalate k) parts
+    where pieces = split k src
+          parts = [ snd $ foldr (\p (i, s) ->
+                                     ( i-1
+                                     , if i == 0
+                                       then (p ++ v ++ head s) : tail s
+                                       else p : s
+                                     )) (i, []) pieces
+                  | i <- [ 1 .. length pieces - 1 ]
+                  ]
 
 uniqueSubs :: [(String, String)] -> String -> HashSet String
 uniqueSubs reps src = S.fromList $ concat [ singleReplacements k v src | (k, v) <- reps]
