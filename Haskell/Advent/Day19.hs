@@ -29,7 +29,7 @@ singleReplacements k v src = let pieces = split k src
                                                               then (p ++ v ++ head s) : tail s
                                                               else p : s
                                                             )) (i, []) pieces
-                                         | i <- [ 1 .. length pieces - 1]
+                                         | i <- [ 1 .. length pieces - 1 ]
                                          ]
                         in map (intercalate k) parts
 
