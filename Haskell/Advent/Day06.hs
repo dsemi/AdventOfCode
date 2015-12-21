@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Advent.Day06
     ( part1
     , part2
@@ -5,13 +7,11 @@ module Advent.Day06
 
 import Advent.Problem
 
-import Control.Lens
 import Control.Monad
 import Data.Array.ST
 import Data.Array.Unboxed
 import Data.Bits
-import Data.Either
-import Text.ParserCombinators.Parsec
+import Text.Regex.PCRE.Heavy (re, scan)
 
 data Action = Off | On | Toggle  deriving (Show)
 
@@ -26,18 +26,10 @@ action "turn on"  = On
 action "toggle"   = Toggle
 action _          = undefined
 
-command :: Parser Command
-command = do
-  a <- try (string "toggle")
-       <|> try (string "turn on")
-       <|> string "turn off"
-  void $ char ' '
-  start' <- fmap (both %~ read)
-            $ (,) <$> many1 digit <* char ',' <*> many1 digit
-  void $ string " through "
-  end' <- fmap (both %~ read)
-          $ (,) <$> many1 digit <* char ',' <*> many1 digit
-  return $ Command (action a) start' end'
+command :: String -> Command
+command input = let [a, x1, y1, x2, y2] = snd . head $ scan regex input
+                in Command (action a) (read x1, read y1) (read x2, read y2)
+    where regex = [re|(toggle|turn off|turn on) (\d+),(\d+) through (\d+),(\d+)|]
 
 runCommands :: (Int -> Int) -> (Int -> Int) -> (Int -> Int)
                -> UArray (Int,Int) Int -> [Command] -> UArray (Int,Int) Int
@@ -60,9 +52,9 @@ emptyGrid = array ((0,0), (999,999)) [((x,y), 0) | x <- [0..999], y <- [0..999]]
 
 part1 :: Problem
 part1 = Pure $ sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
-        . rights . map (parse command "") . lines
+        . map command . lines
 
 part2 :: Problem
 part2 = Pure $ sum . elems . runCommands f (+1) (+2) emptyGrid
-        . rights . map (parse command "") . lines
+        . map command . lines
     where f n = max 0 $ n-1
