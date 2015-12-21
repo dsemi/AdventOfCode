@@ -47,10 +47,12 @@ allEquipmentCombos = [ person $ foldl1' (zipWith (+)) [weapon, armor, rings]
                      , rings <- map (foldl1' (zipWith (+))) . init $ tails combo ]
 
 isWinning b p = playerTurnsToDie >= bossTurnsToDie
-    where ttd p1 p2 = ceiling $ fromIntegral (hp p1)
-                      / max 1 (fromIntegral (damage p2) - fromIntegral (armor p1))
-          bossTurnsToDie = ttd b p
+    where bossTurnsToDie = ttd b p
           playerTurnsToDie = ttd p b
+          ttd p1 p2
+              | r == 0    = q
+              | otherwise = q + 1
+              where (q, r) = hp p1 `quotRem` max 1 (damage p2 - armor p1)
 
 allBattles boss = partition (isWinning boss) allEquipmentCombos
 
