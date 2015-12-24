@@ -75,7 +75,6 @@ parseBoss input = let [h, d] = map read . snd . head $ scan regex input
                           }
     where regex = [redotall|Hit Points: (\d+).*Damage: (\d+)|]
 
-
 part1 :: Problem
 part1 = Pure f
     where f input = minimum . ints . filter won $ turn False (parseBoss input) 0 True
