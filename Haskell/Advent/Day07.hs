@@ -44,9 +44,8 @@ eval f exp = case exp of
                RShift a b -> val a `shiftR` val b
     where val = either f id
 
-
 buildWires :: [String] -> HashMap String Node
-buildWires input = foldl' addWire M.empty input
+buildWires = foldl' addWire M.empty
     where regex = [re|(?:(?:(\S+) )?(\S+) )?(\S+) -> (\S+)|]
           addWire :: HashMap String Node -> String -> HashMap String Node
           addWire m s = let [a, op, b, w] = snd . head $ scan regex s
@@ -56,7 +55,7 @@ buildWires input = foldl' addWire M.empty input
                         in M.insert w node m
 
 getValue :: HashMap String Node -> String -> Int
-getValue m k = mgv k
+getValue m = mgv
     where mgv = memoFix gv
           gv f k = eval f $ m ! k
 
