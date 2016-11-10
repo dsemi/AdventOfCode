@@ -17,15 +17,16 @@ cabal-version:       >=1.10
 
 executable Advent
   main-is:             Main.hs
-  other-modules:       Advent.Days, Advent.Problem
-                       Advent.Day01, Advent.Day02, Advent.Day03, Advent.Day04, Advent.Day05,
-                       Advent.Day06, Advent.Day07, Advent.Day08, Advent.Day09, Advent.Day10,
-                       Advent.Day11, Advent.Day12, Advent.Day13, Advent.Day14, Advent.Day15,
-                       Advent.Day16, Advent.Day17, Advent.Day18, Advent.Day19, Advent.Day20,
-                       Advent.Day21, Advent.Day22, Advent.Day23, Advent.Day24, Advent.Day25,
-                       Advent.Day22h
+  other-modules:       Year2015.Days, Year2015.Utils
+                       Year2015.Day01, Year2015.Day02, Year2015.Day03, Year2015.Day04, Year2015.Day05,
+                       Year2015.Day06, Year2015.Day07, Year2015.Day08, Year2015.Day09, Year2015.Day10,
+                       Year2015.Day11, Year2015.Day12, Year2015.Day13, Year2015.Day14, Year2015.Day15,
+                       Year2015.Day16, Year2015.Day17, Year2015.Day18, Year2015.Day19, Year2015.Day20,
+                       Year2015.Day21, Year2015.Day22, Year2015.Day23, Year2015.Day24, Year2015.Day25,
+                       Year2015.Day22h
 
   other-extensions:    TemplateHaskell
-  build-depends:       base >=4.8 && <4.9, deepseq >=1.4 && <1.5, split >=0.2 && <0.3, template-haskell >=2.10 && <2.11, ansi-terminal >=0.6 && <0.7, unordered-containers >=0.2 && <0.3, array >=0.5 && <0.6, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, pcre-light, pcre-heavy, multiset, cryptohash, arithmoi, containers, attoparsec
+  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash, arithmoi, containers, attoparsec, megaparsec
   ghc-options:         -O2
+  hs-source-dirs:      src
   default-language:    Haskell2010
