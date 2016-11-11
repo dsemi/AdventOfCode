@@ -1,4 +1,4 @@
-module Year2015.Utils where
+module Utils where
 
 import Text.Megaparsec
 import Text.Megaparsec.Lexer

@@ -3,7 +3,7 @@ module Year2015.Day05
     , part2
     ) where
 
-import Year2015.Utils
+import Utils
 
 import Control.Monad
 import Data.List (group, isInfixOf)

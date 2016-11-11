@@ -3,7 +3,7 @@ module Year2015.Day15
     , part2
     ) where
 
-import Year2015.Utils
+import Utils
 
 import Control.Applicative
 import Data.List (transpose)

@@ -3,7 +3,7 @@ module Year2015.Day11
     , part2
     ) where
 
-import Year2015.Utils
+import Utils
 
 import Data.Either.Utils
 import Data.List (tails)

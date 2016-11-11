@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 
 executable Advent
   main-is:             Main.hs
-  other-modules:       Year2015.Days, Year2015.Utils
+  other-modules:       Utils, Year2015.Days
                        Year2015.Day01, Year2015.Day02, Year2015.Day03, Year2015.Day04, Year2015.Day05,
                        Year2015.Day06, Year2015.Day07, Year2015.Day08, Year2015.Day09, Year2015.Day10,
                        Year2015.Day11, Year2015.Day12, Year2015.Day13, Year2015.Day14, Year2015.Day15,

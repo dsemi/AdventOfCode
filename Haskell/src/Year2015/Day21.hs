@@ -3,7 +3,7 @@ module Year2015.Day21
     , part2
     ) where
 
-import Year2015.Utils
+import Utils
 
 import Data.List (foldl1', partition, tails)
 import Data.Maybe

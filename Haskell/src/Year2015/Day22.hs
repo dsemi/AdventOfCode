@@ -4,7 +4,7 @@ module Year2015.Day22
     ) where
 
 import Year2015.Day22h
-import Year2015.Utils
+import Utils
 
 import Control.Lens
 import Text.Megaparsec

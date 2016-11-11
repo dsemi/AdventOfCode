@@ -3,7 +3,7 @@ module Year2015.Day25
     , part2
     ) where
 
-import Year2015.Utils
+import Utils
 
 import Math.NumberTheory.Powers
 
