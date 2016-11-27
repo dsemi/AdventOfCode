@@ -1,15 +1,21 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Year2015.Day19
     ( part1
     , part2
     ) where
 
+import Control.Arrow
+import Data.ByteString.Char8 (pack)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.List (intercalate)
 import Data.Maybe
 import Data.String.Utils
+import Data.Tuple
 import Text.Megaparsec
 import Text.Megaparsec.String
+import Text.Regex.PCRE.Heavy (Regex, compileM, sub)
 
 parseMapping :: String -> (String, String)
 parseMapping = fromJust . parseMaybe parser
@@ -33,15 +39,10 @@ singleReplacements k v src = map (intercalate k) parts
 uniqueSubs :: [(String, String)] -> String -> HashSet String
 uniqueSubs reps src = S.fromList $ concat [ singleReplacements k v src | (k, v) <- reps]
 
-uniquePredecessors :: [(String, String)] -> String -> HashSet String
-uniquePredecessors reps src = S.fromList $ concat [ singleReplacements v k src | (k, v) <- reps]
-
-findPathToElectron :: [(String, String)] -> String -> Int
-findPathToElectron reps = fromJust . go 0
-    where go c [] = Nothing
-          go c "e" = Just c
-          go c s = listToMaybe . mapMaybe (go (c+1))
-                   . S.toList $ uniquePredecessors reps s
+findPathToElectron :: Regex -> (String -> String) -> String -> Int
+findPathToElectron regex rep = go 0
+    where go c "e" = c
+          go c s = go (c+1) $ sub regex rep s
 
 p1 :: String -> Int
 p1 input = let (s:_:mappings) = reverse $ lines input
@@ -53,8 +54,11 @@ part1 = show . p1
 
 p2 :: String -> Int
 p2 input = let (s:_:mappings) = reverse $ lines input
-               reps = map parseMapping mappings
-           in findPathToElectron reps s
+               s' = reverse s
+               reps = map (swap . (reverse *** reverse) . parseMapping) mappings
+               (Right regex) = compileM (pack . intercalate "|" $ map fst reps) []
+               rep w = fromJust $ lookup w reps
+           in findPathToElectron regex rep s'
 
 part2 :: String -> String
 part2 = show . p2
