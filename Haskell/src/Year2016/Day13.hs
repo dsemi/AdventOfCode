@@ -1,4 +1,4 @@
-module Year2016.Day01
+module Year2016.Day13
     ( part1
     , part2
     ) where

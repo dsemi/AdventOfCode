@@ -2,7 +2,8 @@
 
 module Main where
 
-import Year2015.Days
+import DaysTH
+
 import Year2015.Day01
 import Year2015.Day02
 import Year2015.Day03
@@ -29,6 +30,32 @@ import Year2015.Day23
 import Year2015.Day24
 import Year2015.Day25
 
+import Year2016.Day01
+import Year2016.Day02
+import Year2016.Day03
+import Year2016.Day04
+import Year2016.Day05
+import Year2016.Day06
+import Year2016.Day07
+import Year2016.Day08
+import Year2016.Day09
+import Year2016.Day10
+import Year2016.Day11
+import Year2016.Day12
+import Year2016.Day13
+import Year2016.Day14
+import Year2016.Day15
+import Year2016.Day16
+import Year2016.Day17
+import Year2016.Day18
+import Year2016.Day19
+import Year2016.Day20
+import Year2016.Day21
+import Year2016.Day22
+import Year2016.Day23
+import Year2016.Day24
+import Year2016.Day25
+
 import Control.DeepSeq
 import Control.Monad
 import Data.List.Split
@@ -38,8 +65,13 @@ import System.CPUTime
 import System.Environment
 import Text.Printf
 
-parseArgs args = let probs = foldr pa [] args
-                 in if null probs then [1..25] else probs
+data Args = Args { year :: Int
+                 , probs :: [Int]
+                 }
+
+parseArgs []       = undefined
+parseArgs (y:args) = let probs = foldr pa [] args
+                 in Args (read y) $ if null probs then [1..25] else probs
     where pa a m
               | all (`elem` '-':['0'..'9']) a = case map read (splitOn "-" a) of
                                                   [s,e] -> [s..e] ++ m
@@ -47,8 +79,8 @@ parseArgs args = let probs = foldr pa [] args
                                                   _     -> undefined -- lazy
               | otherwise                     = undefined -- again
 
-findInput :: Int -> IO String
-findInput pday = strip <$> readFile ("../inputs/input" ++ show pday ++ ".txt")
+findInput :: Int -> Int -> IO String
+findInput yr pday = strip <$> readFile ("../inputs/" ++ show yr ++ "/input" ++ show pday ++ ".txt")
 
 $(buildProbs)
 
@@ -69,12 +101,12 @@ timeFunc f = do
   let elapsedTime = fromIntegral (end - start) / 10^12
   return (result, elapsedTime)
 
-maybeRun :: Int -> IO Double
-maybeRun n = maybe notfound run $ lookup n problems
+maybeRun :: Int -> Int -> IO Double
+maybeRun y n = maybe notfound run $ lookup y problems >>= lookup n
     where notfound = return 0
           str = "Part %d: %28s  Elapsed time %s seconds\n"
           run (p1, p2) = do
-            input <- findInput n
+            input <- findInput y n
             putStrLn $ "Day " ++ show n
             (ans1, elapsedTime1) <- timeFunc $ return $ p1 input
             printf str (1 :: Int) ans1 $ colorizeTime elapsedTime1
@@ -84,6 +116,6 @@ maybeRun n = maybe notfound run $ lookup n problems
 
 main :: IO ()
 main = do
-  ps <- parseArgs <$> getArgs
-  totalTime <- foldM (\acc -> liftM (+acc) . maybeRun) 0 ps
+  args <- parseArgs <$> getArgs
+  totalTime <- foldM (\acc -> liftM (+acc) . maybeRun (year args)) 0 $ probs args
   printf "Total: %49.3f seconds\n" totalTime
