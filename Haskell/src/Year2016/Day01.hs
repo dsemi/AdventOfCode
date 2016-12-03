@@ -7,6 +7,7 @@ import Control.Lens
 import Data.String.Utils (split)
 import qualified Data.HashSet as S
 
+
 -- North East South West
 directions :: [(Int, Int) -> (Int, Int)]
 directions = [ over _2 succ
@@ -37,7 +38,6 @@ findDup = go S.empty
               | S.size s == S.size s' = x
               | otherwise = go s' xs
               where s' = S.insert x s
-
 
 part2 :: String -> String
 part2 = show . manhattanDist . findDup . path
