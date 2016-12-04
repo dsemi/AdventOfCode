@@ -16,10 +16,10 @@ dirFunc 'L' = over _2 pred
 type Coord = (Int, Int)
 type Pad = Array Coord Char
 
-pad :: Pad
-pad = listArray ((0, 0), (2, 2)) [ '1', '2', '3'
-                                 , '4', '5', '6'
-                                 , '7', '8', '9' ]
+pad :: [String] -> Pad
+pad s = let r = length s
+            c = length (head s)
+        in listArray ((1, 1), (r, c)) $ concat s
 
 findCode :: Char -> Pad -> String -> String
 findCode start pad = go start . lines
@@ -35,14 +35,13 @@ findCode start pad = go start . lines
               where c = foldl nextKey s x
 
 part1 :: String -> String
-part1 = findCode '5' pad
-
-pad' :: Pad
-pad' = listArray ((0, 0), (4, 4)) [ ' ', ' ', '1', ' ', ' '
-                                  , ' ', '2', '3', '4', ' '
-                                  , '5', '6', '7', '8', '9'
-                                  , ' ', 'A', 'B', 'C', ' '
-                                  , ' ', ' ', 'D', ' ', ' ' ]
+part1 = findCode '5' $ pad [ "123"
+                           , "456"
+                           , "789" ]
 
 part2 :: String -> String
-part2 = findCode '5' pad'
+part2 = findCode '5' $ pad [ "  1  "
+                           , " 234 "
+                           , "56789"
+                           , " ABC "
+                           , "  D  " ]
