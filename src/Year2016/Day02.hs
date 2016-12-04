@@ -15,19 +15,20 @@ dirFunc 'L' = over _2 pred
 
 type Coord = (Int, Int)
 type Pad = Array Coord Char
+
 pad :: Pad
 pad = listArray ((0, 0), (2, 2)) [ '1', '2', '3'
                                  , '4', '5', '6'
                                  , '7', '8', '9' ]
 
 findCode :: Char -> Pad -> String -> String
-findCode s pad = go s . lines
+findCode start pad = go start . lines
     where nextKey key dir
               | inRange (bounds pad) coord
-                && pad ! coord /= ' '      = pad ! coord
-              | otherwise                  = key
+                && val /= ' ' = val
+              | otherwise     = key
               where coord = dirFunc dir $ findCoord key
-          findCoord :: Char -> Coord
+                    val   = pad ! coord
           findCoord c = fst . head . filter ((==c) . snd) $ assocs pad
           go _ [] = []
           go s (x:xs) = c : go c xs
@@ -42,5 +43,6 @@ pad' = listArray ((0, 0), (4, 4)) [ ' ', ' ', '1', ' ', ' '
                                   , '5', '6', '7', '8', '9'
                                   , ' ', 'A', 'B', 'C', ' '
                                   , ' ', ' ', 'D', ' ', ' ' ]
+
 part2 :: String -> String
 part2 = findCode '5' pad'
