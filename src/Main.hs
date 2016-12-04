@@ -80,7 +80,7 @@ parseArgs (y:args) = let probs = foldr pa [] args
               | otherwise                     = undefined -- again
 
 findInput :: Int -> Int -> IO String
-findInput yr pday = strip <$> readFile ("../inputs/" ++ show yr ++ "/input" ++ show pday ++ ".txt")
+findInput yr pday = strip <$> readFile ("inputs/" ++ show yr ++ "/input" ++ show pday ++ ".txt")
 
 $(buildProbs)
 
