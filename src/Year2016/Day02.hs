@@ -8,14 +8,14 @@ import Data.Array ((!), Array, assocs, bounds, listArray)
 import Data.Ix (inRange)
 
 
+type Coord = (Int, Int)
+type Pad = Array Coord Char
+
 dirFunc :: Char -> Coord -> Coord
 dirFunc 'U' = over _1 pred
 dirFunc 'R' = over _2 succ
 dirFunc 'D' = over _1 succ
 dirFunc 'L' = over _2 pred
-
-type Coord = (Int, Int)
-type Pad = Array Coord Char
 
 pad :: [String] -> Pad
 pad s = let r = length s
