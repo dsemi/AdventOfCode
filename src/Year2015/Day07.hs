@@ -28,7 +28,7 @@ parseNode line = case words line of
                    [a, "OR",     b, "->", v] -> (v, f a `Or` f b)
                    [a, "LSHIFT", b, "->", v] -> (v, f a `LShift` f b)
                    [a, "RSHIFT", b, "->", v] -> (v, f a `RShift` f b)
-    where f :: String -> Either String Int
+    where f :: String -> Id
           f x = maybeToEither x $ maybeRead x
 
 eval :: (String -> Int) -> Node -> Int

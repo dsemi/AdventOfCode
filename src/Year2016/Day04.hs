@@ -6,7 +6,7 @@ module Year2016.Day04
 import Control.Arrow ((&&&))
 import Data.List (group, intercalate, isInfixOf, sort, sortBy)
 import Data.List.Split (splitOn)
-import Data.Maybe (fromJust)
+import Data.Maybe (mapMaybe)
 import Text.Megaparsec (char, noneOf, parseMaybe, some)
 import Text.Megaparsec.String (Parser)
 
@@ -17,7 +17,7 @@ data Room = Room { encryptedName :: String
                  }
 
 getRooms :: String -> [Room]
-getRooms = map (fromJust . parseMaybe parseRoom) . lines
+getRooms = mapMaybe (parseMaybe parseRoom) . lines
     where parseRoom :: Parser Room
           parseRoom = do
             encryptedPlusSector <- some (noneOf "[") <* char '['
@@ -32,6 +32,7 @@ roomIsValid (Room en _ ch) = nCommonChars 5 (filter (/= '-') en) == ch
 part1 :: String -> String
 part1 = show . sum . map sectorId . filter roomIsValid . getRooms
 
+rotate :: Int -> Char -> Char
 rotate 0 c = c
 rotate n c
     | c == '-' = ' '

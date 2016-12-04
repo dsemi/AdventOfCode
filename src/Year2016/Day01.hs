@@ -3,41 +3,48 @@ module Year2016.Day01
     , part2
     ) where
 
-import Control.Lens
+import Control.Lens (_1, _2, over)
 import Data.String.Utils (split)
-import qualified Data.HashSet as S
+import Data.HashSet (empty, insert, size)
 
 
--- North East South West
-directions :: [(Int, Int) -> (Int, Int)]
-directions = [ over _2 succ
-             , over _1 succ
-             , over _2 pred
-             , over _1 pred
-             ]
+type Coord = (Int, Int)
+data Direction = North | East | South | West deriving (Enum)
 
-path :: String -> [(Int, Int)]
-path = go 0 (0, 0) . split ", "
+turn :: Char -> Direction -> Direction
+turn 'R' = right
+    where right West = North
+          right dir  = succ dir
+turn 'L' = left
+    where left North = West
+          left dir   = pred dir
+
+move :: Direction -> Coord -> Coord
+move North = over _2 succ
+move East  = over _1 succ
+move South = over _2 pred
+move West  = over _1 pred
+
+path :: String -> [Coord]
+path = go North (0, 0) . split ", "
     where go _ _ [] = []
-          go dir pos ((d:n):xs) = pathPart ++ go newDir (last pathPart) xs
-              where dirShift = if d == 'L' then -1 else 1
-                    newDir = (dir + dirShift) `mod` 4
-                    dirFun = directions !! newDir
-                    pathPart = take (read n) . tail $ iterate dirFun pos
+          go dir pos ((d:n):xs) = pathPart ++ go dir' (last pathPart) xs
+              where dir' = turn d dir
+                    pathPart = take (read n) . tail $ iterate (move dir') pos
 
-manhattanDist :: (Int, Int) -> Int
+manhattanDist :: Coord -> Int
 manhattanDist (a, b) = abs a + abs b
 
 part1 :: String -> String
 part1 = show . manhattanDist . last . path
 
-findDup :: [(Int, Int)] -> (Int, Int)
-findDup = go S.empty
+findDup :: [Coord] -> Coord
+findDup = go empty
     where go s []     = undefined
           go s (x:xs)
-              | S.size s == S.size s' = x
+              | size s == size s' = x
               | otherwise = go s' xs
-              where s' = S.insert x s
+              where s' = insert x s
 
 part2 :: String -> String
 part2 = show . manhattanDist . findDup . path

@@ -3,7 +3,7 @@ module Year2016.Day03
     , part2
     ) where
 
-import Data.Maybe (fromJust)
+import Data.Maybe (mapMaybe)
 import Data.List.Split (chunksOf)
 import Text.Megaparsec (parseMaybe, space)
 import Text.Megaparsec.Lexer (integer)
@@ -13,7 +13,7 @@ import Text.Megaparsec.String (Parser)
 type Triangle = (Integer, Integer, Integer)
 
 parseTriangles :: String -> [Triangle]
-parseTriangles = map (fromJust . parseMaybe parseNums) . lines
+parseTriangles = mapMaybe (parseMaybe parseNums) . lines
     where parseNums :: Parser Triangle
           parseNums = do
             n1 <- space *> integer
