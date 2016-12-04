@@ -8,6 +8,7 @@ import Data.Array ((!), Array, assocs, bounds, listArray)
 import Data.Ix (inRange)
 
 
+dirFunc :: Char -> Coord -> Coord
 dirFunc 'U' = over _1 pred
 dirFunc 'R' = over _2 succ
 dirFunc 'D' = over _1 succ
