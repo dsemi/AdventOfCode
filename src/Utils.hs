@@ -1,5 +1,7 @@
 module Utils where
 
+import Data.Either
+import Data.List (tails)
 import Text.Megaparsec
 import Text.Megaparsec.Lexer
 import Text.Megaparsec.String
@@ -12,3 +14,6 @@ findAllInts = ((map fromInteger) <$>) . parse parser ""
 
 searchAll :: Parser a -> Parser a
 searchAll p = let parser = try p <|> (anyChar *> parser) in parser
+
+findAll :: Parser a -> String -> [a]
+findAll parser = rights . map (parse parser "") . init . tails
