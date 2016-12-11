@@ -31,7 +31,7 @@ executable Advent
                        Year2016.Day21, Year2016.Day22, Year2016.Day23, Year2016.Day24, Year2016.Day25
 
   other-extensions:    TemplateHaskell
-  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash, arithmoi, containers, attoparsec, megaparsec, pcre-heavy, base16-bytestring, transformers
+  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash, arithmoi, containers, attoparsec, megaparsec, pcre-heavy, base16-bytestring, mtl
   ghc-options:         -O2
   hs-source-dirs:      src
   default-language:    Haskell2010

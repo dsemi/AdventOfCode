@@ -4,7 +4,7 @@ module Year2016.Day05
     ) where
 
 import Control.Monad (replicateM)
-import Control.Monad.Trans.State (State, evalState, state)
+import Control.Monad.State (State, evalState, state)
 import Crypto.Hash.MD5 (hash)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
