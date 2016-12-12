@@ -3,27 +3,30 @@ module Year2016.Day10
     , part2
     ) where
 
+import Data.Coerce
 import Control.Monad.State
 import Data.List (sort)
 import Data.Map.Strict ((!), Map)
 import qualified Data.Map.Strict as M
 
 data BotInputs = None | One Int | Two Int Int deriving (Eq)
-data Target = B Int | O Int deriving (Eq, Ord)
+newtype BotId = BotId Int deriving (Eq, Ord)
+newtype OutId = OutId Int deriving (Eq, Ord)
+data Target = B BotId | O OutId deriving (Eq, Ord)
 data Targets = Targets Target Target
 
-data Node = Bot { num :: Int
+data Node = Bot { bId :: BotId
                 , botFunc :: Maybe ActiveBot
                 , inputs :: BotInputs
                 , targets :: Targets
                 }
-          | Output { num :: Int
+          | Output { oId :: OutId
                    , input :: Int
                    }
 
 data ActiveBot = ActiveBot (Int -> State (Map Target Node) ())
 
-botStage1 :: Int -> Targets -> Int -> State (Map Target Node) ()
+botStage1 :: BotId -> Targets -> Int -> State (Map Target Node) ()
 botStage1 n targets@(Targets t1 t2) v1 =
     modify $ M.insert (B n) (Bot n (Just (ActiveBot botStage2)) (One v1) targets)
     where botStage2 v2 = do
@@ -41,21 +44,21 @@ propagate target value = do
 
 parse :: [String] -> State (Map Target Node) ()
 parse ["bot",n0,_,_,_,o1,n1,_,_,_,o2,n2] =
-    let botNum = read n0
+    let botNum = BotId $ read n0
         targets = Targets (f o1 n1) (f o2 n2)
         bot = Bot botNum (Just $ ActiveBot $ botStage1 botNum targets) None targets
     in modify $ M.insert (B botNum) bot
     where f o n
-              | o == "output" = O (read n)
-              | o == "bot"    = B (read n)
-parse ["value",v,_,_,_,n] = propagate (B (read n)) (read v)
+              | o == "output" = O (OutId $ read n)
+              | o == "bot"    = B (BotId $ read n)
+parse ["value",v,_,_,_,n] = propagate (B (BotId $ read n)) (read v)
 
 buildGraph :: String -> Map Target Node
-buildGraph input = execState (mapM parse (sort . map words $ lines input)) M.empty
+buildGraph = flip execState M.empty . mapM parse . sort . map words . lines
 
-part1 :: String -> String
-part1 = show . num . head . filter ((== Two 17 61) . inputs) . M.elems . buildGraph
+part1 :: String -> Int
+part1 = coerce . bId . head . filter ((== Two 17 61) . inputs) . M.elems . buildGraph
 
-part2 :: String -> String
+part2 :: String -> Int
 part2 s = let graph = buildGraph s
-          in show . product . map input $ map ((graph !) . O) [0..2]
+          in product . map input $ map ((graph !) . O . OutId) [0..2]

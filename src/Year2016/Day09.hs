@@ -29,11 +29,11 @@ decompressedLength f input@(s:ss) =
                         in repeatCount marker * f repeatedChars + decompressedLength f rest
       (Left _) -> 1 + decompressedLength f ss
 
-part1 :: String -> String
-part1 = show . decompressedLength length
+part1 :: String -> Int
+part1 = decompressedLength length
 
 recursive :: String -> Int
 recursive = decompressedLength recursive
 
-part2 :: String -> String
-part2 = show . decompressedLength recursive
+part2 :: String -> Int
+part2 = decompressedLength recursive

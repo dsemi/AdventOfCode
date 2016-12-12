@@ -29,8 +29,8 @@ roomIsValid :: Room -> Bool
 roomIsValid (Room en _ ch) = nCommonChars 5 (filter (/= '-') en) == ch
     where nCommonChars n = take n . map snd . sort . map (negate . length &&& head) . group . sort
 
-part1 :: String -> String
-part1 = show . sum . map sectorId . filter roomIsValid . getRooms
+part1 :: String -> Int
+part1 = sum . map sectorId . filter roomIsValid . getRooms
 
 rotate :: Int -> Char -> Char
 rotate 0 c = c
@@ -42,5 +42,5 @@ rotate n c
 isNorthPole :: Room -> Bool
 isNorthPole (Room en si _) = "northpole" `isInfixOf` map (rotate si) en
 
-part2 :: String -> String
-part2 = show . sectorId . head . filter isNorthPole . filter roomIsValid . getRooms
+part2 :: String -> Int
+part2 = sectorId . head . filter isNorthPole . filter roomIsValid . getRooms

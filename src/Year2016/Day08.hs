@@ -45,8 +45,8 @@ parser = parseRect <|> parseRotateRow <|> parseRotateCol
 litPixels :: String -> HashSet Coord
 litPixels = foldl' (flip ($)) S.empty . mapMaybe (parseMaybe parser) . lines
 
-part1 :: String -> String
-part1 = show . S.size . litPixels
+part1 :: String -> Int
+part1 = S.size . litPixels
 
 showDisplay :: HashSet Coord -> String
 showDisplay litPix = '\n' : (unlines $ map (\r -> map (f . (r,)) [0..w-1]) [0..h-1])

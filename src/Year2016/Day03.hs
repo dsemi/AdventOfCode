@@ -25,12 +25,12 @@ numValidTriangles :: [Triangle] -> Int
 numValidTriangles = length . filter isValidTriangle
     where isValidTriangle (a, b, c) = a + b > c && a + c > b && b + c > a
 
-part1 :: String -> String
-part1 = show . numValidTriangles . parseTriangles
+part1 :: String -> Int
+part1 = numValidTriangles . parseTriangles
 
 byCols :: [Triangle] -> [Triangle]
 byCols ((a, b, c):(d, e, f):(g, h, i):rest) = (a, d, g) : (b, e, h) : (c, f, i) : byCols rest
 byCols [] = []
 
-part2 :: String -> String
-part2 = show . numValidTriangles . byCols . parseTriangles
+part2 :: String -> Int
+part2 = numValidTriangles . byCols . parseTriangles

@@ -33,8 +33,8 @@ path = go North (0, 0) . split ", "
 manhattanDist :: Coord -> Int
 manhattanDist (a, b) = abs a + abs b
 
-part1 :: String -> String
-part1 = show . manhattanDist . last . path
+part1 :: String -> Int
+part1 = manhattanDist . last . path
 
 findDup :: [Coord] -> Coord
 findDup = go empty
@@ -42,5 +42,5 @@ findDup = go empty
               | member x s = x
               | otherwise  = go (insert x s) xs
 
-part2 :: String -> String
-part2 = show . manhattanDist . findDup . path
+part2 :: String -> Int
+part2 =  manhattanDist . findDup . path

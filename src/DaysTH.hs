@@ -1,5 +1,8 @@
+{-# LANGUAGE TemplateHaskell, FlexibleInstances, TypeSynonymInstances, UndecidableInstances #-}
+
 module DaysTH
 ( buildProbs
+, toString
 ) where
 
 import Utils
@@ -24,6 +27,16 @@ problemPathPrefixes :: [String]
 problemPathPrefixes = [ "src/Year2015/Day??.hs"
                       , "src/Year2016/Day??.hs"
                       ]
+
+class ToString a where
+    toString :: a -> String
+
+instance  {-# OVERLAPPING #-} ToString String where
+    toString = id
+
+
+instance {-# OVERLAPPING #-} Show a => ToString a where
+    toString = show
 
 
 buildProbs :: Q [Dec]
@@ -50,7 +63,7 @@ buildProbs = do
          ]
     where accProbs acc p = M.insertWith (++) (year p) (buildProb p) acc
           buildProb p = [TupE [ LitE (IntegerL (day p))
-                              , TupE [ VarE (part1 p)
-                                     , VarE (part2 p)]]]
+                              , TupE [ UInfixE (VarE 'toString) (VarE '(.)) (VarE (part1 p))
+                                     , UInfixE (VarE 'toString) (VarE '(.)) (VarE (part2 p))]]]
           toLit (a, b) = TupE [ LitE (IntegerL a)
                               , ListE b]

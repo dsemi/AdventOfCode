@@ -26,8 +26,8 @@ parseAbba = do
   char a
   return [a, b, b, a]
 
-part1 :: String -> String
-part1 = show . length . filter (valid . splitSupernetsAndHypernets) . lines
+part1 :: String -> Int
+part1 = length . filter (valid . splitSupernetsAndHypernets) . lines
     where hasAbba = not . null . findAll parseAbba
           valid (sns, hns) = any hasAbba sns && all (not . hasAbba) hns
 
@@ -38,7 +38,7 @@ expectedBab = do
   char a
   return [b, a, b]
 
-part2 :: String -> String
-part2 = show . length . filter (valid . splitSupernetsAndHypernets) . lines
+part2 :: String -> Int
+part2 = length . filter (valid . splitSupernetsAndHypernets) . lines
     where valid (sns, hns) = let babs = concatMap (findAll expectedBab) sns
                              in or $ isInfixOf <$> babs <*> hns
