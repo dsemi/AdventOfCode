@@ -3,19 +3,21 @@
 module Year2016.Day12h where
 
 import Data.Vector (Vector)
-import Control.Lens.TH
+import Control.Lens.TH (makeLenses)
 
-data Instruction = Cpy (Either Char Int) Char
+data Value = Reg Char | Const Int deriving (Show)
+
+data Instruction = Cpy Value Char
                  | Inc Char
                  | Dec Char
-                 | Jnz (Either Char Int) Int deriving (Show)
+                 | Jnz Value Int deriving (Show)
 
 data Simulator = Sim { _a :: Int
                      , _b :: Int
                      , _c :: Int
                      , _d :: Int
                      , _currentLine :: Int
-                     , _instrs :: Vector Instruction
+                     , _instructions :: Vector Instruction
                      }
 
 makeLenses ''Simulator
