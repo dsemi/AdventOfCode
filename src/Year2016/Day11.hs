@@ -3,29 +3,80 @@ module Year2016.Day11
     , part2
     ) where
 
-import Utils (findAll)
+import Utils (aStar, findAll)
 
-import Control.Lens ((%~), ix)
-import Data.List (inits)
+import Control.Lens (_1, _2, both, ix, over)
+import Data.List (delete, lookup, nub, sort, tails)
+import Data.List.Split (splitOn)
+import Data.Maybe (fromJust)
 import Text.Megaparsec (choice, noneOf, some, spaceChar, string)
 
 
-parseFloor :: String -> [String]
-parseFloor = findAll $ do
-               name <- spaceChar *> some (noneOf " ")
-               type' <- spaceChar *> choice (map string ["microchip", "generator"])
-               return $ unwords [name, type']
+type Pair = (Int, Int) -- First number is floor of Microchip, second is floor of Generator
+type Floors = (Int, [Pair])
 
-countSteps :: [[String]] -> Int
-countSteps = sum . map (subtract 3 . (*2) . sum) . tail . inits . init . map length
+combinations :: Int -> [a] -> [[a]]
+combinations 0 _  = [ [] ]
+combinations n xs = [ y:ys | y:xs' <- tails xs
+                    , ys <- combinations (n-1) xs']
+
+isDone :: Floors -> Bool
+isDone = all (==(3, 3)) . snd
+
+heuristic :: Floors -> Int
+heuristic = sum . map (3-) . concatMap (\(a, b) -> [a, b]) . snd
+
+applyToTwo :: (Pair -> Pair) -> [Pair] -> [[Pair]]
+applyToTwo f [x, y] = [[f x, f y]]
+applyToTwo f (x:xs) = (map (f x :) $ applyToEach f xs) ++ (map (x :) $ applyToTwo f xs)
+
+applyToEach :: (Pair -> Pair) -> [Pair] -> [[Pair]]
+applyToEach f [x] = [[f x]]
+applyToEach f (x:xs) = (f x : xs) : (map (x :) $ applyToEach f xs)
+
+isValid :: [Pair] -> Bool
+isValid = go []
+    where go _ [] = True
+          go c ((a, b):fs)
+              | a == b || a `notElem` (map snd fs ++ c) = go (b:c) fs
+              | otherwise = False
+
+neighbors :: Floors -> [Floors]
+neighbors (e, flrs) = nub [ (e+d, flrs') | d <- dirs
+                          , flrs' <- map sort $ applyToEach (over _1 (f d)) flrs
+                                     ++ applyToEach (over _2 (f d)) flrs
+                                     ++ applyToEach (over both (f d)) flrs
+                                     ++ applyToTwo (over _1 (f d)) flrs
+                                     ++ applyToTwo (over _2 (f d)) flrs
+                          , flrs /= flrs'
+                          , isValid flrs'
+                          ]
+    where dirs  = filter ((\x -> x >=0 && x < 4) . (+e)) [1, -1]
+          f d n = if n == e then n+d else n
+
+parseFloor :: String -> [(String, String)]
+parseFloor = findAll $ do
+               name  <- spaceChar *> some (noneOf " ")
+               type' <- spaceChar *> choice (map string ["microchip", "generator"])
+               return $ (head $ splitOn "-" name, type')
+
+makeFloors :: [[(String, String)]] -> Floors
+makeFloors = go [] . concatMap (\(f, fs) -> map (\(n, t) -> (n, (f, t))) fs) . zip [0..]
+    where go :: [Pair] -> [(String, (Int, String))] -> Floors
+          go fls []                 = (0, sort fls)
+          go fls ((n, (f, t)) : xs) = let (Just x@(f', _)) = lookup n xs
+                                      in if t == "microchip"
+                                         then go ((f, f') : fls) $ delete (n, x) xs
+                                         else go ((f', f) : fls) $ delete (n, x) xs
 
 part1 :: String -> Int
-part1 = countSteps . map parseFloor . lines
+part1 = fromJust . (\s -> aStar s isDone heuristic neighbors) . makeFloors . map parseFloor . lines
 
 part2 :: String -> Int
-part2 = countSteps . (ix 0 %~ (++ extraItems)) . map parseFloor . lines
-    where extraItems = [ "elerium generator"
-                       , "elerium-compatible microchip"
-                       , "dilithium generator"
-                       , "dilithium-compatible microchip"
+part2 = fromJust . (\s -> aStar s isDone heuristic neighbors) . makeFloors
+        . over (ix 0) (++ extraItems) . map parseFloor . lines
+    where extraItems = [ ("elerium", "generator")
+                       , ("elerium", "microchip")
+                       , ("dilithium", "generator")
+                       , ("dilithium", "microchip")
                        ]

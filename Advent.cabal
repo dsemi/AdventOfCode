@@ -17,7 +17,7 @@ cabal-version:       >=1.10
 
 executable Advent
   main-is:             Main.hs
-  other-modules:       Utils, DaysTH,
+  other-modules:       Utils, UtilsTH, DaysTH,
                        Year2015.Day01, Year2015.Day02, Year2015.Day03, Year2015.Day04, Year2015.Day05,
                        Year2015.Day06, Year2015.Day07, Year2015.Day08, Year2015.Day09, Year2015.Day10,
                        Year2015.Day11, Year2015.Day12, Year2015.Day13, Year2015.Day14, Year2015.Day15,
@@ -32,7 +32,7 @@ executable Advent
                        Year2016.Day12h
 
   other-extensions:    TemplateHaskell
-  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash, arithmoi, containers, attoparsec, megaparsec, pcre-heavy, base16-bytestring, mtl, extra
+  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash, arithmoi, containers, attoparsec, megaparsec, pcre-heavy, base16-bytestring, mtl, extra, hashable
   ghc-options:         -O2
   hs-source-dirs:      src
   default-language:    Haskell2010
