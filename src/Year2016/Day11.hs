@@ -70,10 +70,11 @@ makeFloors = go [] . concatMap (\(f, fs) -> map (\(n, t) -> (n, (f, t))) fs) . z
                                          else go ((f', f) : fls) $ delete (n, x) xs
 
 part1 :: String -> Int
-part1 = fromJust . (\s -> aStar s isDone heuristic neighbors) . makeFloors . map parseFloor . lines
+part1 = fst . fromJust . (\s -> aStar s isDone heuristic neighbors)
+        . makeFloors . map parseFloor . lines
 
 part2 :: String -> Int
-part2 = fromJust . (\s -> aStar s isDone heuristic neighbors) . makeFloors
+part2 = fst . fromJust . (\s -> aStar s isDone heuristic neighbors) . makeFloors
         . over (ix 0) (++ extraItems) . map parseFloor . lines
     where extraItems = [ ("elerium", "generator")
                        , ("elerium", "microchip")

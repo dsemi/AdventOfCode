@@ -3,8 +3,19 @@ module Year2016.Day18
     , part2
     ) where
 
-part1 :: String -> String
-part1 = const ""
+makeNextRow :: String -> String
+makeNextRow prevRow@(_:rest) = zipWith3 safeOrTrap ('.':prevRow) prevRow $ rest ++ "."
+    where safeOrTrap '^' '^' '.' = '^'
+          safeOrTrap '.' '^' '^' = '^'
+          safeOrTrap '^' '.' '.' = '^'
+          safeOrTrap '.' '.' '^' = '^'
+          safeOrTrap  _   _   _  = '.'
 
-part2 :: String -> String
-part2 = const ""
+numSafe :: Int -> String -> Int
+numSafe n = length . filter (=='.') . concat . take n . iterate makeNextRow
+
+part1 :: String -> Int
+part1 = numSafe 40
+
+part2 :: String -> Int
+part2 = numSafe 400000

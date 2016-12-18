@@ -31,7 +31,7 @@ searchAll p = let parser = try p <|> (anyChar *> parser) in parser
 findAll :: Parser a -> String -> [a]
 findAll parser = rights . map (parse parser "") . init . tails
 
-aStar :: (Eq a, Hashable a) => a -> (a -> Bool) -> (a -> Int) -> (a -> [a]) -> Maybe Int
+aStar :: (Eq a, Hashable a) => a -> (a -> Bool) -> (a -> Int) -> (a -> [a]) -> Maybe (Int, a)
 aStar start isFinished heuristic neighbors = evalState search startState
     where startState = AStarState (S.singleton start) S.empty (M.singleton start 0) (M.singleton start (heuristic start))
           search = do
@@ -40,7 +40,7 @@ aStar start isFinished heuristic neighbors = evalState search startState
             fs <- use fScore
             let current = minimumBy (comparing (fs !)) $ S.toList open
             if | S.null open        -> return $ Nothing
-               | isFinished current -> return $ Just $ gs M.! current
+               | isFinished current -> return $ Just $ (gs M.! current, current)
                | otherwise          -> do
                      openSet %= S.delete current
                      closedSet %= S.insert current

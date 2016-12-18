@@ -27,7 +27,7 @@ neighbors isOpen (x, y) = filter isOpen $ filter isValid [(x+1, y), (x-1, y), (x
     where isValid (x, y) = x >=0 && y >= 0
 
 part1 :: String -> Int
-part1 s = fromJust $ aStar (1, 1) (==target) heuristic (neighbors (isOpen n))
+part1 s = fst . fromJust $ aStar (1, 1) (==target) heuristic (neighbors (isOpen n))
     where n = read s
 
 bfs :: (Eq a, Hashable a) => a -> Int -> (a -> [a]) -> HashSet a
