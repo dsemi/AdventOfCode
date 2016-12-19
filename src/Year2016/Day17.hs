@@ -38,9 +38,9 @@ neighbors (xy, b) = let udlr = zip (B.unpack . B.take 4 . encode $ hash b) "UDLR
           apply xy b 'R'  = (over _1 (+1) xy, B.snoc b 'R')
           inBounds (x, y) = x > 0 && x <= 4 && y > 0 && y <= 4
 
-part1 :: String -> String
+part1 :: String -> ByteString
 part1 s = let (Just (_, (_, ans))) = aStar (start (B.pack s)) isDone heuristic neighbors
-          in B.unpack $ B.drop (length s) ans
+          in B.drop (length s) ans
 
 bfs :: (Eq a, Hashable a) => a -> (a -> Bool) -> (a -> [a]) -> Int
 bfs start isFinished neighbors = search I.empty S.empty [(0, start)]

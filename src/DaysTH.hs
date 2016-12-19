@@ -7,9 +7,13 @@ module DaysTH
 
 import Utils
 
+import Data.ByteString.Char8 (ByteString)
+import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.List (foldl')
-import Data.Maybe
+import Data.Maybe (fromJust)
+import Data.Text (Text)
+import qualified Data.Text as T
 import Language.Haskell.TH
 import System.Path.Glob
 import Text.Megaparsec (digitChar, parseMaybe, some, string, noneOf)
@@ -22,7 +26,6 @@ data Problem = Problem { module' :: String
                        , part2 :: Name
                        }
 
-
 problemPathPrefixes :: [String]
 problemPathPrefixes = [ "src/Year2015/Day??.hs"
                       , "src/Year2016/Day??.hs"
@@ -34,10 +37,14 @@ class ToString a where
 instance  {-# OVERLAPPING #-} ToString String where
     toString = id
 
+instance  {-# OVERLAPPING #-} ToString Text where
+    toString = T.unpack
+
+instance  {-# OVERLAPPING #-} ToString ByteString where
+    toString = B.unpack
 
 instance {-# OVERLAPPING #-} Show a => ToString a where
     toString = show
-
 
 buildProbs :: Q [Dec]
 buildProbs = do
