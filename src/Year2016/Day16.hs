@@ -6,15 +6,11 @@ module Year2016.Day16
     ) where
 
 import qualified Data.ByteString.Char8 as B
-import Data.List (find)
-import Data.Maybe (fromJust)
 
-find' x = fromJust . find x
 
 dragonChecksum :: Int -> String -> String
-dragonChecksum desiredLen ns = find' (odd . length) . iterate checksum . B.unpack
-                               . B.take desiredLen . find' ((>=desiredLen) . B.length)
-                               . iterate curve $ B.pack ns
+dragonChecksum desiredLen ns = until (odd . length) checksum . B.unpack . B.take desiredLen
+                               . until ((>=desiredLen) . B.length) curve $ B.pack ns
     where curve a = mconcat [a, "0", B.map rep $ B.reverse a]
           rep '1' = '0'
           rep '0' = '1'
