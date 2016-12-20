@@ -43,8 +43,8 @@ find seed hash num n = go S.empty S.empty [0..]
 end :: Seq a -> a
 end = (\(_ :> r) -> r) . S.viewr
 
-part1 :: String -> Int
-part1 s = end $ find (B.pack s) hash 64 0
+part1 :: ByteString -> Int
+part1 s = end $ find s hash 64 0
 
-part2 :: String -> Int
-part2 s = end $ find (B.pack s) hash 64 2016
+part2 :: ByteString -> Int
+part2 s = end $ find s hash 64 2016

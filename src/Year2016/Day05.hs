@@ -20,13 +20,13 @@ findHashPrefixedByFiveZeros seed =
                            , fiveZeros `B.isPrefixOf` checksum]
         where fiveZeros = B.pack "00000"
 
-part1 :: String -> String
-part1 s = B.unpack $ evalState (B.pack . map (B.head . B.drop 5) <$> replicateM 8 nextHash) 0
-    where nextHash = findHashPrefixedByFiveZeros $ B.pack s
+part1 :: ByteString -> ByteString
+part1 s = evalState (B.pack . map (B.head . B.drop 5) <$> replicateM 8 nextHash) 0
+    where nextHash = findHashPrefixedByFiveZeros s
 
-part2 :: String -> String
-part2 s = B.unpack $ evalState (findPassword M.empty) 0
-    where nextHash = findHashPrefixedByFiveZeros $ B.pack s
+part2 :: ByteString -> ByteString
+part2 s = evalState (findPassword M.empty) 0
+    where nextHash = findHashPrefixedByFiveZeros s
           indices = "01234567"
           addChar m pos char
               | pos `elem` indices && not (M.member pos m) = M.insert pos char m

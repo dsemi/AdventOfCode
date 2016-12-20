@@ -14,8 +14,8 @@ removeNext = go []
           go c [x] = x : reverse c
           go c (x:_:xs) = go (x:c) xs
 
-part1 :: String -> Int
-part1 s = head $ until ((==1) . length) removeNext [1..(read s)]
+part1 :: Int -> Int
+part1 n = head $ until ((==1) . length) removeNext [1..n]
 
 removeAcross :: Seq Int -> Seq Int
 removeAcross s@(S.viewl -> (x :< xs)) = S.deleteAt (length s `div` 2 - 1) xs |> x
@@ -23,5 +23,5 @@ removeAcross s@(S.viewl -> (x :< xs)) = S.deleteAt (length s `div` 2 - 1) xs |> 
 start :: Seq a -> a
 start = (\(l :< _) -> l) . S.viewl
 
-part2 :: String -> Int
-part2 s = start . until ((==1) . length) removeAcross $ S.fromList [1..(read s)]
+part2 :: Int -> Int
+part2 n = start . until ((==1) . length) removeAcross $ S.fromList [1..n]
