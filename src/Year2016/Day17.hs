@@ -5,13 +5,12 @@ module Year2016.Day17
     , part2
     ) where
 
-import Utils (aStar)
-
 import Control.Lens (_1, _2, over)
 import Crypto.Hash.MD5 (hash)
 import Data.ByteString.Base16 (encode)
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
+import Data.Graph.AStar
 import Data.Hashable (Hashable)
 import qualified Data.IntSet as I
 import qualified Data.HashSet as S
@@ -39,7 +38,8 @@ neighbors (xy, b) = let udlr = zip (B.unpack . B.take 4 . encode $ hash b) "UDLR
           inBounds (x, y) = x > 0 && x <= 4 && y > 0 && y <= 4
 
 part1 :: ByteString -> ByteString
-part1 s = let (Just (_, (_, ans))) = aStar (start s) isDone heuristic neighbors
+part1 s = let Just (_, ans) = last <$> aStar (S.fromList . neighbors)
+                              (\_ -> const 1) heuristic isDone (start s)
           in B.drop (B.length s) ans
 
 bfs :: (Eq a, Hashable a) => a -> (a -> Bool) -> (a -> [a]) -> Int

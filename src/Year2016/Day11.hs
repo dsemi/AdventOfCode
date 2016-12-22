@@ -3,10 +3,13 @@ module Year2016.Day11
     , part2
     ) where
 
-import Utils (aStar, findAll)
+import Utils (findAll)
 
 import Control.Lens (_1, _2, both, ix, over)
-import Data.List (delete, lookup, nub, sort, tails)
+import Data.Graph.AStar
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as S
+import Data.List (delete, lookup, sort, tails)
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
 import Text.Megaparsec (choice, noneOf, some, spaceChar, string)
@@ -41,16 +44,16 @@ isValid = go []
               | a == b || a `notElem` (map snd fs ++ c) = go (b:c) fs
               | otherwise = False
 
-neighbors :: Floors -> [Floors]
-neighbors (e, flrs) = nub [ (e+d, flrs') | d <- dirs
-                          , flrs' <- map sort $ applyToEach (over _1 (f d)) flrs
-                                     ++ applyToEach (over _2 (f d)) flrs
-                                     ++ applyToEach (over both (f d)) flrs
-                                     ++ applyToTwo (over _1 (f d)) flrs
-                                     ++ applyToTwo (over _2 (f d)) flrs
-                          , flrs /= flrs'
-                          , isValid flrs'
-                          ]
+neighbors :: Floors -> HashSet Floors
+neighbors (e, flrs) = S.fromList [ (e+d, flrs') | d <- dirs
+                                 , flrs' <- map sort $ applyToEach (over _1 (f d)) flrs
+                                            ++ applyToEach (over _2 (f d)) flrs
+                                            ++ applyToEach (over both (f d)) flrs
+                                            ++ applyToTwo (over _1 (f d)) flrs
+                                            ++ applyToTwo (over _2 (f d)) flrs
+                                 , flrs /= flrs'
+                                 , isValid flrs'
+                                 ]
     where dirs  = filter ((\x -> x >=0 && x < 4) . (+e)) [1, -1]
           f d n = if n == e then n+d else n
 
@@ -70,11 +73,11 @@ makeFloors = go [] . concatMap (\(f, fs) -> map (\(n, t) -> (n, (f, t))) fs) . z
                                          else go ((f', f) : fls) $ delete (n, x) xs
 
 part1 :: String -> Int
-part1 = fst . fromJust . (\s -> aStar s isDone heuristic neighbors)
+part1 = fromJust . fmap length . aStar neighbors (\_ -> const 1) heuristic isDone
         . makeFloors . map parseFloor . lines
 
 part2 :: String -> Int
-part2 = fst . fromJust . (\s -> aStar s isDone heuristic neighbors) . makeFloors
+part2 = fromJust . fmap length . aStar neighbors (\_ -> const 1) heuristic isDone . makeFloors
         . over (ix 0) (++ extraItems) . map parseFloor . lines
     where extraItems = [ ("elerium", "generator")
                        , ("elerium", "microchip")

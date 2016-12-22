@@ -5,9 +5,8 @@ module Year2016.Day13
     , part2
     ) where
 
-import Utils (aStar)
-
 import Data.Bits (popCount)
+import Data.Graph.AStar
 import Data.Hashable (Hashable)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
@@ -27,7 +26,8 @@ neighbors isOpen (x, y) = filter isOpen $ filter isValid [(x+1, y), (x-1, y), (x
     where isValid (x, y) = x >=0 && y >= 0
 
 part1 :: Int -> Int
-part1 = fst . fromJust . aStar (1, 1) (==target) heuristic . neighbors . isOpen
+part1 = fromJust . fmap length .
+        (\x -> aStar (S.fromList . neighbors (isOpen x)) (\_ -> const 1) heuristic (==target) (1, 1))
 
 bfs :: (Eq a, Hashable a) => a -> Int -> (a -> [a]) -> HashSet a
 bfs start depth neighbors = search [(0, start)] S.empty
