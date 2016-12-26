@@ -29,10 +29,10 @@ executable Advent
                        Year2016.Day11, Year2016.Day12, Year2016.Day13, Year2016.Day14, Year2016.Day15,
                        Year2016.Day16, Year2016.Day17, Year2016.Day18, Year2016.Day19, Year2016.Day20,
                        Year2016.Day21, Year2016.Day22, Year2016.Day23, Year2016.Day24, Year2016.Day25,
-                       Year2016.Day12h, Year2016.Day23h, Year2016.Day25h
+                       Year2016.Assembunny, Year2016.AssembunnyTH
 
   other-extensions:    TemplateHaskell
-  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash-md5, arithmoi, containers>=0.5.8.1, attoparsec, megaparsec, pcre-heavy, base16-bytestring, mtl, extra, hashable, string-conv, data-ordlist, astar
+  build-depends:       base >=4.9 && <4.10, deepseq, split, template-haskell, ansi-terminal, unordered-containers, array, MissingH, lens, memoize, aeson, bytestring, vector, text, lens-aeson, multiset, cryptohash-md5, arithmoi, containers>=0.5.8.1, attoparsec, megaparsec, pcre-heavy, base16-bytestring, mtl, extra, hashable, string-conv, data-ordlist, astar, errors, either, monad-loops
   ghc-options:         -O2
   hs-source-dirs:      src
   default-language:    Haskell2010

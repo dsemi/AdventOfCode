@@ -1,27 +1,29 @@
 {-# LANGUAGE TemplateHaskell, StrictData #-}
 
-module Year2016.Day25h where
+module Year2016.AssembunnyTH where
 
-import Data.Vector (Vector)
 import Data.Sequence (Seq)
-import Control.Lens.TH (makeLenses)
+import Data.Vector (Vector)
+import Control.Lens.TH
 
 data Value = Reg Char | Const Int deriving (Eq, Show)
 
-data Instruction = Cpy Value Char
+data Instruction = Cpy Value Value
                  | Inc Char
                  | Dec Char
+                 | Tgl Char
                  | Out Char
-                 | Mul Int Char Char Char
-                 | Jnz Value Value deriving (Eq, Show)
+                 | Jnz Value Value
+                 | Mul Value Char Char Char deriving (Eq, Show)
 
 data Simulator = Sim { _a :: Int
                      , _b :: Int
                      , _c :: Int
                      , _d :: Int
                      , _currentLine :: Int
+                     , _outputLim :: Int
                      , _output :: Seq Int
                      , _instructions :: Vector Instruction
-                     } deriving (Show)
+                     } deriving (Eq, Show)
 
 makeLenses ''Simulator
