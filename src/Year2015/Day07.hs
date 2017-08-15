@@ -11,8 +11,9 @@ import qualified Data.HashMap.Strict as M
 import Data.List (foldl')
 import Data.Either.Utils
 import Data.String.Utils
+import Data.Word
 
-type Id = Either String Int
+type Id = Either String Word16
 data Node = Const Id
           | Not Id
           | And Id Id
@@ -31,14 +32,14 @@ parseNode line = case words line of
     where f :: String -> Id
           f x = maybeToEither x $ maybeRead x
 
-eval :: (String -> Int) -> Node -> Int
+eval :: (String -> Word16) -> Node -> Word16
 eval f exp = case exp of
                Const a    -> val a
                Not a      -> complement $ val a
                And a b    -> val a .&. val b
                Or a b     -> val a .|. val b
-               LShift a b -> val a `shiftL` val b
-               RShift a b -> val a `shiftR` val b
+               LShift a b -> val a `shiftL` (fromIntegral $ val b)
+               RShift a b -> val a `shiftR` (fromIntegral $ val b)
     where val = either f id
 
 buildWires :: [String] -> HashMap String Node
@@ -47,14 +48,14 @@ buildWires = foldl' addWire M.empty
           addWire m s = let (w, node) = parseNode s
                         in M.insert w node m
 
-getValue :: HashMap String Node -> String -> Int
+getValue :: HashMap String Node -> String -> Word16
 getValue m = mgv
     where mgv = memoFix gv
           gv f k = eval f $ m ! k
 
 p1 :: String -> Int
 p1 input = let m = buildWires $ lines input
-           in getValue m "a"
+           in fromIntegral $ getValue m "a"
 
 part1 :: String -> String
 part1 = show . p1
@@ -63,7 +64,7 @@ p2 :: String -> Int
 p2 input = let m = buildWires $ lines input
                a = getValue m "a"
                m' = M.insert "b" (Const $ Right a) m
-           in getValue m' "a"
+           in fromIntegral $ getValue m' "a"
 
 part2 :: String -> String
 part2 = show . p2

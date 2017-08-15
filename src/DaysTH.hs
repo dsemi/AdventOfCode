@@ -78,8 +78,8 @@ unwrap (TtoT f) = T.unpack . f . T.pack
 data ProblemTH = ProblemTH { module' :: String
                            , year :: Integer
                            , day :: Integer
-                           , part1 :: String
-                           , part2 :: String
+                           , part1' :: String
+                           , part2' :: String
                            }
 
 problemPathPrefixes :: [String]
@@ -105,43 +105,40 @@ buildProbs = do
                    (moduleName ++ ".part2")
       ps :: [ProblemTH]
       ps = map (fromJust . parseMaybe parser) pFiles
-  probs <- map toLit . M.toList <$> foldM accProbs M.empty ps
-  return [ FunD (mkName "problems")
-           [ Clause [] (NormalB (ListE probs)) []
-           ]
-         ]
+  [d|problems = $(ListE . map toLit . M.toList <$> foldM accProbs M.empty ps)|]
     where accProbs acc p = do
                prob <- buildProb p
-               return $ M.insertWith (++) (year p) prob acc
+               return $ M.insertWith (++) (year p) [prob] acc
           buildProb p = do
-               Just p1Name <- lookupValueName (part1 p)
-               Just p2Name <- lookupValueName (part2 p)
+               Just p1Name <- lookupValueName (part1' p)
+               Just p2Name <- lookupValueName (part2' p)
                p1Types <- getTypes p1Name
                p2Types <- getTypes p2Name
                let p1Const = probConst p1Types
                let p2Const = probConst p2Types
-               return [TupE [ LitE (IntegerL (day p))
-                            , TupE [ AppE (VarE p1Const) (VarE p1Name)
-                                   , AppE (VarE p2Const) (VarE p2Name)]]]
+               let p1n = return $ VarE p1Name
+               let p2n = return $ VarE p2Name
+               let dp = day p
+               [|(dp, ($(p1Const) $(p1n), $(p2Const) $(p2n)))|]
           toLit (a, b) = TupE [ LitE (IntegerL a)
                               , ListE b]
           getTypes x = do
                VarI _ (AppT (AppT _ (ConT t1)) (ConT t2)) _ <- reify x
                return (t1, t2)
-          probConst (t1, t2) = if | t1 == ''String && t2 == ''String -> 'sToS
-                                  | t1 == ''String && t2 == ''Int -> 'sToI
-                                  | t1 == ''String && t2 == ''ByteString -> 'sToB
-                                  | t1 == ''String && t2 == ''Text -> 'sToT
-                                  | t1 == ''ByteString && t2 == ''String -> 'bToS
-                                  | t1 == ''ByteString && t2 == ''Int -> 'bToI
-                                  | t1 == ''ByteString && t2 == ''ByteString -> 'bToB
-                                  | t1 == ''ByteString && t2 == ''Text -> 'bToT
-                                  | t1 == ''Int && t2 == ''String -> 'iToS
-                                  | t1 == ''Int && t2 == ''Int -> 'iToI
-                                  | t1 == ''Int && t2 == ''ByteString -> 'iToB
-                                  | t1 == ''Int && t2 == ''Text -> 'iToT
-                                  | t1 == ''Text && t2 == ''String -> 'tToS
-                                  | t1 == ''Text && t2 == ''Int -> 'tToI
-                                  | t1 == ''Text && t2 == ''ByteString -> 'tToB
-                                  | t1 == ''Text && t2 == ''Text -> 'tToT
-                                  | otherwise -> trace (show (t1,t2)) undefined
+          probConst (t1, t2) = return $ VarE $ if | t1 == ''String && t2 == ''String -> 'sToS
+                                                  | t1 == ''String && t2 == ''Int -> 'sToI
+                                                  | t1 == ''String && t2 == ''ByteString -> 'sToB
+                                                  | t1 == ''String && t2 == ''Text -> 'sToT
+                                                  | t1 == ''ByteString && t2 == ''String -> 'bToS
+                                                  | t1 == ''ByteString && t2 == ''Int -> 'bToI
+                                                  | t1 == ''ByteString && t2 == ''ByteString -> 'bToB
+                                                  | t1 == ''ByteString && t2 == ''Text -> 'bToT
+                                                  | t1 == ''Int && t2 == ''String -> 'iToS
+                                                  | t1 == ''Int && t2 == ''Int -> 'iToI
+                                                  | t1 == ''Int && t2 == ''ByteString -> 'iToB
+                                                  | t1 == ''Int && t2 == ''Text -> 'iToT
+                                                  | t1 == ''Text && t2 == ''String -> 'tToS
+                                                  | t1 == ''Text && t2 == ''Int -> 'tToI
+                                                  | t1 == ''Text && t2 == ''ByteString -> 'tToB
+                                                  | t1 == ''Text && t2 == ''Text -> 'tToT
+                                                  | otherwise -> trace (show (t1,t2)) undefined

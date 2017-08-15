@@ -1,0 +1,46 @@
+name: Advent
+version: '0.1.0.0'
+author: Dan Seminara
+maintainer: semi225599@gmail.com
+license: UnspecifiedLicense
+other-extensions:
+- TemplateHaskell
+dependencies:
+- base >=4.9 && <4.10
+- deepseq
+- split
+- template-haskell
+- ansi-terminal
+- unordered-containers
+- array
+- MissingH
+- lens
+- memoize
+- aeson
+- bytestring
+- vector
+- text
+- lens-aeson
+- multiset
+- cryptohash-md5
+- arithmoi
+- containers >=0.5.8.1
+- attoparsec
+- megaparsec
+- pcre-heavy
+- base16-bytestring
+- mtl
+- extra
+- hashable
+- string-conv
+- data-ordlist
+- astar
+- errors
+- either
+- monad-loops
+- free
+executables:
+  Advent:
+    main: Main.hs
+    source-dirs: src
+    ghc-options: -O2
