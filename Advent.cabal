@@ -15,7 +15,6 @@ executable Advent
   other-modules:
     DaysTH
     Utils
-    UtilsTH
     Year2015.Day01
     Year2015.Day02
     Year2015.Day03
@@ -38,15 +37,11 @@ executable Advent
     Year2015.Day20
     Year2015.Day21
     Year2015.Day22
-    Year2015.Day22h
     Year2015.Day23
     Year2015.Day24
     Year2015.Day25
     Year2015.Problem
     Year2016.Assembunny
-    Year2016.Assembunny2
-    Year2016.Assembunny3
-    Year2016.AssembunnyTH
     Year2016.Day01
     Year2016.Day02
     Year2016.Day03
@@ -98,7 +93,6 @@ executable Advent
     pcre-heavy,
     base16-bytestring,
     mtl,
-    extra,
     hashable,
     string-conv,
     data-ordlist,

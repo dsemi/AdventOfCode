@@ -30,7 +30,6 @@ dependencies:
 - pcre-heavy
 - base16-bytestring
 - mtl
-- extra
 - hashable
 - string-conv
 - data-ordlist

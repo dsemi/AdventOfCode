@@ -1,27 +1,49 @@
-{-# LANGUAGE TupleSections, ViewPatterns #-}
+{-# LANGUAGE StrictData, TemplateHaskell, TupleSections, ViewPatterns #-}
 
 module Year2016.Assembunny
-    ( module Year2016.AssembunnyTH
+    ( Simulator(..)
+    , a, b, c, d, output, instructions
     , evaluate
     , evaluateUntilOutputLengthIs
     , parseInstructions
     ) where
 
-import Year2016.AssembunnyTH
-
-import Control.Lens ((%=), (.=), (+=), (-=), _2, assign, ix, over, set, use, view)
+import Control.Lens ((%=), (.=), (+=), (-=), _2, assign, ix, over, use)
+import Control.Lens.TH (makeLenses)
 import Control.Monad
-import Control.Monad.Extra (whenM)
 import Control.Monad.State.Strict
-import Data.Foldable (toList)
+import Data.Data
+import Data.Foldable()
 import Data.Maybe (fromJust, mapMaybe)
-import Data.Sequence ((|>), empty)
-import Data.Vector (Vector)
+import Data.Sequence (Seq, (|>), empty)
 import Data.Vector ((!), Vector)
 import qualified Data.Vector as V
 import Text.Megaparsec ((<|>), eitherP, oneOf, parseMaybe, space, spaceChar, string)
 import Text.Megaparsec.Lexer (integer, signed)
 import Text.Megaparsec.String (Parser)
+
+
+data Value = Reg Char | Const Int deriving (Eq, Show)
+
+data Instruction = Cpy Value Value
+                 | Inc Char
+                 | Dec Char
+                 | Tgl Char
+                 | Out Char
+                 | Jnz Value Value
+                 | Mul Value Char Char Char deriving (Eq, Show)
+
+data Simulator = Sim { _a :: Int
+                     , _b :: Int
+                     , _c :: Int
+                     , _d :: Int
+                     , _currentLine :: Int
+                     , _outputLim :: Int
+                     , _output :: Seq Int
+                     , _instructions :: Vector Instruction
+                     } deriving (Eq, Show)
+
+makeLenses ''Simulator
 
 
 parseInstructions :: String -> Simulator
@@ -54,9 +76,10 @@ value (Const i) = return i
 value (Reg   r) = use $ reg r
 
 evalInstr :: Instruction -> State Simulator ()
-evalInstr (Cpy v v') = case v' of
-                         (Const _) -> return ()
-                         (Reg r)   -> value v >>= assign (reg r)
+evalInstr (Cpy v v') =
+    case v' of
+      (Const _) -> return ()
+      (Reg r)   -> value v >>= assign (reg r)
 evalInstr (Inc r) = reg r += 1
 evalInstr (Dec r) = reg r -= 1
 evalInstr (Tgl r) = do
@@ -73,7 +96,11 @@ evalInstr (Tgl r) = do
 evalInstr (Out r) = do
   v <- use $ reg r
   output %= (|> v)
-evalInstr (Jnz v v') = value v' >>= \l -> whenM ((/= 0) <$> value v) (currentLine += l - 1)
+evalInstr (Jnz v v') = do
+  l <- value v'
+  rv <- value v
+  when (rv /= 0) $
+       currentLine += l - 1
 evalInstr (Mul a b c d) = do
   a' <- value a
   b' <- use $ reg b

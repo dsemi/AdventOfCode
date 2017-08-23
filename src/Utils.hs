@@ -2,8 +2,6 @@
 
 module Utils where
 
-import UtilsTH
-
 import Data.Either
 import Data.List (tails)
 import Text.Megaparsec

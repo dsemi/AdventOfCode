@@ -1,15 +1,41 @@
+{-# LANGUAGE TemplateHaskell #-}
+
 module Year2015.Day22
     ( part1
     , part2
     ) where
 
-import Year2015.Day22h
 import Utils
 
 import Control.Lens
+import Control.Lens.TH
 import Text.Megaparsec
 import Text.Megaparsec.Lexer (integer)
 import Text.Megaparsec.String
+
+
+data GameState = Game { _pHealth :: Int
+                      , _pMana :: Int
+                      , _pArmor :: Int
+                      , _bHealth :: Int
+                      , _bDamage :: Int
+                      , _effects :: [Effect]
+                      }
+
+data ID = M | D | S | P | R deriving (Eq, Show)
+
+type Effect = (ID, [GameState -> GameState])
+
+data Spell = SingleSpell { _id :: ID
+                         , cost :: Int
+                         , func :: GameState -> GameState
+                         }
+           | EffectSpell { _id :: ID
+                         , cost :: Int
+                         , effect :: Effect
+                         }
+
+makeLenses ''GameState
 
 data EndGame = PlayerWon Int | PlayerLost Int
 

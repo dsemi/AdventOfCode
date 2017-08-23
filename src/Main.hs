@@ -67,13 +67,13 @@ import System.Console.ANSI
 import System.CPUTime
 import System.Environment
 import Text.Printf
-import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
+
 
 data Args = Args { year :: Int
                  , probs :: [Int]
                  }
 
+parseArgs :: [String] -> Args
 parseArgs []       = undefined
 parseArgs (y:args) = let probs = foldr pa [] args
                      in Args (read y) $ if null probs then [1..25] else probs
