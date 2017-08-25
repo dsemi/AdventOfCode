@@ -8,7 +8,7 @@ module Year2016.Assembunny
     , parseInstructions
     ) where
 
-import Control.Lens ((%=), (.=), (+=), (-=), _2, assign, ix, over, use)
+import Control.Lens ((%=), (.=), (+=), (-=), assign, ix, over, set, use)
 import Control.Lens.TH (makeLenses)
 import Control.Monad
 import Control.Monad.State.Strict
@@ -18,6 +18,7 @@ import Data.Maybe (fromJust, mapMaybe)
 import Data.Sequence (Seq, (|>), empty)
 import Data.Vector ((!), Vector)
 import qualified Data.Vector as V
+import Data.Vector.Lens (sliced)
 import Text.Megaparsec ((<|>), eitherP, oneOf, parseMaybe, space, spaceChar, string)
 import Text.Megaparsec.Lexer (integer, signed)
 import Text.Megaparsec.String (Parser)
@@ -121,15 +122,8 @@ optimize v = foldr replaceMul v
               | otherwise = Nothing
           matchesMul _ = Nothing
           noop = Jnz (Const 0) (Const 0)
-          toMul a b c d = V.fromList [ Mul a b c d
-                                     , noop
-                                     , noop
-                                     , noop
-                                     , noop
-                                     , noop
-                                     ]
-          replaceMul (i,(a,b,c,d)) v = let (v1, (_, v2)) = over _2 (V.splitAt 6) $ V.splitAt i v
-                                       in V.concat [v1, toMul a b c d, v2]
+          toMul a b c d = V.fromList $ Mul a b c d : replicate 5 noop
+          replaceMul (i,(a,b,c,d)) = set (sliced i 6) (toMul a b c d)
 
 evaluateWith :: (Instruction -> State Simulator ()) -> Simulator -> Simulator
 evaluateWith evalInstr = execState eval . over instructions optimize
