@@ -42,7 +42,6 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-- memoize-0.8.1
 - containers-0.5.8.1
 - astar-0.3.0.0
 

@@ -15,7 +15,6 @@ dependencies:
 - array
 - MissingH
 - lens
-- memoize
 - aeson
 - bytestring
 - vector

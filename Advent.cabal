@@ -78,7 +78,6 @@ executable Advent
     array,
     MissingH,
     lens,
-    memoize,
     aeson,
     bytestring,
     vector,
