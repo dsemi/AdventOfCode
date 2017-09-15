@@ -3,68 +3,40 @@ module Year2015.Day07
     , part2
     ) where
 
+import Control.Lens
 import Data.Bits
-import Data.Either
-import Data.Function.Memoize
-import Data.HashMap.Strict (HashMap, (!))
-import qualified Data.HashMap.Strict as M
-import Data.List (foldl')
+import Data.HashMap.Lazy (HashMap, (!))
+import qualified Data.HashMap.Lazy as M
 import Data.Either.Utils
 import Data.String.Utils
 import Data.Word
 
-type Id = Either String Word16
-data Node = Const Id
-          | Not Id
-          | And Id Id
-          | Or Id Id
-          | LShift Id Id
-          | RShift Id Id
 
-parseNode :: String -> (String, Node)
-parseNode line = case words line of
-                   [             a, "->", v] -> (v, Const $ f a)
-                   [   "NOT",    a, "->", v] -> (v, Not $ f a)
-                   [a, "AND",    b, "->", v] -> (v, f a `And` f b)
-                   [a, "OR",     b, "->", v] -> (v, f a `Or` f b)
-                   [a, "LSHIFT", b, "->", v] -> (v, f a `LShift` f b)
-                   [a, "RSHIFT", b, "->", v] -> (v, f a `RShift` f b)
-    where f :: String -> Id
-          f x = maybeToEither x $ maybeRead x
+parseNode :: (String -> Word16) -> String -> (String, Word16)
+parseNode f line = case words line of
+                   [             a, "->", v] -> (v, fn a f)
+                   [   "NOT",    a, "->", v] -> (v, complement $ fn a f)
+                   [a, "AND",    b, "->", v] -> (v, fn a f .&. fn b f)
+                   [a, "OR",     b, "->", v] -> (v, fn a f .|. fn b f)
+                   [a, "LSHIFT", b, "->", v] -> (v, fn a f `shiftL` fromIntegral (fn b f))
+                   [a, "RSHIFT", b, "->", v] -> (v, fn a f `shiftR` fromIntegral (fn b f))
+    where fn x = either (flip ($)) const . maybeToEither x $ maybeRead x
 
-eval :: (String -> Word16) -> Node -> Word16
-eval f exp = case exp of
-               Const a    -> val a
-               Not a      -> complement $ val a
-               And a b    -> val a .&. val b
-               Or a b     -> val a .|. val b
-               LShift a b -> val a `shiftL` (fromIntegral $ val b)
-               RShift a b -> val a `shiftR` (fromIntegral $ val b)
-    where val = either f id
+buildGraph :: HashMap String Word16 -> String -> HashMap String Word16
+buildGraph m = M.fromList . map (parseNode (m !)) . lines
 
-buildWires :: [String] -> HashMap String Node
-buildWires = foldl' addWire M.empty
-    where addWire :: HashMap String Node -> String -> HashMap String Node
-          addWire m s = let (w, node) = parseNode s
-                        in M.insert w node m
-
-getValue :: HashMap String Node -> String -> Word16
-getValue m = mgv
-    where mgv = memoFix gv
-          gv f k = eval f $ m ! k
-
-p1 :: String -> Int
-p1 input = let m = buildWires $ lines input
-           in fromIntegral $ getValue m "a"
+p1 :: String -> Word16
+p1 input = let m = buildGraph m input
+           in m ! "a"
 
 part1 :: String -> String
 part1 = show . p1
 
-p2 :: String -> Int
-p2 input = let m = buildWires $ lines input
-               a = getValue m "a"
-               m' = M.insert "b" (Const $ Right a) m
-           in fromIntegral $ getValue m' "a"
+p2 :: String -> Word16
+p2 input = let m = buildGraph m input
+               a = m ! "a"
+               m' = M.insert "b" a $ buildGraph m' input
+           in m' ! "a"
 
 part2 :: String -> String
 part2 = show . p2
