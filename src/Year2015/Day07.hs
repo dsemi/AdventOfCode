@@ -3,27 +3,26 @@ module Year2015.Day07
     , part2
     ) where
 
-import Control.Lens
 import Data.Bits
-import Data.HashMap.Lazy (HashMap, (!))
-import qualified Data.HashMap.Lazy as M
+import Data.HashMap.Lazy (HashMap, fromList, insert, (!))
 import Data.Either.Utils
 import Data.String.Utils
 import Data.Word
 
 
 parseNode :: (String -> Word16) -> String -> (String, Word16)
-parseNode f line = case words line of
-                   [             a, "->", v] -> (v, fn a f)
-                   [   "NOT",    a, "->", v] -> (v, complement $ fn a f)
-                   [a, "AND",    b, "->", v] -> (v, fn a f .&. fn b f)
-                   [a, "OR",     b, "->", v] -> (v, fn a f .|. fn b f)
-                   [a, "LSHIFT", b, "->", v] -> (v, fn a f `shiftL` fromIntegral (fn b f))
-                   [a, "RSHIFT", b, "->", v] -> (v, fn a f `shiftR` fromIntegral (fn b f))
+parseNode f line =
+    case words line of
+      [             a, "->", v] -> (v, fn a f)
+      [   "NOT",    a, "->", v] -> (v, complement $ fn a f)
+      [a, "AND",    b, "->", v] -> (v, fn a f .&. fn b f)
+      [a, "OR",     b, "->", v] -> (v, fn a f .|. fn b f)
+      [a, "LSHIFT", b, "->", v] -> (v, fn a f `shiftL` fromIntegral (fn b f))
+      [a, "RSHIFT", b, "->", v] -> (v, fn a f `shiftR` fromIntegral (fn b f))
     where fn x = either (flip ($)) const . maybeToEither x $ maybeRead x
 
 buildGraph :: HashMap String Word16 -> String -> HashMap String Word16
-buildGraph m = M.fromList . map (parseNode (m !)) . lines
+buildGraph m = fromList . map (parseNode (m !)) . lines
 
 p1 :: String -> Word16
 p1 input = let m = buildGraph m input
@@ -34,8 +33,7 @@ part1 = show . p1
 
 p2 :: String -> Word16
 p2 input = let m = buildGraph m input
-               a = m ! "a"
-               m' = M.insert "b" a $ buildGraph m' input
+               m' = insert "b" (m ! "a") $ buildGraph m' input
            in m' ! "a"
 
 part2 :: String -> String
