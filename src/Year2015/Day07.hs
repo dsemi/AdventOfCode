@@ -4,11 +4,10 @@ module Year2015.Day07
     ) where
 
 import Data.Bits
-import Data.HashMap.Lazy (HashMap, fromList, insert, (!))
 import Data.Either.Utils
+import Data.Maybe
 import Data.String.Utils
 import Data.Word
-
 
 parseNode :: (String -> Word16) -> String -> (String, Word16)
 parseNode f line =
@@ -21,19 +20,19 @@ parseNode f line =
       [a, "RSHIFT", b, "->", v] -> (v, fn a f `shiftR` fromIntegral (fn b f))
     where fn x = either (flip ($)) const . maybeToEither x $ maybeRead x
 
-buildGraph :: HashMap String Word16 -> String -> HashMap String Word16
-buildGraph m = fromList . map (parseNode (m !)) . lines
+m ! k = fromJust $ lookup k m
+build m = map (parseNode (m !)) . lines
 
 p1 :: String -> Word16
-p1 input = let m = buildGraph m input
+p1 input = let m = build m input
            in m ! "a"
 
 part1 :: String -> String
 part1 = show . p1
 
 p2 :: String -> Word16
-p2 input = let m = buildGraph m input
-               m' = insert "b" (m ! "a") $ buildGraph m' input
+p2 input = let m = build m input
+               m' = ("b", (m ! "a")) : build m' input
            in m' ! "a"
 
 part2 :: String -> String
