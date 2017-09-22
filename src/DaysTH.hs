@@ -1,10 +1,8 @@
-{-# LANGUAGE TemplateHaskell, MultiWayIf #-}
+{-# LANGUAGE FlexibleInstances, QuasiQuotes, TemplateHaskell, TypeSynonymInstances #-}
 
 module DaysTH
-( Problem(..)
-, buildProbs
-, unwrap
-) where
+    ( buildProbs
+    ) where
 
 import Utils
 
@@ -12,75 +10,41 @@ import Control.Monad
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
-import Data.List (foldl')
-import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
 import System.Path.Glob
-import Text.Megaparsec (digitChar, parseMaybe, some, string, noneOf)
-import Text.Megaparsec.String
+import Text.Regex.PCRE.Heavy
+import Data.Word
 import Debug.Trace
 
-data Problem = StoS (String -> String)
-             | StoB (String -> ByteString)
-             | StoI (String -> Int)
-             | StoT (String -> Text)
-             | ItoS (Int -> String)
-             | ItoB (Int -> ByteString)
-             | ItoI (Int -> Int)
-             | ItoT (Int -> Text)
-             | BtoS (ByteString -> String)
-             | BtoB (ByteString -> ByteString)
-             | BtoI (ByteString -> Int)
-             | BtoT (ByteString -> Text)
-             | TtoS (Text -> String)
-             | TtoB (Text -> ByteString)
-             | TtoI (Text -> Int)
-             | TtoT (Text -> Text)
 
-sToS = StoS
-sToB = StoB
-sToI = StoI
-sToT = StoT
-iToS = ItoS
-iToB = ItoB
-iToI = ItoI
-iToT = ItoT
-bToS = BtoS
-bToB = BtoB
-bToI = BtoI
-bToT = BtoT
-tToS = TtoS
-tToB = TtoB
-tToI = TtoI
-tToT = TtoT
+class PType a where
+    wrap :: String -> a
+    unwrap :: a -> String
 
-unwrap :: Problem -> String -> String
-unwrap (StoS f) = f
-unwrap (StoB f) = B.unpack . f
-unwrap (StoI f) = show . f
-unwrap (StoT f) = T.unpack . f
-unwrap (BtoS f) = f . B.pack
-unwrap (BtoB f) = B.unpack . f . B.pack
-unwrap (BtoI f) = show . f . B.pack
-unwrap (BtoT f) = T.unpack . f . B.pack
-unwrap (ItoS f) = f . read
-unwrap (ItoB f) = B.unpack . f . read
-unwrap (ItoI f) = show . f . read
-unwrap (ItoT f) = T.unpack . f . read
-unwrap (TtoS f) = f . T.pack
-unwrap (TtoB f) = B.unpack . f . T.pack
-unwrap (TtoI f) = show . f . T.pack
-unwrap (TtoT f) = T.unpack . f . T.pack
+instance PType String where
+    wrap = id
+    unwrap = id
 
-data ProblemTH = ProblemTH { module' :: String
-                           , year :: Integer
-                           , day :: Integer
-                           , part1' :: String
-                           , part2' :: String
-                           }
+instance PType ByteString where
+    wrap = B.pack
+    unwrap = B.unpack
+
+instance PType Int where
+    wrap = read
+    unwrap = show
+
+instance PType Text where
+    wrap = T.pack
+    unwrap = T.unpack
+
+instance PType Word16 where
+    wrap = read
+    unwrap = show
+
+apply :: (PType a, PType b) => (a -> b) -> String -> String
+apply f = unwrap . f . wrap
 
 problemPathPrefixes :: [String]
 problemPathPrefixes = [ "src/Year2015/Day??.hs"
@@ -90,55 +54,19 @@ problemPathPrefixes = [ "src/Year2015/Day??.hs"
 buildProbs :: Q [Dec]
 buildProbs = do
   pFiles <- runIO $ concat <$> mapM glob problemPathPrefixes
-  let parser :: Parser ProblemTH
-      parser = do
-        string "src/Year"
-        year <- some (noneOf "/")
-        string "/Day"
-        day <- some digitChar
-        string ".hs"
-        let moduleName = "Year" ++ year ++ ".Day" ++ day
-        return $ ProblemTH moduleName
-                   (read year)
-                   (read day)
-                   (moduleName ++ ".part1")
-                   (moduleName ++ ".part2")
-      ps :: [ProblemTH]
-      ps = map (fromJust . parseMaybe parser) pFiles
-  [d|problems = $(ListE . map toLit . M.toList <$> foldM accProbs M.empty ps)|]
-    where accProbs acc p = do
-               prob <- buildProb p
-               return $ M.insertWith (++) (year p) [prob] acc
-          buildProb p = do
-               Just p1Name <- lookupValueName (part1' p)
-               Just p2Name <- lookupValueName (part2' p)
-               p1Types <- getTypes p1Name
-               p2Types <- getTypes p2Name
-               let p1Const = probConst p1Types
-               let p2Const = probConst p2Types
-               let p1n = return $ VarE p1Name
-               let p2n = return $ VarE p2Name
-               let dp = day p
-               [|(dp, ($(p1Const) $(p1n), $(p2Const) $(p2n)))|]
+  let parse :: String -> Q (Integer, Exp)
+      parse x = do
+        let [year, day] = snd . head $ scan r x
+            moduleName  = "Year" ++ year ++ ".Day" ++ day
+            part1       = moduleName ++ ".part1"
+            part2       = moduleName ++ ".part2"
+        entry <- [e|(read day, ( apply $(nm part1)
+                               , apply $(nm part2)))|]
+        return (read year, entry)
+          where r = [re|src/Year(\d+)/Day(\d+).hs|]
+                nm = varE . mkName
+  [d|problems = $(ListE . map toLit . M.toList . foldr accProbs M.empty <$> mapM parse pFiles)|]
+    where accProbs (year, prob) acc = M.insertWith (++) year [prob] acc
           toLit (a, b) = TupE [ LitE (IntegerL a)
-                              , ListE b]
-          getTypes x = do
-               VarI _ (AppT (AppT _ (ConT t1)) (ConT t2)) _ <- reify x
-               return (t1, t2)
-          probConst (t1, t2) = return $ VarE $ if | t1 == ''String && t2 == ''String -> 'sToS
-                                                  | t1 == ''String && t2 == ''Int -> 'sToI
-                                                  | t1 == ''String && t2 == ''ByteString -> 'sToB
-                                                  | t1 == ''String && t2 == ''Text -> 'sToT
-                                                  | t1 == ''ByteString && t2 == ''String -> 'bToS
-                                                  | t1 == ''ByteString && t2 == ''Int -> 'bToI
-                                                  | t1 == ''ByteString && t2 == ''ByteString -> 'bToB
-                                                  | t1 == ''ByteString && t2 == ''Text -> 'bToT
-                                                  | t1 == ''Int && t2 == ''String -> 'iToS
-                                                  | t1 == ''Int && t2 == ''Int -> 'iToI
-                                                  | t1 == ''Int && t2 == ''ByteString -> 'iToB
-                                                  | t1 == ''Int && t2 == ''Text -> 'iToT
-                                                  | t1 == ''Text && t2 == ''String -> 'tToS
-                                                  | t1 == ''Text && t2 == ''Int -> 'tToI
-                                                  | t1 == ''Text && t2 == ''ByteString -> 'tToB
-                                                  | t1 == ''Text && t2 == ''Text -> 'tToT
-                                                  | otherwise -> trace (show (t1,t2)) undefined
+                              , ListE b
+                              ]

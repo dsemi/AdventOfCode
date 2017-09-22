@@ -12,28 +12,22 @@ import Data.Word
 parseNode :: (String -> Word16) -> String -> (String, Word16)
 parseNode f line =
     case words line of
-      [             a, "->", v] -> (v, fn a f)
-      [   "NOT",    a, "->", v] -> (v, complement $ fn a f)
-      [a, "AND",    b, "->", v] -> (v, fn a f .&. fn b f)
-      [a, "OR",     b, "->", v] -> (v, fn a f .|. fn b f)
-      [a, "LSHIFT", b, "->", v] -> (v, fn a f `shiftL` fromIntegral (fn b f))
-      [a, "RSHIFT", b, "->", v] -> (v, fn a f `shiftR` fromIntegral (fn b f))
-    where fn x = either (flip ($)) const . maybeToEither x $ maybeRead x
+      [             a, "->", v] -> (v, fn f a)
+      [   "NOT",    a, "->", v] -> (v, complement $ fn f a)
+      [a, "AND",    b, "->", v] -> (v, fn f a .&. fn f b)
+      [a, "OR",     b, "->", v] -> (v, fn f a .|. fn f b)
+      [a, "LSHIFT", b, "->", v] -> (v, fn f a `shiftL` fromIntegral (fn f b))
+      [a, "RSHIFT", b, "->", v] -> (v, fn f a `shiftR` fromIntegral (fn f b))
+    where fn f x = either f id . maybeToEither x $ maybeRead x
 
 m ! k = fromJust $ lookup k m
 build m = map (parseNode (m !)) . lines
 
-p1 :: String -> Word16
-p1 input = let m = build m input
-           in m ! "a"
+part1 :: String -> Word16
+part1 input = let m = build m input
+              in m ! "a"
 
-part1 :: String -> String
-part1 = show . p1
-
-p2 :: String -> Word16
-p2 input = let m = build m input
-               m' = ("b", (m ! "a")) : build m' input
-           in m' ! "a"
-
-part2 :: String -> String
-part2 = show . p2
+part2 :: String -> Word16
+part2 input = let m = build m input
+                  m' = ("b", (m ! "a")) : build m' input
+              in m' ! "a"
