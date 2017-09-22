@@ -125,15 +125,15 @@ eval (Jnz v v' : _) = do
   rv <- value v
   return $ if rv /= 0 then (+l) else (+1)
 
-evaluateUntil :: State Simulator Bool -> State Simulator ()
-evaluateUntil f = do
+evaluateWhile :: State Simulator Bool -> State Simulator ()
+evaluateWhile f = do
   instrs <- use instructions
   line <- use currentLine
   cond <- f
   when cond $ do
     cl <- eval $ drop line $ V.toList instrs
     currentLine %= cl
-    evaluateUntil f
+    evaluateWhile f
 
 lineInBounds :: State Simulator Bool
 lineInBounds = do
@@ -147,7 +147,7 @@ outLengthIs n = do
   return $ length out <= n
 
 evaluate :: Simulator -> Simulator
-evaluate = execState (evaluateUntil lineInBounds)
+evaluate = execState (evaluateWhile lineInBounds)
 
 evaluateUntilOutputLengthIs :: Int -> Simulator -> Simulator
-evaluateUntilOutputLengthIs n = execState (evaluateUntil ((&&) <$> outLengthIs n <*> lineInBounds))
+evaluateUntilOutputLengthIs n = execState (evaluateWhile ((&&) <$> outLengthIs n <*> lineInBounds))
