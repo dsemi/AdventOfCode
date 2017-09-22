@@ -20,31 +20,31 @@ import Debug.Trace
 
 
 class PType a where
-    wrap :: String -> a
-    unwrap :: a -> String
+    unS :: String -> a
+    toS :: a -> String
 
 instance PType String where
-    wrap = id
-    unwrap = id
+    unS = id
+    toS = id
 
 instance PType ByteString where
-    wrap = B.pack
-    unwrap = B.unpack
+    unS = B.pack
+    toS = B.unpack
 
 instance PType Int where
-    wrap = read
-    unwrap = show
+    unS = read
+    toS = show
 
 instance PType Text where
-    wrap = T.pack
-    unwrap = T.unpack
+    unS = T.pack
+    toS = T.unpack
 
 instance PType Word16 where
-    wrap = read
-    unwrap = show
+    unS = read
+    toS = show
 
 apply :: (PType a, PType b) => (a -> b) -> String -> String
-apply f = unwrap . f . wrap
+apply f = toS . f . unS
 
 problemPathPrefixes :: [String]
 problemPathPrefixes = [ "src/Year2015/Day??.hs"
