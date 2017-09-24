@@ -6,14 +6,13 @@ module Year2015.Day01
 import Data.List (findIndex)
 import Data.Maybe
 
+
 floorDiff :: Char -> Int
 floorDiff '(' =  1
 floorDiff ')' = -1
-floorDiff  _  = undefined
 
-part1 :: String -> String
-part1 = show . sum . map floorDiff
+part1 :: String -> Int
+part1 = sum . map floorDiff
 
-part2 :: String -> String
-part2 = show . (+1) . fromJust . findIndex (<0) . calcFloors
-    where calcFloors = scanl1 (+) . map floorDiff
+part2 :: String -> Int
+part2 = (+1) . fromJust . findIndex (<0) . scanl1 (+) . map floorDiff

@@ -37,6 +37,7 @@ dependencies:
 - either
 - monad-loops
 - free
+- recursion-schemes
 executables:
   Advent:
     main: Main.hs

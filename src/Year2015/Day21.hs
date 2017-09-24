@@ -11,6 +11,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Lexer (integer)
 import Text.Megaparsec.String
 
+
 combinations :: [a] -> Int -> [[a]]
 combinations  _ 0 = [[]]
 combinations xs n = [ y:ys | y:xs' <- tails xs
@@ -66,8 +67,8 @@ isWinning b p = playerTurnsToDie >= bossTurnsToDie
 
 allBattles boss = partition (isWinning boss) allEquipmentCombos
 
-part1 :: String -> String
-part1 = show . minimum . map cost . fst . allBattles . parseBoss
+part1 :: String -> Int
+part1 = minimum . map cost . fst . allBattles . parseBoss
 
-part2 :: String -> String
-part2 = show . maximum . map cost . snd . allBattles . parseBoss
+part2 :: String -> Int
+part2 = maximum . map cost . snd . allBattles . parseBoss

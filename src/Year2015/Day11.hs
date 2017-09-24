@@ -10,6 +10,7 @@ import Data.List (tails)
 import Text.Megaparsec
 import Text.Megaparsec.String
 
+
 incrStr :: String -> String
 incrStr = reverse . step . reverse
     where step [] = []

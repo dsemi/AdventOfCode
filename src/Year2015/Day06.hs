@@ -12,7 +12,8 @@ import Text.Megaparsec
 import Text.Megaparsec.Lexer
 import Text.Megaparsec.String
 
-data Action = Off | On | Toggle  deriving (Show)
+
+data Action = Off | On | Toggle deriving (Show)
 
 data Command = Command { cmd :: Action
                        , start :: (Int, Int)
@@ -23,7 +24,6 @@ action :: String -> Action
 action "turn off" = Off
 action "turn on"  = On
 action "toggle"   = Toggle
-action _          = undefined
 
 command :: String -> Command
 command = fromJust . parseMaybe parser
@@ -36,7 +36,7 @@ command = fromJust . parseMaybe parser
                            <* string " through " <*> parseIntTuple
 
 runCommands :: (Int -> Int) -> (Int -> Int) -> (Int -> Int)
-               -> UArray (Int,Int) Int -> [Command] -> UArray (Int,Int) Int
+               -> UArray (Int, Int) Int -> [Command] -> UArray (Int, Int) Int
 runCommands f1 f2 f3 grid commands =
   runSTUArray $ do
     arr <- thaw grid
@@ -54,11 +54,11 @@ runCommands f1 f2 f3 grid commands =
 emptyGrid :: UArray (Int, Int) Int
 emptyGrid = array ((0,0), (999,999)) [((x,y), 0) | x <- [0..999], y <- [0..999]]
 
-part1 :: String -> String
-part1 = show . sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
+part1 :: String -> Int
+part1 = sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
         . map command . lines
 
-part2 :: String -> String
-part2 = show . sum . elems . runCommands f (+1) (+2) emptyGrid
+part2 :: String -> Int
+part2 = sum . elems . runCommands f (+1) (+2) emptyGrid
         . map command . lines
     where f n = max 0 $ n-1

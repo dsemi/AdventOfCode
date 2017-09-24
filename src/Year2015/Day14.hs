@@ -13,6 +13,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Lexer
 import Text.Megaparsec.String
 
+
 totalTime :: Int
 totalTime = 2503
 
@@ -41,14 +42,11 @@ maxesBy :: Ord b => (a -> b) -> [a] -> [a]
 maxesBy cmp xs = let ms = sortBy (flip $ comparing cmp) xs
                  in takeWhile ((== cmp (head ms)) . cmp) ms
 
-part1 :: String -> String
-part1 = show . maximum . map last . M.elems . getDistancesAtEachSecond
+part1 :: String -> Int
+part1 = maximum . map last . M.elems . getDistancesAtEachSecond
 
-p2 :: String -> Int
-p2 input = let dists = getDistancesAtEachSecond input
-               counts = MS.fromList . concatMap (map fst . maxesBy snd . zip [1..])
-                        . transpose $ M.elems dists
-           in snd . last $ MS.toAscOccurList counts
-
-part2 :: String -> String
-part2 = show . p2
+part2 :: String -> Int
+part2 input = let dists = getDistancesAtEachSecond input
+                  counts = MS.fromList . concatMap (map fst . maxesBy snd . zip [1..])
+                           . transpose $ M.elems dists
+              in snd . last $ MS.toAscOccurList counts

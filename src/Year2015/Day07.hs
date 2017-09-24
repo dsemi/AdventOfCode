@@ -9,6 +9,7 @@ import Data.Maybe
 import Data.String.Utils
 import Data.Word
 
+
 parseNode :: (String -> Word16) -> String -> (String, Word16)
 parseNode f line =
     case words line of

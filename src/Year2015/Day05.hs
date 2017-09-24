@@ -11,15 +11,16 @@ import Data.Either
 import Text.Megaparsec
 import Text.Megaparsec.String
 
-part1 :: String -> String
-part1 = show . length . filter isNice . lines
+
+part1 :: String -> Int
+part1 = length . filter isNice . lines
     where isNice :: String -> Bool
           isNice s = not (any (`isInfixOf` s) ["ab", "cd", "pq", "xy"])
                      && length (filter (`elem` "aeiou") s) > 2
                      && any ((>=2) . length) (group s)
 
-part2 :: String -> String
-part2 = show . length . filter isNice2 . lines
+part2 :: String -> Int
+part2 = length . filter isNice2 . lines
     where isNice2 s = twoDoubles && everyOther
               where findDoubles = do
                       a <- anyChar

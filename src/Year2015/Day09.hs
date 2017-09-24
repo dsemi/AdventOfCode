@@ -5,11 +5,12 @@ module Year2015.Day09
 
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
-import Data.List (foldl', permutations)
+import Data.List (permutations)
 import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.Lexer
 import Text.Megaparsec.String
+
 
 data Edge = Edge String String Int
 
@@ -27,12 +28,12 @@ allPathDistances :: [String] -> [Int]
 allPathDistances input = let m = constructMap $ map parseLine input
                              paths = permutations $ M.keys m
                          in map (\p -> sum . zipWith (\a b -> m ! a ! b) p $ tail p) paths
-    where constructMap = foldl' (\m e -> addEdgeToMap (opposite e) $ addEdgeToMap e m) M.empty
-          addEdgeToMap (Edge p1 p2 d) m = let m' = fromMaybe M.empty $ M.lookup p1 m
+    where constructMap = foldr (\e -> addEdgeToMap (opposite e) . addEdgeToMap e) M.empty
+          addEdgeToMap (Edge p1 p2 d) m = let m' = M.lookupDefault M.empty p1 m
                                           in M.insert p1 (M.insert p2 d m') m
 
-part1 :: String -> String
-part1 = show . minimum . allPathDistances . lines
+part1 :: String -> Int
+part1 = minimum . allPathDistances . lines
 
-part2 :: String -> String
-part2 = show . maximum . allPathDistances . lines
+part2 :: String -> Int
+part2 = maximum . allPathDistances . lines

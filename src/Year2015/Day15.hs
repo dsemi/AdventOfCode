@@ -8,6 +8,7 @@ import Utils
 import Control.Applicative
 import Data.List (transpose)
 
+
 data Ingredient = Ingredient { capacity :: Int
                              , durability :: Int
                              , flavor :: Int
@@ -32,8 +33,8 @@ scores total calFilter ings =
     ]
     where scorings = [capacity, durability, flavor, texture]
 
-part1 :: String -> String
-part1 = show . maximum . scores 100 (const True). map parseIngredient . lines
+part1 :: String -> Int
+part1 = maximum . scores 100 (const True). map parseIngredient . lines
 
-part2 :: String -> String
-part2 = show . maximum . scores 100 ((==500) . sum). map parseIngredient . lines
+part2 :: String -> Int
+part2 = maximum . scores 100 ((==500) . sum). map parseIngredient . lines

@@ -10,6 +10,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Lexer
 import Text.Megaparsec.String
 
+
 tape :: HashMap String (Int -> Bool)
 tape = M.fromList [ ("children", (==3))
                   , ("cats", (==7))
@@ -36,13 +37,13 @@ parseLines = map (M.fromList . fromJust . parseMaybe parser) . lines
 couldMatch :: HashMap String (Int -> Bool) -> HashMap String Int -> Bool
 couldMatch tape = all (uncurry (tape !)) . M.toList
 
-solve :: HashMap String (Int -> Bool) -> String -> String
-solve tape' = show . fst . head . filter (couldMatch tape' . snd) . zip [1..] . parseLines
+solve :: HashMap String (Int -> Bool) -> String -> Int
+solve tape' = fst . head . filter (couldMatch tape' . snd) . zip [1..] . parseLines
 
-part1 :: String -> String
+part1 :: String -> Int
 part1 = solve tape
 
-part2 :: String -> String
+part2 :: String -> Int
 part2 = solve tape'
     where tape' = M.fromList [ ("cats", (>7))
                              , ("pomeranians", (<3))

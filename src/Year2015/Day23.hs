@@ -1,55 +1,94 @@
+{-# LANGUAGE StrictData, TemplateHaskell #-}
+
 module Year2015.Day23
     ( part1
     , part2
     ) where
 
-import Data.Attoparsec.ByteString.Char8
-import Data.ByteString.Char8 (pack)
-import Data.Either
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
+import Control.Lens (set, use, uses, view, (%=), (+=), (*=))
+import Control.Lens.TH (makeLenses)
+import Control.Monad.State.Strict
+import Data.Maybe
+import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
+import Text.Megaparsec ((<|>), letterChar, parseMaybe, space, string)
+import Text.Megaparsec.Lexer (integer, signed)
+import Text.Megaparsec.String (Parser)
 
-data Instruction = Cmd { inst :: String
-                       , reg :: String
-                       , off :: String
-                       } deriving (Show)
 
-instr :: Parser Instruction
-instr = do
-  i <- many1 letter_ascii <* space
-  r <- many1 $ notChar ','
-  o <- option "" $ char ',' *> space *> many1 (notChar ' ')
-  return $ Cmd i r o
+data Instruction = Hlf Char
+                 | Tpl Char
+                 | Inc Char
+                 | Jmp Int
+                 | Jie Char Int
+                 | Jio Char Int
 
-signedInt :: Parser Int
-signedInt = signed decimal
+data Simulator = Simulator { _a :: Int
+                           , _b :: Int
+                           , _currentLine :: Int
+                           , _instructions :: Vector Instruction
+                           }
+makeLenses ''Simulator
 
-cmd mem (Cmd i r o)
-    | i == "hlf"           = M.adjust (`div` 2) r mem'
-    | i == "tpl"           = M.adjust (*3) r mem'
-    | i == "inc"           = M.adjust (+1) r mem'
-    | i == "jmp"           = M.adjust (+r') "addr" mem
-    | i == "jie" && even v = M.adjust (+o') "addr" mem
-    | i == "jio" && v == 1 = M.adjust (+o') "addr" mem
-    | otherwise            = mem'
-    where mem' = M.adjust (+1) "addr" mem
-          v    = mem M.! r
-          (Right r') = parseOnly signedInt $ pack r
-          (Right o') = parseOnly signedInt $ pack o
+parseInstructions :: String -> Simulator
+parseInstructions = Simulator 0 0 0 . V.fromList
+                    . map (fromJust . parseMaybe parseInstruction) . lines
+    where parseInstruction :: Parser Instruction
+          parseInstruction = parseHlf
+                             <|> parseTpl
+                             <|> parseInc
+                             <|> parseJmp
+                             <|> parseJie
+                             <|> parseJio
+          int = signed space $ fromInteger <$> integer
+          parseHlf :: Parser Instruction
+          parseHlf = string "hlf " >> Hlf <$> letterChar
+          parseTpl = string "tpl " >> Tpl <$> letterChar
+          parseInc = string "inc " >> Inc <$> letterChar
+          parseJmp = string "jmp " >> Jmp <$> int
+          parseJie = string "jie " >> Jie <$> letterChar <* string ", " <*> int
+          parseJio = string "jio " >> Jio <$> letterChar <* string ", " <*> int
 
-run mem instrs
-    | 0 <= i && i < V.length instrs = run (cmd mem $ instrs V.! i) instrs
-    | otherwise                     = mem
-    where i = mem M.! "addr"
+reg 'a' = a
+reg 'b' = b
 
-day23 :: HashMap String Int -> String -> Int
-day23 mem = (M.! "b") . run mem . V.fromList . rights . map (parseOnly instr . pack) . lines
+eval :: Instruction -> State Simulator (Int -> Int)
+eval (Hlf r) = do
+  reg r %= (`div` 2)
+  return (+1)
+eval (Tpl r) = do
+  reg r *= 3
+  return (+1)
+eval (Inc r) = do
+  reg r += 1
+  return (+1)
+eval (Jmp o) = do
+  return (+o)
+eval (Jie r o) = do
+  v <- use $ reg r
+  return $ if even v then (+o) else (+1)
+eval (Jio r o) = do
+  v <- use $ reg r
+  return $ if v == 1 then (+o) else (+1)
 
-part1 :: String -> String
-part1 = show . day23 mem
-    where mem = M.fromList [("a", 0), ("b", 0), ("addr", 0)]
+evaluateWhile :: State Simulator Bool -> State Simulator ()
+evaluateWhile f = do
+  line <- use currentLine
+  cond <- f
+  when cond $ do
+    instr <- uses instructions (! line)
+    cl <- eval instr
+    currentLine %= cl
+    evaluateWhile f
 
-part2 :: String -> String
-part2 = show . day23 mem
-    where mem = M.fromList [("a", 1), ("b", 0), ("addr", 0)]
+lineInBounds :: State Simulator Bool
+lineInBounds = do
+  instrs <- use instructions
+  line <- use currentLine
+  return $ line >= 0 && line < V.length instrs
+
+part1 :: String -> Int
+part1 = view b . execState (evaluateWhile lineInBounds) . parseInstructions
+
+part2 :: String -> Int
+part2 = view b . execState (evaluateWhile lineInBounds) . set a 1 . parseInstructions

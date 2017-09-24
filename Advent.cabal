@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.17.1.
+-- This file has been generated from package.yaml by hpack version 0.18.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -99,7 +99,8 @@ executable Advent
     errors,
     either,
     monad-loops,
-    free
+    free,
+    recursion-schemes
   ghc-options: -O2
   hs-source-dirs:
     src

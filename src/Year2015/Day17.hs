@@ -5,6 +5,7 @@ module Year2015.Day17
 
 import Data.List (tails)
 
+
 combinations :: [a] -> Int -> [[a]]
 combinations  _ 0 = [[]]
 combinations xs n = [ y:ys | y:xs' <- tails xs
@@ -16,8 +17,8 @@ allCombinationsTotaling n xs = map (filter ((==n) . sum) . combinations xs) [1..
 parseInput :: String -> [Int]
 parseInput = map read . lines
 
-part1 :: String -> String
-part1 = show . sum . map length . allCombinationsTotaling 150 . parseInput
+part1 :: String -> Int
+part1 = sum . map length . allCombinationsTotaling 150 . parseInput
 
-part2 :: String -> String
-part2 = show . length . head . filter (not . null) . allCombinationsTotaling 150 . parseInput
+part2 :: String -> Int
+part2 = length . head . filter (not . null) . allCombinationsTotaling 150 . parseInput

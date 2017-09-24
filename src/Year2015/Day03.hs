@@ -8,12 +8,12 @@ import Control.Lens
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HS
 
+
 dirFun :: Char -> (Int, Int) -> (Int, Int)
 dirFun '^' = _2 %~ (+1)
 dirFun 'v' = _2 %~ subtract 1
 dirFun '>' = _1 %~ (+1)
 dirFun '<' = _1 %~ subtract 1
-dirFun  _  = undefined
 
 visitedSquares :: String -> HashSet (Int, Int)
 visitedSquares = HS.fromList . scanl (flip ($)) (0,0) . map dirFun

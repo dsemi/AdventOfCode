@@ -108,10 +108,8 @@ parseBoss input = let (Just (h, d)) = parseMaybe parser input
             return (h, d)
 
 
-part1 :: String -> String
-part1 = show . f
-    where f input = minimum . ints . filter won $ turn False (parseBoss input) 0 True
+part1 :: String -> Int
+part1 input = minimum . ints . filter won $ turn False (parseBoss input) 0 True
 
-part2 :: String -> String
-part2 = show . f
-    where f input = minimum . ints . filter won $ turn True (parseBoss input) 0 True
+part2 :: String -> Int
+part2 input = minimum . ints . filter won $ turn True (parseBoss input) 0 True

@@ -6,6 +6,7 @@ module Year2015.Day18
 import Data.Array.Unboxed
 import Data.Ix
 
+
 count x = length . filter (==x)
 
 adjacents :: ((Int, Int), (Int, Int)) -> (Int, Int) -> [(Int, Int)]
@@ -33,12 +34,12 @@ makeGrid :: ([((Int, Int), Char)] -> [((Int, Int), Char)]) -> String -> UArray (
 makeGrid f = accumArray seq '.' bds . f . zip (range bds) . concat . lines
     where bds = ((0, 0), (99, 99))
 
-part1 :: String -> String
-part1 = show . count '#' . elems . (!! 100)
+part1 :: String -> Int
+part1 = count '#' . elems . (!! 100)
         . iterate (nextGrid nextState) . makeGrid id
 
-part2 :: String -> String
-part2 = show . count '#' . elems . (!! 100)
+part2 :: String -> Int
+part2 = count '#' . elems . (!! 100)
         . iterate (nextGrid f) . makeGrid (++ zip corners "####")
     where corners = [(0, 0), (0, 99), (99, 0), (99, 99)]
           f a xy adjStates

@@ -15,6 +15,7 @@ import Text.Megaparsec
 import Text.Megaparsec.String
 import Text.Regex.PCRE.Heavy (Regex, compileM, sub)
 
+
 parseMapping :: String -> (String, String)
 parseMapping = fromJust . parseMaybe parser
     where parser :: Parser (String, String)
@@ -42,21 +43,15 @@ findPathToElectron regex rep = go 0
     where go c "e" = c
           go c s = go (c+1) $ sub regex rep s
 
-p1 :: String -> Int
-p1 input = let (s:_:mappings) = reverse $ lines input
-               reps = map parseMapping mappings
-           in S.size $ uniqueSubs reps s
+part1 :: String -> Int
+part1 input = let (s:_:mappings) = reverse $ lines input
+                  reps = map parseMapping mappings
+              in S.size $ uniqueSubs reps s
 
-part1 :: String -> String
-part1 = show . p1
-
-p2 :: String -> Int
-p2 input = let (s:_:mappings) = reverse $ lines input
-               s' = reverse s
-               reps = map (swap . (reverse *** reverse) . parseMapping) mappings
-               (Right regex) = compileM (pack . intercalate "|" $ map fst reps) []
-               rep w = fromJust $ lookup w reps
-           in findPathToElectron regex rep s'
-
-part2 :: String -> String
-part2 = show . p2
+part2 :: String -> Int
+part2 input = let (s:_:mappings) = reverse $ lines input
+                  s' = reverse s
+                  reps = map (swap . (reverse *** reverse) . parseMapping) mappings
+                  (Right regex) = compileM (pack . intercalate "|" $ map fst reps) []
+                  rep w = fromJust $ lookup w reps
+              in findPathToElectron regex rep s'

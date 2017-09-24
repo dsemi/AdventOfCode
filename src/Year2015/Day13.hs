@@ -5,11 +5,12 @@ module Year2015.Day13
 
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
-import Data.List (foldl', permutations)
+import Data.List (permutations)
 import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.Lexer
 import Text.Megaparsec.String
+
 
 data Edge = Edge String String Int
 
@@ -35,8 +36,8 @@ parseLine = fromJust . parseMaybe parser
 
 
 constructMap :: [Edge] -> HashMap String (HashMap String Int)
-constructMap = foldl' addEdgeToMap M.empty
-    where addEdgeToMap m (Edge p1 p2 n) = let m' = fromMaybe M.empty $ M.lookup p1 m
+constructMap = foldr addEdgeToMap M.empty
+    where addEdgeToMap (Edge p1 p2 n) m = let m' = fromMaybe M.empty $ M.lookup p1 m
                                           in M.insert p1 (M.insert p2 n m') m
 
 maxHappinessOrdering :: HashMap String (HashMap String Int) -> Int
@@ -45,14 +46,11 @@ maxHappinessOrdering m = maximum $ map (\p -> happinessDiff (head p) (last p)
     where orders = permutations $ M.keys m
           happinessDiff a b = m ! a ! b + m ! b ! a
 
-part1 :: String -> String
-part1 = show . maxHappinessOrdering . constructMap . map parseLine . lines
+part1 :: String -> Int
+part1 = maxHappinessOrdering . constructMap . map parseLine . lines
 
-p2 :: String -> Int
-p2 input = let m = constructMap . map parseLine $ lines input
-               meMap = M.fromList . zip (M.keys m) $ repeat 0
-               m' = M.insert "me" meMap $ M.map (M.insert "me" 0) m
-           in maxHappinessOrdering m'
-
-part2 :: String -> String
-part2 = show . p2
+part2 :: String -> Int
+part2 input = let m = constructMap . map parseLine $ lines input
+                  meMap = M.fromList . zip (M.keys m) $ repeat 0
+                  m' = M.insert "me" meMap $ M.map (M.insert "me" 0) m
+              in maxHappinessOrdering m'

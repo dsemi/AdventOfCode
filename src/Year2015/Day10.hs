@@ -6,11 +6,12 @@ module Year2015.Day10
 import Control.Monad
 import Data.List (group)
 
+
 lookAndSay :: String -> String
 lookAndSay = concatMap (liftM2 (++) (show . length) (take 1)) . group
 
-part1 :: String -> String
-part1 = show . length . (!! 40) . iterate lookAndSay
+part1 :: String -> Int
+part1 =  length . (!! 40) . iterate lookAndSay
 
-part2 :: String -> String
-part2 = show . length . (!! 50) . iterate lookAndSay
+part2 :: String -> Int
+part2 = length . (!! 50) . iterate lookAndSay
