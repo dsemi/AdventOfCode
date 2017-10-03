@@ -8,18 +8,20 @@ module Year2016.Assembunny
     , parseInstructions
     ) where
 
-import Control.Lens ((%=), (.=), (+=), (-=), assign, ix, over, set, use)
+import Utils
+
+import Control.Lens (assign, ix, over, set, use, (%=), (.=), (+=), (-=))
 import Control.Lens.TH (makeLenses)
 import Control.Monad
 import Control.Monad.State.Strict
 import Data.Foldable()
 import Data.Maybe (fromJust, mapMaybe)
-import Data.Sequence (Seq, (|>), empty)
-import Data.Vector ((!), Vector)
+import Data.Sequence (Seq, empty, (|>))
+import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
-import Text.Megaparsec ((<|>), eitherP, oneOf, parseMaybe, space, spaceChar, string)
-import Text.Megaparsec.Lexer (integer, signed)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (eitherP, parseMaybe, (<|>))
+import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
+import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
 data Value = Const Int | Reg Char deriving (Eq, Show)
@@ -54,7 +56,7 @@ parseInstructions = Sim 0 0 0 0 0 0 empty . V.fromList
                              <|> parseTgl
                              <|> parseOut
                              <|> parseJnz
-          int = signed space $ fromInteger <$> integer
+          int = signed space $ fromInteger <$> decimal
           register = oneOf "abcd"
           value = either Reg Const <$> eitherP register int
           parseCpy = string "cpy " >> Cpy <$> value <* spaceChar <*> value

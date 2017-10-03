@@ -3,7 +3,7 @@ module Year2016.Day11
     , part2
     ) where
 
-import Utils (findAll)
+import Utils
 
 import Control.Lens (_1, _2, both, ix, over)
 import Data.Graph.AStar
@@ -12,7 +12,8 @@ import qualified Data.HashSet as S
 import Data.List (delete, lookup, sort, tails)
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
-import Text.Megaparsec (choice, noneOf, some, spaceChar, string)
+import Text.Megaparsec (choice, some)
+import Text.Megaparsec.Char (noneOf, spaceChar, string)
 
 
 type Pair = (Int, Int) -- First number is floor of Microchip, second is floor of Generator

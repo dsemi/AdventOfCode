@@ -69,7 +69,7 @@ executable Advent
     Year2016.Day25
   other-extensions: TemplateHaskell
   build-depends:
-    base >=4.9 && <4.10,
+    base >=4.9 && <5,
     deepseq,
     split,
     template-haskell,
@@ -89,6 +89,7 @@ executable Advent
     containers >=0.5.8.1,
     attoparsec,
     megaparsec,
+    pcre-light,
     pcre-heavy,
     base16-bytestring,
     mtl,

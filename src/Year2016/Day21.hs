@@ -3,15 +3,18 @@ module Year2016.Day21
     , part2
     ) where
 
+import Utils
+
 import Control.Lens (_2, over)
 import Data.Foldable (toList)
 import Data.List (foldl')
 import Data.Maybe (mapMaybe)
-import Data.Sequence ((><), Seq)
+import Data.Sequence (Seq, (><))
 import qualified Data.Sequence as S
-import Text.Megaparsec ((<|>), anyChar, char, optional, parseMaybe, string)
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (optional, parseMaybe, (<|>))
+import Text.Megaparsec.Char (anyChar, char, string)
+import Text.Megaparsec.Char.Lexer (decimal)
+
 
 data Dir = L | R deriving (Show)
 data Action = SwapPosition Int Int
@@ -25,7 +28,7 @@ data Action = SwapPosition Int Int
 parser :: Parser Action
 parser = parseSwap <|> parseSwapC <|> parseRotateR <|> parseRotateL
          <|> parseRotateC <|> parseReverse <|> parseMove
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
           parseSwap = SwapPosition <$> (string "swap position " *> int <* string " with position ") <*> int
           parseSwapC = SwapChar <$> (string "swap letter " *> anyChar) <*> (string " with letter " *> anyChar)
           parseRotateR = Rotate R <$> (string "rotate right " *> int <* string " step" <* optional (char 's'))

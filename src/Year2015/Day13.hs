@@ -3,20 +3,22 @@ module Year2015.Day13
     , part2
     ) where
 
+import Utils
+
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (permutations)
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Lexer
-import Text.Megaparsec.String
+import Text.Megaparsec (parseMaybe, some, try, (<|>))
+import Text.Megaparsec.Char (alphaNumChar, char, spaceChar, string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 data Edge = Edge String String Int
 
 parseLine :: String -> Edge
 parseLine = fromJust . parseMaybe parser
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
           parseValue :: Parser Int
           parseValue = do
             op <- (try (string "lose") <|> (string "gain")) <* spaceChar

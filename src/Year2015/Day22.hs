@@ -9,9 +9,9 @@ import Utils
 
 import Control.Lens
 import Control.Lens.TH
-import Text.Megaparsec
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String
+import Text.Megaparsec (parseMaybe)
+import Text.Megaparsec.Char (space, string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 data GameState = Game { _pHealth :: Int
@@ -99,7 +99,7 @@ parseBoss input = let (Just (h, d)) = parseMaybe parser input
                           , _bDamage = d
                           , _effects = []
                           }
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
           parser :: Parser (Int, Int)
           parser = do
             h <- string "Hit Points: " *> int

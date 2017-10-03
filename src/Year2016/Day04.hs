@@ -3,12 +3,14 @@ module Year2016.Day04
     , part2
     ) where
 
+import Utils
+
 import Control.Arrow ((&&&))
 import Data.List (group, intercalate, isInfixOf, sort, sortBy)
 import Data.List.Split (splitOn)
 import Data.Maybe (mapMaybe)
-import Text.Megaparsec (char, noneOf, parseMaybe, some)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec.Char (char, noneOf)
 
 
 data Room = Room { encryptedName :: String

@@ -7,9 +7,9 @@ import Utils
 
 import Data.List (foldl1', partition, tails)
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String
+import Text.Megaparsec (parseMaybe)
+import Text.Megaparsec.Char (space, string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 combinations :: [a] -> Int -> [[a]]
@@ -40,7 +40,7 @@ shop3 = [ ("Damage +1", [25, 1, 0]), ("Damage +2", [50, 2, 0])
 
 parseBoss :: String -> Person
 parseBoss = fromJust . parseMaybe parser
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
           parser :: Parser Person
           parser = do
             hp <- string "Hit Points: " *> int

@@ -3,11 +3,13 @@ module Year2016.Day03
     , part2
     ) where
 
+import Utils
+
 import Data.Maybe (mapMaybe)
 import Data.List.Split (chunksOf)
-import Text.Megaparsec (parseMaybe, space)
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (parseMaybe)
+import Text.Megaparsec.Char (space)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 type Triangle = (Integer, Integer, Integer)
@@ -16,9 +18,9 @@ parseTriangles :: String -> [Triangle]
 parseTriangles = mapMaybe (parseMaybe parseNums) . lines
     where parseNums :: Parser Triangle
           parseNums = do
-            n1 <- space *> integer
-            n2 <- space *> integer
-            n3 <- space *> integer
+            n1 <- space *> decimal
+            n2 <- space *> decimal
+            n3 <- space *> decimal
             return (n1, n2, n3)
 
 numValidTriangles :: [Triangle] -> Int

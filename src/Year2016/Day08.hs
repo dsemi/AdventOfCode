@@ -5,18 +5,20 @@ module Year2016.Day08
     , part2
     ) where
 
+import Utils
+
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.List (foldl')
 import Data.Maybe (mapMaybe)
-import Text.Megaparsec ((<|>), parseMaybe, string)
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (parseMaybe, (<|>))
+import Text.Megaparsec.Char (string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 type Coord = (Int, Int)
 
-int = fromInteger <$> integer
+int = fromInteger <$> decimal
 
 w = 50
 h = 6

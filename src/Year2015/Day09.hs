@@ -3,13 +3,15 @@ module Year2015.Day09
     , part2
     ) where
 
+import Utils
+
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (permutations)
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Lexer
-import Text.Megaparsec.String
+import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec.Char (alphaNumChar, string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 data Edge = Edge String String Int
@@ -22,7 +24,7 @@ parseLine = fromJust . parseMaybe parser
     where parser :: Parser Edge
           parser = Edge <$> some alphaNumChar <* string " to "
                         <*> some alphaNumChar <* string " = "
-                        <*> (fromInteger <$> integer)
+                        <*> (fromInteger <$> decimal)
 
 allPathDistances :: [String] -> [Int]
 allPathDistances input = let m = constructMap $ map parseLine input

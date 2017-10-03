@@ -3,6 +3,8 @@ module Year2016.Day22
     , part2
     ) where
 
+import Utils
+
 import Data.Array
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
@@ -10,9 +12,9 @@ import qualified Data.HashSet as S
 import Data.Maybe (mapMaybe)
 import Data.List (tails)
 import Data.List.Split (splitOn)
-import Text.Megaparsec
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec.Char (char, noneOf, space)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 type Coord = (Int, Int)
@@ -33,7 +35,7 @@ parseNode = do
   a <- space *> int <* char 'T'
   up <- space *> int <* char '%'
   return $ Node p (read x, read y) s u a up
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
 
 viablePairs :: [Node] -> [(Node, Node)]
 viablePairs nodes = [ (a, b) | (a:ns) <- init $ tails nodes

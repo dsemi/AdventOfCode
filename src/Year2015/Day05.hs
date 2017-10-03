@@ -8,8 +8,8 @@ import Utils
 import Control.Monad
 import Data.List (group, isInfixOf)
 import Data.Either
-import Text.Megaparsec
-import Text.Megaparsec.String
+import Text.Megaparsec (parse, try)
+import Text.Megaparsec.Char (anyChar, char)
 
 
 part1 :: String -> Int

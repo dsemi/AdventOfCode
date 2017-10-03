@@ -1,3 +1,5 @@
+{-# LANGUAGE DataKinds #-}
+
 module Year2015.Day25
     ( part1
     , part2
@@ -5,14 +7,14 @@ module Year2015.Day25
 
 import Utils
 
-import Math.NumberTheory.Powers
+import Math.NumberTheory.Moduli.Class (Mod, getVal, powMod)
 
 
 parseCoord input = let (Right [r, c]) = findAllInts input
                    in (r, c)
 
 makeCode :: Integer -> Int
-makeCode n = fromInteger $ powerMod 252533 n 33554393 * 20151125 `mod` 33554393
+makeCode n = fromInteger . getVal $ powMod (252533 :: Mod 33554393) n + 20151125
 
 part1 :: String -> Int
 part1 input = makeCode index

@@ -3,6 +3,7 @@ module Year2016.Day14
     , part2
     ) where
 
+import Data.Attoparsec.ByteString.Char8 (Parser, anyChar, char, parseOnly)
 import Data.ByteString.Base16 (encode)
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
@@ -12,15 +13,14 @@ import Data.Sequence ((|>), (><), Seq, ViewR(..))
 import qualified Data.Sequence as S
 import qualified Crypto.Hash.MD5 as MD5
 import Data.Monoid ((<>))
-import Text.Megaparsec (anyChar, char, parse)
-import Text.Megaparsec.ByteString (Parser)
+import Data.Void (Void)
 
 
 hash :: ByteString -> ByteString
 hash = encode . MD5.hash
 
 findAll :: Parser a -> ByteString -> [a]
-findAll parser = rights . map (parse parser "") . init. B.tails
+findAll parser = rights . map (parseOnly parser) . init. B.tails
 
 find3 :: Parser Char
 find3 = anyChar >>= char >>= char

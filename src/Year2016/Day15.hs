@@ -3,10 +3,13 @@ module Year2016.Day15
     , part2
     ) where
 
+import Utils
+
 import Data.Maybe (mapMaybe)
-import Text.Megaparsec (digitChar, parseMaybe, some, string)
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String
+import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec.Char (digitChar, string)
+import Text.Megaparsec.Char.Lexer (decimal)
+
 
 parser :: Parser (Int, Int)
 parser = do
@@ -14,7 +17,7 @@ parser = do
   ps <- int <* string " positions; at time=0, it is at position "
   p <- int <* string "."
   return (p, ps)
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
 
 findTarget ds = go 0 ds
     where go c ds

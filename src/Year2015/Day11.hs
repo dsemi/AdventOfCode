@@ -7,8 +7,8 @@ import Utils
 
 import Data.Either.Utils
 import Data.List (tails)
-import Text.Megaparsec
-import Text.Megaparsec.String
+import Text.Megaparsec (many, parse, try, (<|>))
+import Text.Megaparsec.Char (anyChar, char)
 
 
 incrStr :: String -> String

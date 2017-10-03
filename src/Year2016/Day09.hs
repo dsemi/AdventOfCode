@@ -3,9 +3,11 @@ module Year2016.Day09
     , part2
     ) where
 
-import Text.Megaparsec (char, parse)
-import Text.Megaparsec.Lexer (integer)
-import Text.Megaparsec.String (Parser)
+import Utils
+
+import Text.Megaparsec (parse)
+import Text.Megaparsec.Char (char)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 data Marker = Marker { dataLen :: Int
                      , repeatCount :: Int
@@ -17,7 +19,7 @@ parseMarker = do
   dl <- char '(' *> int
   rc <- char 'x' *> int <* char ')'
   return . Marker dl rc . length $ format dl rc
-    where int = fromInteger <$> integer
+    where int = fromInteger <$> decimal
           format a b = "(" ++ show a ++ "x" ++ show b ++ ")"
 
 decompressedLength :: (String -> Int) -> String -> Int

@@ -3,11 +3,10 @@ module Year2016.Day07
     , part2
     ) where
 
-import Utils (findAll)
+import Utils
 
 import Data.List (isInfixOf)
-import Text.Megaparsec (anyChar, char, noneOf)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec.Char (anyChar, char, noneOf)
 
 
 splitSupernetsAndHypernets :: String -> ([String], [String])

@@ -5,15 +5,17 @@ module Year2015.Day23
     , part2
     ) where
 
+import Utils
+
 import Control.Lens (set, use, uses, view, (%=), (+=), (*=))
 import Control.Lens.TH (makeLenses)
 import Control.Monad.State.Strict
 import Data.Maybe
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
-import Text.Megaparsec ((<|>), letterChar, parseMaybe, space, string)
-import Text.Megaparsec.Lexer (integer, signed)
-import Text.Megaparsec.String (Parser)
+import Text.Megaparsec (parseMaybe, (<|>))
+import Text.Megaparsec.Char (letterChar, space, string)
+import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
 data Instruction = Hlf Char
@@ -40,7 +42,7 @@ parseInstructions = Simulator 0 0 0 . V.fromList
                              <|> parseJmp
                              <|> parseJie
                              <|> parseJio
-          int = signed space $ fromInteger <$> integer
+          int = signed space $ fromInteger <$> decimal
           parseHlf :: Parser Instruction
           parseHlf = string "hlf " >> Hlf <$> letterChar
           parseTpl = string "tpl " >> Tpl <$> letterChar
