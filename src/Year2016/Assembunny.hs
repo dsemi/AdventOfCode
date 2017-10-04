@@ -17,8 +17,9 @@ import Control.Monad.State.Strict
 import Data.Foldable()
 import Data.Maybe (fromJust, mapMaybe)
 import Data.Sequence (Seq, empty, (|>))
-import Data.Vector (Vector, (!))
+import Data.Vector (Vector)
 import qualified Data.Vector as V
+import GHC.Exts
 import Text.Megaparsec (eitherP, parseMaybe, (<|>))
 import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
@@ -38,16 +39,15 @@ data Simulator = Sim { _a :: Int
                      , _c :: Int
                      , _d :: Int
                      , _currentLine :: Int
-                     , _outputLim :: Int
                      , _output :: Seq Int
                      , _instructions :: Vector Instruction
-                     } deriving (Eq, Show)
+                     }
 
 makeLenses ''Simulator
 
 
 parseInstructions :: String -> Simulator
-parseInstructions = Sim 0 0 0 0 0 0 empty . V.fromList
+parseInstructions = Sim 0 0 0 0 0 empty . V.fromList
                     . map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parser Instruction
           parseInstruction = parseCpy
@@ -75,19 +75,20 @@ value :: Value -> State Simulator Int
 value (Const i) = return i
 value (Reg   r) = use $ reg r
 
-multiplication :: [Instruction] -> Maybe (Value, Char, Char, Char)
-multiplication (Cpy a (Reg d)
-               : Inc c
-               : Dec d'
-               : Jnz (Reg d'') (Const (-2))
-               : Dec b
-               : Jnz (Reg b') (Const (-5))
-               : _)
-    | d == d' && d' == d'' && b == b' = Just (a, b, c, d)
-    | otherwise = Nothing
-multiplication _ = Nothing
+multiplication :: Vector Instruction -> Maybe (Value, Char, Char, Char)
+multiplication instrs = case V.toList (V.unsafeTake 6 instrs) of
+                          [ Cpy a (Reg d)
+                           , Inc c
+                           , Dec d'
+                           , Jnz (Reg d'') (Const (-2))
+                           , Dec b
+                           , Jnz (Reg b') (Const (-5))
+                           ] -> if d == d' && d' == d'' && b == b'
+                                then Just (a, b, c, d)
+                                else Nothing
+                          _ -> Nothing
 
-eval :: [Instruction] -> State Simulator (Int -> Int)
+eval :: Vector Instruction -> State Simulator (Int -> Int)
 eval (multiplication -> Just (a, b, c, d)) = do
   a' <- value a
   b' <- use $ reg b
@@ -95,58 +96,58 @@ eval (multiplication -> Just (a, b, c, d)) = do
   reg b .= 0
   reg d .= 0
   return (+6)
-eval (Cpy v v' : _) = do
-  case v' of
-    (Reg r)   -> value v >>= assign (reg r)
-    (Const _) -> return ()
-  return (+1)
-eval (Inc r : _) = do
-  reg r += 1
-  return (+1)
-eval (Dec r : _) = do
-  reg r -= 1
-  return (+1)
-eval (Tgl r : _) = do
-  i <- use $ reg r
-  instrs <- use instructions
-  cl <- use currentLine
-  when (i + cl < length instrs) $ do
-    modify' $ over (instructions . ix (i+cl)) tgl
-  return (+1)
-      where tgl (Cpy v v') = Jnz v v'
-            tgl (Inc r)    = Dec r
-            tgl (Dec r)    = Inc r
-            tgl (Jnz v v') = Cpy v v'
-            tgl (Tgl r)    = Inc r
-eval (Out r : _) = do
-  v <- use $ reg r
-  output %= (|> v)
-  return (+1)
-eval (Jnz v v' : _) = do
-  l <- value v'
-  rv <- value v
-  return $ if rv /= 0 then (+l) else (+1)
+eval instrs =
+    case V.unsafeHead instrs of
+      (Cpy v v') -> do
+        case v' of
+          (Reg r)   -> value v >>= assign (reg r)
+          (Const _) -> return ()
+        return (+1)
+      (Inc r) -> do
+        reg r += 1
+        return (+1)
+      (Dec r) -> do
+        reg r -= 1
+        return (+1)
+      (Tgl r) -> do
+        i <- use $ reg r
+        instrs <- use instructions
+        cl <- use currentLine
+        when (i + cl < V.length instrs) $ do
+          modify' $ over (instructions . ix (i+cl)) tgl
+        return (+1)
+      (Out r) -> do
+        v <- use $ reg r
+        output %= (|> v)
+        return (+1)
+      (Jnz v v') -> do
+        l <- value v'
+        rv <- value v
+        return $ if rv /= 0 then (+l) else (+1)
+    where tgl (Cpy v v') = Jnz v v'
+          tgl (Inc r)    = Dec r
+          tgl (Dec r)    = Inc r
+          tgl (Jnz v v') = Cpy v v'
+          tgl (Tgl r)    = Inc r
 
-evaluateWhile :: State Simulator Bool -> State Simulator ()
+
+evaluateWhile :: (Simulator -> Bool) -> State Simulator ()
 evaluateWhile f = do
-  instrs <- use instructions
-  line <- use currentLine
-  cond <- f
+  sim <- get
+  let instrs = _instructions sim
+      line = _currentLine sim
+      cond = f sim
   when cond $ do
-    cl <- eval $ drop line $ V.toList instrs
+    cl <- eval $ V.drop line instrs
     currentLine %= cl
     evaluateWhile f
 
-lineInBounds :: State Simulator Bool
-lineInBounds = do
-  instrs <- use instructions
-  line <- use currentLine
-  return $ line >= 0 && line < V.length instrs
+lineInBounds :: Simulator -> Bool
+lineInBounds (Sim {_currentLine=line, _instructions=instrs}) =
+    line >= 0 && line < V.length instrs
 
-outLengthIs :: Int -> State Simulator Bool
-outLengthIs n = do
-  out <- use output
-  return $ length out <= n
+outLengthIs :: Int -> Simulator -> Bool
+outLengthIs n (Sim {_output=out}) = length out <= n
 
 evaluate :: Simulator -> Simulator
 evaluate = execState (evaluateWhile lineInBounds)
