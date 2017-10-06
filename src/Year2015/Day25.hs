@@ -7,14 +7,14 @@ module Year2015.Day25
 
 import Utils
 
-import Math.NumberTheory.Moduli.Class (Mod, getVal, powMod)
+import Math.NumberTheory.Moduli.Class (Mod, getVal, (^%))
 
 
 parseCoord input = let (Right [r, c]) = findAllInts input
                    in (r, c)
 
 makeCode :: Integer -> Int
-makeCode n = fromInteger . getVal $ powMod (252533 :: Mod 33554393) n + 20151125
+makeCode n = fromInteger . getVal $ (252533 :: Mod 33554393) ^% n + 20151125
 
 part1 :: String -> Int
 part1 input = makeCode index

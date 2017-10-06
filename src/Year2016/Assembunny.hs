@@ -12,7 +12,7 @@ import Utils
 
 import Control.Lens (ix, over, set, view, (%~), (.~), (+~), (-~), (&))
 import Control.Lens.TH (makeLenses)
-import Control.Monad
+import Control.Monad (guard, when)
 import Control.Monad.ST (ST, runST)
 import Data.Function ((&))
 import Data.Maybe (fromJust, mapMaybe)
@@ -25,7 +25,7 @@ import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
-data Value = Const Int | Reg Char deriving (Eq, Show)
+data Value = Reg Char | Const Int deriving (Eq, Show)
 
 data Instruction = Cpy Value Value
                  | Inc Char
@@ -44,7 +44,6 @@ data Simulator = Sim { _a :: Int
                      } deriving (Eq, Show)
 
 makeLenses ''Simulator
-
 
 parseInstructions :: String -> Simulator
 parseInstructions = Sim 0 0 0 0 0 empty . V.fromList
@@ -71,70 +70,76 @@ reg 'b' = b
 reg 'c' = c
 reg 'd' = d
 
+either' :: (Char -> a) -> (Int -> a) -> Value -> a
+either' f g v = case v of
+                  (Reg   c) -> f c
+                  (Const i) -> g i
+
 value :: Value -> Simulator -> Int
-value (Const i) _ = i
-value (Reg   r) s = view (reg r) s
+value = either' (view . reg) const
 
 multiplication :: Vector Instruction -> Maybe (Value, Char, Char, Char)
-multiplication instrs = case V.toList (V.unsafeTake 6 instrs) of
-                          [ Cpy a (Reg d)
-                           , Inc c
-                           , Dec d'
-                           , Jnz (Reg d'') (Const (-2))
-                           , Dec b
-                           , Jnz (Reg b') (Const (-5))
-                           ] -> if d == d' && d' == d'' && b == b'
-                                then Just (a, b, c, d)
-                                else Nothing
-                          _ -> Nothing
+multiplication instrs = do
+  guard $ V.length instrs >= 6
+  Cpy a (Reg d) <- return $ V.unsafeIndex instrs 0
+  Inc c <- return $ V.unsafeIndex instrs 1
+  Dec d' <- return $ V.unsafeIndex instrs 2
+  guard $ d == d'
+  Jnz (Reg d'') (Const (-2)) <- return $ V.unsafeIndex instrs 3
+  guard $ d' == d''
+  Dec b <- return $ V.unsafeIndex instrs 4
+  Jnz (Reg b') (Const (-5)) <- return $ V.unsafeIndex instrs 5
+  guard $ b == b'
+  Just (a, b, c, d)
+
+plusEquals :: Vector Instruction -> Maybe (Char, Char)
+plusEquals instrs = do
+  guard $ V.length instrs >= 3
+  Inc a <- return $ V.unsafeIndex instrs 0
+  Dec b <- return $ V.unsafeIndex instrs 1
+  Jnz (Reg b') (Const (-2)) <- return $ V.unsafeIndex instrs 2
+  guard $ b == b'
+  Just (a, b)
 
 evalNextInstr :: Simulator -> Simulator
-evalNextInstr sim@(Sim{_currentLine=cl}) = eval $ V.drop cl $ view instructions sim
-    where eval :: Vector Instruction -> Simulator
+evalNextInstr sim@(Sim{_currentLine=cl}) =
+    let (sim', i) = eval $ V.unsafeDrop cl $ view instructions sim
+    in sim' & currentLine +~ i
+    where eval :: Vector Instruction -> (Simulator, Int)
           eval (multiplication -> Just (a, b, c, d)) =
-            let a' = value a sim
-                b' = view (reg b) sim
-            in sim & reg c +~ (a' * b')
-                   & reg b .~ 0
-                   & reg d .~ 0
-                   & currentLine +~ 6
+              ( sim & reg c +~ (value a sim * view (reg b) sim)
+                    & reg b .~ 0
+                    & reg d .~ 0
+              , 6)
+          eval (plusEquals -> Just (a, b)) =
+              ( sim & reg a +~ view (reg b) sim
+                    & reg b .~ 0
+              , 3)
           eval instrs =
               case V.unsafeHead instrs of
                 (Cpy v v') ->
-                  let f = case v' of
-                            (Reg r)   -> reg r .~ value v sim
-                            (Const _) -> id
-                  in sim & f
-                         & currentLine +~ 1
+                    ( sim & either' (\r -> reg r .~ value v sim) (const id) v'
+                    , 1)
                 (Inc r) ->
-                  sim & reg r +~ 1
-                      & currentLine +~ 1
+                    ( sim & reg r +~ 1
+                    , 1)
                 (Dec r) ->
-                  sim & reg r -~ 1
-                      & currentLine +~ 1
+                  ( sim & reg r -~ 1
+                  , 1)
                 (Tgl r) ->
-                  let i = view (reg r) sim
-                      f = if i + cl < V.length (view instructions sim)
-                          then over (instructions . ix (i+cl)) tgl
-                          else id
-                  in sim & f
-                         & currentLine +~ 1
+                    ( sim & over (instructions . ix (view (reg r) sim + cl)) tgl
+                    , 1)
                 (Out r) ->
-                  let v = view (reg r) sim
-                  in sim & output %~ (|> v)
-                         & currentLine +~ 1
+                    ( sim & output %~ (|> view (reg r) sim)
+                    , 1)
                 (Jnz v v') ->
-                  let l = value v' sim
-                      rv = value v sim
-                  in sim & if rv /= 0
-                           then currentLine +~ l
-                           else currentLine +~ 1
+                    ( sim
+                    , if value v sim /= 0 then value v' sim else 1)
               where tgl (Cpy v v') = Jnz v v'
                     tgl (Inc r)    = Dec r
                     tgl (Dec r)    = Inc r
                     tgl (Jnz v v') = Cpy v v'
                     tgl (Tgl r)    = Inc r
-
 
 evaluateWhile :: (Simulator -> Bool) -> Simulator -> ST s Simulator
 evaluateWhile f s = do
