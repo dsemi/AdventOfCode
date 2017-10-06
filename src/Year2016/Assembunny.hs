@@ -10,7 +10,7 @@ module Year2016.Assembunny
 
 import Utils
 
-import Control.Lens (ix, over, set, view, (%~), (.~), (+~), (-~), (&))
+import Control.Lens (ix, over, (^.), (%~), (.~), (+~), (-~))
 import Control.Lens.TH (makeLenses)
 import Control.Monad (guard, when)
 import Control.Monad.ST (ST, runST)
@@ -75,9 +75,6 @@ either' f g v = case v of
                   (Reg   c) -> f c
                   (Const i) -> g i
 
-value :: Value -> Simulator -> Int
-value = either' (view . reg) const
-
 multiplication :: Vector Instruction -> Maybe (Value, Char, Char, Char)
 multiplication instrs = do
   guard $ V.length instrs >= 6
@@ -103,38 +100,34 @@ plusEquals instrs = do
 
 evalNextInstr :: Simulator -> Simulator
 evalNextInstr sim@(Sim{_currentLine=cl}) =
-    let (sim', i) = eval $ V.unsafeDrop cl $ view instructions sim
+    let (sim', i) = eval $ V.unsafeDrop cl $ sim ^. instructions
     in sim' & currentLine +~ i
-    where eval :: Vector Instruction -> (Simulator, Int)
+    where value :: Value -> Int
+          value = either' (\r -> sim ^. reg r) id
+          eval :: Vector Instruction -> (Simulator, Int)
           eval (multiplication -> Just (a, b, c, d)) =
-              ( sim & reg c +~ (value a sim * view (reg b) sim)
+              ( sim & reg c +~ (value a * sim ^. reg b)
                     & reg b .~ 0
                     & reg d .~ 0
-              , 6)
+              , 6 )
           eval (plusEquals -> Just (a, b)) =
-              ( sim & reg a +~ view (reg b) sim
+              ( sim & reg a +~ sim ^. (reg b)
                     & reg b .~ 0
-              , 3)
+              , 3 )
           eval instrs =
               case V.unsafeHead instrs of
-                (Cpy v v') ->
-                    ( sim & either' (\r -> reg r .~ value v sim) (const id) v'
-                    , 1)
-                (Inc r) ->
-                    ( sim & reg r +~ 1
-                    , 1)
-                (Dec r) ->
-                  ( sim & reg r -~ 1
-                  , 1)
-                (Tgl r) ->
-                    ( sim & over (instructions . ix (view (reg r) sim + cl)) tgl
-                    , 1)
-                (Out r) ->
-                    ( sim & output %~ (|> view (reg r) sim)
-                    , 1)
-                (Jnz v v') ->
-                    ( sim
-                    , if value v sim /= 0 then value v' sim else 1)
+                (Cpy v v') -> ( sim & either' (\r -> reg r .~ value v) (const id) v'
+                              , 1 )
+                (Inc r)    -> ( sim & reg r +~ 1
+                              , 1 )
+                (Dec r)    -> ( sim & reg r -~ 1
+                              , 1 )
+                (Tgl r)    -> ( sim & over (instructions . ix (sim ^. reg r + cl)) tgl
+                              , 1 )
+                (Out r)    -> ( sim & output %~ (|> sim ^. reg r)
+                              , 1 )
+                (Jnz v v') -> ( sim
+                              , if value v /= 0 then value v' else 1 )
               where tgl (Cpy v v') = Jnz v v'
                     tgl (Inc r)    = Dec r
                     tgl (Dec r)    = Inc r
