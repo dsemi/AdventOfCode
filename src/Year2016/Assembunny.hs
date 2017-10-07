@@ -31,7 +31,7 @@ data Instruction = Cpy Value Value
                  | Inc Char
                  | Dec Char
                  | Tgl Char
-                 | Out Char
+                 | Out Value
                  | Jnz Value Value deriving (Eq, Show)
 
 data Simulator = Sim { _a :: Int
@@ -62,7 +62,7 @@ parseInstructions = Sim 0 0 0 0 0 empty . V.fromList
           parseInc = string "inc " >> Inc <$> register
           parseDec = string "dec " >> Dec <$> register
           parseTgl = string "tgl " >> Tgl <$> register
-          parseOut = string "out " >> Out <$> register
+          parseOut = string "out " >> Out <$> value
           parseJnz = string "jnz " >> Jnz <$> value <* spaceChar <*> value
 
 reg 'a' = a
@@ -124,7 +124,7 @@ evalNextInstr sim@(Sim{_currentLine=cl}) =
                               , 1 )
                 (Tgl r)    -> ( sim & over (instructions . ix (sim ^. reg r + cl)) tgl
                               , 1 )
-                (Out r)    -> ( sim & output %~ (|> sim ^. reg r)
+                (Out v)    -> ( sim & output %~ (|> value v)
                               , 1 )
                 (Jnz v v') -> ( sim
                               , if value v /= 0 then value v' else 1 )

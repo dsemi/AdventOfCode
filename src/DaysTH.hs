@@ -12,11 +12,11 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.Text (Text)
 import qualified Data.Text as T
+import Data.Word
 import Language.Haskell.TH
 import System.Path.Glob
+import System.IO.Unsafe
 import Text.Regex.PCRE.Heavy
-import Data.Word
-import Debug.Trace
 
 
 class PType a where
@@ -42,6 +42,10 @@ instance PType Text where
 instance PType Word16 where
     unS = read
     toS = show
+
+instance (PType a) => PType (IO a) where
+    unS = return . unS
+    toS = toS . unsafePerformIO -- Hacky workaround for 2016/Day25 bonus
 
 apply :: (PType a, PType b) => (a -> b) -> String -> String
 apply f = toS . f . unS
