@@ -15,40 +15,39 @@ import qualified Data.Text as T
 import Data.Word
 import Language.Haskell.TH
 import System.Path.Glob
-import System.IO.Unsafe
 import Text.Regex.PCRE.Heavy
 
 
 class PType a where
-    unS :: String -> a
-    toS :: a -> String
+    un :: Text -> a
+    to :: a -> IO Text
 
 instance PType String where
-    unS = id
-    toS = id
+    un = T.unpack
+    to = return . T.pack
 
 instance PType ByteString where
-    unS = B.pack
-    toS = B.unpack
+    un = B.pack . T.unpack
+    to = return . T.pack . B.unpack
 
 instance PType Int where
-    unS = read
-    toS = show
+    un = read . T.unpack
+    to = return . T.pack . show
 
 instance PType Text where
-    unS = T.pack
-    toS = T.unpack
+    un = id
+    to = return
 
 instance PType Word16 where
-    unS = read
-    toS = show
+    un = read . T.unpack
+    to = return . T.pack . show
 
 instance (PType a) => PType (IO a) where
-    unS = return . unS
-    toS = toS . unsafePerformIO -- Hacky workaround for 2016/Day25 bonus
+    un = return . un
+    to = (>>= to)
 
-apply :: (PType a, PType b) => (a -> b) -> String -> String
-apply f = toS . f . unS
+apply :: (PType a, PType b) => (a -> b) -> Text -> IO Text
+apply f = to . f . un
 
 problemPathPrefixes :: [String]
 problemPathPrefixes = [ "src/Year2015/Day??.hs"

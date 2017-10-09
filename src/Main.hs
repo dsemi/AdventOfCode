@@ -111,11 +111,11 @@ maybeRun y n = maybe notfound run $ lookup y problems >>= lookup n
     where notfound = return 0
           str = "Part %d: %28s  Elapsed time %s seconds\n"
           run (p1, p2) = do
-            input <- toS <$> findInput y n
+            input <- findInput y n
             putStrLn $ "Day " ++ show n
-            (ans1, elapsedTime1) <- timeFunc $ return $ p1 input
+            (ans1, elapsedTime1) <- timeFunc $ p1 input
             printf str (1 :: Int) ans1 $ colorizeTime elapsedTime1
-            (ans2, elapsedTime2) <- timeFunc $ return $ p2 input
+            (ans2, elapsedTime2) <- timeFunc $ p2 input
             printf str (2 :: Int) ans2 $ colorizeTime elapsedTime2
             return $ elapsedTime1 + elapsedTime2
 
