@@ -5,21 +5,22 @@ module Year2015.Day12
     , part2
     ) where
 
-import Control.Lens
-import Data.Aeson
-import Data.Aeson.Lens
+import Control.Lens (cosmosOf, elemOf, filtered, folded, plate, sumOf, (^?!))
+import Data.Aeson (Value)
+import Data.Aeson.Lens (_Number, _Object, _String, _Value)
 
 
 sumNumbers :: Value -> Int
-sumNumbers = truncate . sumOf (deep _Number)
+sumNumbers = sumNumbersMatching (const True)
 
-removeReds :: Value -> Value
-removeReds v
-    | elemOf (_Object . folded . _String) "red" v = Number 0
-    | otherwise = v
+sumNumbersMatching :: (Value -> Bool) -> Value -> Int
+sumNumbersMatching f = truncate . sumOf (cosmosOf (plate . filtered f) . _Number)
+
+doesntHaveRed :: Value -> Bool
+doesntHaveRed = not . elemOf (_Object . folded . _String) "red"
 
 part1 :: String -> Int
 part1 = sumNumbers . (^?! _Value)
 
 part2 :: String -> Int
-part2 = sumNumbers . transform removeReds . (^?! _Value)
+part2 = sumNumbersMatching doesntHaveRed . (^?! _Value)
