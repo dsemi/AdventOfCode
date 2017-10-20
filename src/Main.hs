@@ -64,7 +64,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import System.Console.ANSI
-import System.CPUTime
+import System.Clock
 import System.Environment
 import Text.Printf
 
@@ -99,11 +99,11 @@ colorizeTime n = printf "%s%.3f%s" startCode n endCode
 
 timeFunc :: (NFData a) => IO a -> IO (a, Double)
 timeFunc f = do
-  start <- getCPUTime
+  start <- toNanoSecs <$> getTime Monotonic
   result <- f
   rnf result `seq` return ()
-  end <- getCPUTime
-  let elapsedTime = fromIntegral (end - start) / 10^12
+  end <- toNanoSecs <$> getTime Monotonic
+  let elapsedTime = fromIntegral (end - start) / 10^9
   return (result, elapsedTime)
 
 maybeRun :: Integer -> Integer -> IO Double

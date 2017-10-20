@@ -39,8 +39,12 @@ dependencies:
 - monad-loops
 - free
 - recursion-schemes
+- stm
+- async
+- extra
+- clock
 executables:
   Advent:
     main: Main.hs
     source-dirs: src
-    ghc-options: -O2
+    ghc-options: -O2 -threaded
