@@ -9,6 +9,8 @@ import Utils
 
 import Control.Lens
 import Control.Lens.TH
+import Data.List (minimumBy)
+import Data.Ord
 import Text.Megaparsec (parseMaybe)
 import Text.Megaparsec.Char (space, string)
 import Text.Megaparsec.Char.Lexer (decimal)
@@ -87,7 +89,7 @@ turn hard state m pt
               , let state'' = case spell of
                                 (SingleSpell _ c f) -> pMana -~ c $ f state'
                                 (EffectSpell _ c e) -> pMana -~ c $ effects %~ (e:) $ state'
-              , endState <- turn hard state'' (m + cost spell) $ not pt
+              , endState <- filter won $ turn hard state'' (m + cost spell) $ not pt
               ]
 
 parseBoss :: String -> GameState
