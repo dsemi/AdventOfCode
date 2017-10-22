@@ -109,7 +109,8 @@ executable Advent
     stm-chans,
     monad-loops,
     conduit,
-    stm-conduit
+    stm-conduit,
+    conduit-combinators
   ghc-options: -O2 -threaded
   hs-source-dirs:
     src

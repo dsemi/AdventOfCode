@@ -47,6 +47,7 @@ dependencies:
 - monad-loops
 - conduit
 - stm-conduit
+- conduit-combinators
 executables:
   Advent:
     main: Main.hs
