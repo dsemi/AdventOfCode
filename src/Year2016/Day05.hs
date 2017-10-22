@@ -1,7 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Year2016.Day05
     ( part1
     , part2
     ) where
+
+import Utils
 
 import Control.Monad (replicateM)
 import Control.Monad.State (State, evalState, state)
@@ -9,6 +13,9 @@ import Crypto.Hash.MD5 (hash)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Base16 (encode)
+import Data.Conduit
+import qualified Data.Conduit.List as L
+import Data.Maybe
 import Data.Monoid ((<>))
 import qualified Data.HashMap.Strict as M
 
@@ -20,13 +27,15 @@ findHashPrefixedByFiveZeros seed =
                            , fiveZeros `B.isPrefixOf` checksum]
         where fiveZeros = B.pack "00000"
 
-part1 :: ByteString -> ByteString
-part1 s = evalState (B.pack . map (B.head . B.drop 5) <$> replicateM 8 nextHash) 0
-    where nextHash = findHashPrefixedByFiveZeros s
+part1 :: ByteString -> IO String
+part1 seed = map (B.head . B.drop 5 . hashNum) <$> (multi f (+1) 0 $$ L.take 8)
+    where hashNum = encode . hash . (seed <>) . B.pack . show
+          f = ("00000" `B.isPrefixOf`) . hashNum
 
-part2 :: ByteString -> ByteString
-part2 s = evalState (findPassword M.empty) 0
-    where nextHash = findHashPrefixedByFiveZeros s
+part2 :: ByteString -> IO ByteString
+part2 seed = multi f (+1) 0 $$ findPassword M.empty
+    where hashNum = encode . hash . (seed <>) . B.pack . show
+          f = ("00000" `B.isPrefixOf`) . hashNum
           indices = "01234567"
           addChar m pos char
               | pos `elem` indices && not (M.member pos m) = M.insert pos char m
@@ -34,5 +43,5 @@ part2 s = evalState (findPassword M.empty) 0
           findPassword m
               | M.size m == 8 = return . B.pack $ map (m M.!) indices
               | otherwise = do
-                  (p : c : []) <- B.unpack . B.take 2 . B.drop 5 <$> nextHash
+                  [p, c] <- B.unpack . B.take 2 . B.drop 5 . hashNum . fromJust <$> await
                   findPassword $ addChar m p c

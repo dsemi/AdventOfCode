@@ -7,7 +7,10 @@ import Control.Concurrent.Async (async, wait)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TMQueue
 import Control.Monad
-import Control.Monad.Loops (unfoldM)
+import Control.Monad.IO.Class
+import Control.Monad.Loops
+import Data.Conduit
+import Data.Conduit.TQueue
 import Data.Either (rights)
 import Data.List (tails)
 import Data.Void (Void)
@@ -29,30 +32,21 @@ searchAll p = let parser = try p <|> (anyChar *> parser) in parser
 findAll :: Parser a -> String -> [a]
 findAll parser = rights . map (parse parser "") . init . tails
 
-multi :: forall a. (a -> a) -> (a -> Bool) -> Int -> a -> IO [a]
-multi nextToCheck isSolution numSolutions start = do
-  setNumCapabilities threads
-  current <- atomically $ newTVar start
-  solnsLeft <- atomically $ newTVar numSolutions
-  solutions <- atomically $ newTMQueue
-  ps <- replicateM threads $ async $ process current solnsLeft solutions
-  mapM_ wait ps
-  atomically $ closeTMQueue solutions
-  atomically $ unfoldM (readTMQueue solutions)
+multi :: forall a. (a -> Bool) -> (a -> a) -> a -> Source IO a
+multi isSolution nextToCheck start = do
+  liftIO $ setNumCapabilities threads
+  current <- liftIO $ atomically $ newTVar start
+  solutions <- liftIO $ atomically $ newTMQueue
+  ps <- liftIO $ replicateM threads $ async $ process current solutions
+  sourceTMQueue solutions
     where bufferSize = 64
           threads = 4
-          process :: TVar a -> TVar Int -> TMQueue a -> IO ()
-          process current solnsLeft solutions = go
-              where go = do
-                      sn <- readTVarIO solnsLeft
-                      when (sn > 0) $ do
-                        buffer <- atomically $ do
-                                x <- readTVar current
-                                let (xs, next:_) = splitAt bufferSize $ iterate nextToCheck x
-                                writeTVar current next
-                                return xs
-                        let solns = filter isSolution buffer
-                        when (not $ null solns) $ atomically $ do
-                          modifyTVar' solnsLeft (subtract $ length solns)
-                          forM_ solns $ writeTMQueue solutions
-                        go
+          process :: TVar a -> TMQueue a -> IO ()
+          process current solutions =
+              whileM_ (fmap not $ atomically $ isClosedTMQueue solutions) $ do
+                buffer <- atomically $ do
+                            x <- readTVar current
+                            let (xs, next:_) = splitAt bufferSize $ iterate nextToCheck x
+                            writeTVar current next
+                            return xs
+                atomically $ forM_ (filter isSolution buffer) $ writeTMQueue solutions

@@ -107,7 +107,9 @@ executable Advent
     extra,
     clock,
     stm-chans,
-    monad-loops
+    monad-loops,
+    conduit,
+    stm-conduit
   ghc-options: -O2 -threaded
   hs-source-dirs:
     src

@@ -45,6 +45,8 @@ dependencies:
 - clock
 - stm-chans
 - monad-loops
+- conduit
+- stm-conduit
 executables:
   Advent:
     main: Main.hs
