@@ -63,8 +63,8 @@ buildProbs = do
             moduleName  = "Year" ++ year ++ ".Day" ++ day
             part1       = moduleName ++ ".part1"
             part2       = moduleName ++ ".part2"
-        entry <- [e|(read day, ( apply $(nm part1)
-                               , apply $(nm part2)))|]
+        entry <- [e|(read day :: Integer , ( apply $(nm part1)
+                                           , apply $(nm part2)))|]
         return (read year, entry)
           where r = [re|src/Year(\d+)/Day(\d+).hs|]
                 nm = varE . mkName

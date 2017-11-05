@@ -4,52 +4,61 @@ author: Dan Seminara
 maintainer: semi225599@gmail.com
 license: UnspecifiedLicense
 other-extensions:
-- TemplateHaskell
+  - TemplateHaskell
 dependencies:
-- base >=4.9 && <5
-- deepseq
-- split
-- template-haskell
-- ansi-terminal
-- unordered-containers
-- array
-- MissingH
-- lens
-- aeson
-- bytestring
-- vector
-- text
-- lens-aeson
-- multiset
-- cryptohash-md5
-- arithmoi
-- containers >=0.5.8.1
-- attoparsec
-- megaparsec
-- pcre-light
-- pcre-heavy
-- base16-bytestring
-- mtl
-- hashable
-- string-conv
-- data-ordlist
-- astar
-- errors
-- either
-- monad-loops
-- free
-- recursion-schemes
-- stm
-- async
-- extra
-- clock
-- stm-chans
-- monad-loops
-- conduit
-- stm-conduit
-- conduit-combinators
+  - base >=4.9 && <5
+  - deepseq
+  - split
+  - template-haskell
+  - ansi-terminal
+  - unordered-containers
+  - array
+  - MissingH
+  - lens
+  - aeson
+  - bytestring
+  - vector
+  - text
+  - lens-aeson
+  - multiset
+  - cryptohash-md5
+  - arithmoi
+  - containers >=0.5.8.1
+  - attoparsec
+  - megaparsec
+  - pcre-light
+  - pcre-heavy
+  - base16-bytestring
+  - mtl
+  - hashable
+  - string-conv
+  - data-ordlist
+  - astar
+  - errors
+  - either
+  - monad-loops
+  - free
+  - recursion-schemes
+  - stm
+  - async
+  - extra
+  - clock
+  - stm-chans
+  - monad-loops
+  - conduit
+  - stm-conduit
+  - conduit-combinators
 executables:
   Advent:
     main: Main.hs
     source-dirs: src
     ghc-options: -O2 -threaded
+build-type: Custom
+custom-setup:
+  dependencies:
+    - base >=4.9 && <5
+    - interpolate
+    - text
+    - Cabal
+    - MissingH
+    - pcre-heavy

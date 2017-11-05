@@ -7,12 +7,22 @@ version:             0.1.0.0
 author:              Dan Seminara
 maintainer:          semi225599@gmail.com
 license:             UnspecifiedLicense
-build-type:          Simple
+build-type:          Custom
 cabal-version:       >= 1.10
+
+custom-setup
+  setup-depends:
+    base >=4.9 && <5,
+    interpolate,
+    text,
+    Cabal,
+    MissingH,
+    pcre-heavy
 
 executable Advent
   main-is: Main.hs
   other-modules:
+    Days
     DaysTH
     Utils
     Year2015.Day01
