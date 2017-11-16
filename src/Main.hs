@@ -1,3 +1,5 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Main where
 
 import Days
@@ -5,7 +7,7 @@ import Days
 import Control.DeepSeq
 import Control.Monad
 import Data.List.Split
-import Data.String.Conv
+import Data.String.Interpolate
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -31,7 +33,7 @@ parseArgs (y:args) = let probs = foldr pa [] args
               | otherwise                     = undefined -- again
 
 findInput :: Integer -> Integer -> IO Text
-findInput yr pday = T.strip <$> T.readFile ("inputs/" ++ show yr ++ "/input" ++ show pday ++ ".txt")
+findInput yr pday = T.strip <$> T.readFile [i|inputs/#{yr}/input#{pday}.txt|]
 
 colorizeTime :: Double -> String
 colorizeTime n = printf "%s%.3f%s" startCode n endCode

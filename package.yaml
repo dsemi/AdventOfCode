@@ -48,6 +48,7 @@ dependencies:
   - conduit
   - stm-conduit
   - conduit-combinators
+  - interpolate
 executables:
   Advent:
     main: Main.hs

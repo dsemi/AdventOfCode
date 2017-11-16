@@ -49,14 +49,9 @@ instance (PType a) => PType (IO a) where
 apply :: (PType a, PType b) => (a -> b) -> Text -> IO Text
 apply f = to . f . un
 
-problemPathPrefixes :: [String]
-problemPathPrefixes = [ "src/Year2015/Day??.hs"
-                      , "src/Year2016/Day??.hs"
-                      ]
-
 buildProbs :: Q [Dec]
 buildProbs = do
-  pFiles <- runIO $ concat <$> mapM glob problemPathPrefixes
+  pFiles <- runIO $ glob "src/Year????/Day??.hs"
   let parse :: String -> Q (Integer, Exp)
       parse x = do
         let [year, day] = snd . head $ scan r x

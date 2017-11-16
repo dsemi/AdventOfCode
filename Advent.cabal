@@ -120,7 +120,8 @@ executable Advent
     monad-loops,
     conduit,
     stm-conduit,
-    conduit-combinators
+    conduit-combinators,
+    interpolate
   ghc-options: -O2 -threaded
   hs-source-dirs:
     src
