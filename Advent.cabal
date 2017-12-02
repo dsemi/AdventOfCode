@@ -78,6 +78,7 @@ executable Advent
     Year2016.Day24
     Year2016.Day25
     Year2017.Day01
+    Year2017.Day02
   other-extensions: TemplateHaskell
   build-depends:
     base >=4.9 && <5,
