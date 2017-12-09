@@ -11,37 +11,30 @@ data Instr = Instr { cmd :: HashMap String Int -> HashMap String Int
                    , cond :: HashMap String Int -> Bool
                    }
 
+op "inc" = (+)
+op "dec" = subtract
+
+comp "!=" = (/=)
+comp "==" = (==)
+comp ">=" = (>=)
+comp ">"  = (>)
+comp "<=" = (<=)
+comp "<"  = (<)
+
 parseInstrs :: String -> [Instr]
 parseInstrs = map parseInstr . lines
     where parseInstr :: String -> Instr
           parseInstr line =
               let [reg, fn, amnt, "if", reg2, cmp, val] = words line
-                  cmd m = let f = case fn of
-                                    "inc" -> (+ read amnt)
-                                    "dec" -> subtract $ read amnt
-                          in M.insert reg (f $ M.lookupDefault 0 reg m) m
-                  cond m = let comp = case cmp of
-                                         "!=" -> (/=)
-                                         "==" -> (==)
-                                         ">=" -> (>=)
-                                         ">" -> (>)
-                                         "<=" -> (<=)
-                                         "<" -> (<)
-                           in comp (M.lookupDefault 0 reg2 m) $ read val
-              in Instr cmd cond
+              in Instr { cmd = \m -> M.insert reg (op fn (read amnt) $ M.lookupDefault 0 reg m) m
+                       , cond = \m -> comp cmp (M.lookupDefault 0 reg2 m) $ read val
+                       }
 
-maximumOr :: (Ord a) => a -> [a] -> a
-maximumOr x [] = x
-maximumOr _ xs = maximum xs
-
-eval :: (HashMap String Int, Int) -> Instr -> (HashMap String Int, Int)
-eval (m, max') (Instr cmd cond) =
-    let m' = if cond m then cmd m else m
-        max'' = max max' $ maximumOr 0 $ M.elems m'
-    in (m', max'')
+eval :: HashMap String Int -> Instr -> HashMap String Int
+eval m (Instr cmd cond) = if cond m then cmd m else m
 
 part1 :: String -> Int
-part1 = maximumOr 0 . M.elems . fst . foldl eval (M.empty, 0) . parseInstrs
+part1 = maximum . foldl eval M.empty . parseInstrs
 
 part2 :: String -> Int
-part2 = snd . foldl eval (M.empty, 0) . parseInstrs
+part2 = maximum . concatMap M.elems . scanl eval M.empty . parseInstrs
