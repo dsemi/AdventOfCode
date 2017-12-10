@@ -55,7 +55,7 @@ timeFunc f = do
 maybeRun :: Integer -> Integer -> IO Double
 maybeRun y n = maybe notfound run $ lookup y problems >>= lookup n
     where notfound = return 0
-          str = "Part %d: %28s  Elapsed time %s seconds\n"
+          str = "Part %d: %32s  Elapsed time %s seconds\n"
           run (p1, p2) = do
             input <- findInput y n
             putStrLn $ "Day " ++ show n
@@ -69,4 +69,4 @@ main :: IO ()
 main = do
   args <- parseArgs <$> getArgs
   totalTime <- foldM (\acc -> liftM (+acc) . maybeRun (year args)) 0 $ probs args
-  printf "Total: %49.3f seconds\n" totalTime
+  printf "Total: %53.3f seconds\n" totalTime

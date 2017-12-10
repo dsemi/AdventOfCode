@@ -10,6 +10,7 @@ import Control.Monad
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
+import Data.Int
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Word
@@ -34,11 +35,39 @@ instance PType Int where
     un = read . T.unpack
     to = return . T.pack . show
 
+instance PType Int8 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
+instance PType Int16 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
+instance PType Int32 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
+instance PType Int64 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
 instance PType Text where
     un = id
     to = return
 
+instance PType Word8 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
 instance PType Word16 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
+instance PType Word32 where
+    un = read . T.unpack
+    to = return . T.pack . show
+
+instance PType Word64 where
     un = read . T.unpack
     to = return . T.pack . show
 
