@@ -49,6 +49,7 @@ dependencies:
   - stm-conduit
   - conduit-combinators
   - interpolate
+  - transformers
 executables:
   Advent:
     main: Main.hs

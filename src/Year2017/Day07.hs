@@ -5,12 +5,13 @@ module Year2017.Day07
 
 import Utils (Parser)
 
-import Data.Either (fromLeft, isLeft, rights)
+import Control.Monad
+import Data.Either (fromLeft)
+import Data.Function (on)
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (groupBy, sortBy)
 import Data.Maybe (fromJust, fromMaybe)
-import Data.Ord (comparing)
 import Text.Megaparsec (optional, many, parseMaybe, sepBy)
 import Text.Megaparsec.Char (letterChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
@@ -45,24 +46,25 @@ buildTree :: [Program] -> HashMap String Program
 buildTree = foldr f M.empty
     where f p@(Program name _ _) = M.insert name p
 
-findImbalance :: String -> HashMap String Program -> Either Int (Int, Int)
-findImbalance root tree = go $ tree ! root
-    where findAnomaly = head . head . filter ((==1) . length)
-                        . groupBy (\(a, b) (c, d) -> a + b == c + d)
-                        . sortBy (comparing (uncurry (+)))
-          go (Program name weight []) = Right (weight, 0)
-          go (Program name weight children)
-              | any isLeft childCalcs = head $ filter isLeft childCalcs
-              | all (==expected) totals = Right $ (weight, sum $ expected : totals)
-              | length weights > 2 =
-                  let anomaly = findAnomaly weights
-                      expectedTotal = uncurry (+) $ head $ filter (/=anomaly) weights
-                  in Left $ expectedTotal - snd anomaly
-              | otherwise = undefined
-              where childCalcs = map (go . (tree !)) children
-                    weights = rights childCalcs
-                    (expected:totals) = map (uncurry (+)) $ weights
+findImbalance :: String -> HashMap String Program -> Int
+findImbalance root tree = fromLeft 0 $ go $ tree ! root
+    where add = fmap $ uncurry (+)
+          findAnomaly = head . head . filter ((==1) . length)
+                        . groupBy ((==) `on` add)
+                        . sortBy (compare `on` add)
+          go :: Program -> Either Int (Int, Int)
+          go (Program name weight []) = return (weight, 0)
+          go (Program name weight children) =
+              if all (== expected) totals
+              then do
+                childSum <- foldr1 (liftM2 (+)) totals
+                return (weight, childSum)
+              else do
+                anomaly <- findAnomaly weights
+                expectedTotal <- add $ head $ filter (/= Right anomaly) weights
+                Left $ expectedTotal - snd anomaly
+              where weights = map (go . (tree !)) children
+                    totals@(expected:_) = map add weights
 
 part2 :: String -> Int
-part2 input = let root = part1 input
-              in fromLeft 0 $ findImbalance root $ buildTree $ parsePrograms input
+part2 input = findImbalance (part1 input) $ buildTree $ parsePrograms input
