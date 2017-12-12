@@ -5,66 +5,58 @@ module Year2017.Day07
 
 import Utils (Parser)
 
-import Control.Monad
+import Control.Arrow ((&&&))
+import Control.Monad (liftM2)
 import Data.Either (fromLeft)
 import Data.Function (on)
-import Data.HashMap.Strict (HashMap, (!))
-import qualified Data.HashMap.Strict as M
-import Data.List (groupBy, sortBy)
+import qualified Data.HashSet as S
+import Data.List (groupBy, sortBy, transpose)
+import Data.List.Split (splitOn)
 import Data.Maybe (fromJust, fromMaybe)
+import Data.Tree (Tree(..), unfoldTreeM)
 import Text.Megaparsec (optional, many, parseMaybe, sepBy)
 import Text.Megaparsec.Char (letterChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
 
+part1 :: String -> String
+part1 input = let [as, bs] = transpose $ map (splitOn " -> ") $ lines input
+              in foldr1 const $ S.fromList (map (head . words) as)
+                     `S.difference` S.fromList (concatMap (splitOn ", ") bs)
+
 data Program = Program { name :: String
                        , weight :: Int
-                       , children :: [String]
                        } deriving (Show)
 
-parsePrograms :: String -> [Program]
+parsePrograms :: String -> [(Program, [String])]
 parsePrograms = map (fromJust . parseMaybe parser) . lines
-    where parser :: Parser Program
+    where parser :: Parser (Program, [String])
           parser = do
             name <- many letterChar
             weight <- string " (" *> decimal <* string ")"
             children <- optional $ string " -> " *> many letterChar `sepBy` string ", "
-            return $ Program name weight $ fromMaybe [] children
+            return (Program name weight, fromMaybe [] children)
 
-buildInvertedTree :: [Program] -> HashMap String String
-buildInvertedTree = foldr f M.empty
-    where f (Program parent _ children) m = foldr g m children
-              where g child = M.insert child parent
-
-findBottom :: HashMap String String -> String
-findBottom m = until (not . (`M.member` m)) (m !) $ head $ M.keys m
-
-part1 :: String -> String
-part1 = findBottom . buildInvertedTree . parsePrograms
-
-buildTree :: [Program] -> HashMap String Program
-buildTree = foldr f M.empty
-    where f p@(Program name _ _) = M.insert name p
-
-findImbalance :: String -> HashMap String Program -> Int
-findImbalance root tree = fromLeft 0 $ go $ tree ! root
+findImbalance :: Tree Program -> Either Int (Int, Int)
+findImbalance (Node (Program name weight) []) = return (weight, 0)
+findImbalance (Node (Program name weight) children) = do
+  let weights = map findImbalance children
+      totals@(expected:_) = map add weights
+  if all (== expected) totals
+  then do
+    childSum <- foldr1 (liftM2 (+)) totals
+    return (weight, childSum)
+  else do
+    anomaly <- findAnomaly weights
+    expectedTotal <- add $ head $ filter (/= Right anomaly) weights
+    Left $ expectedTotal - snd anomaly
     where add = fmap $ uncurry (+)
           findAnomaly = head . head . filter ((==1) . length)
                         . groupBy ((==) `on` add)
                         . sortBy (compare `on` add)
-          go :: Program -> Either Int (Int, Int)
-          go (Program name weight []) = return (weight, 0)
-          go (Program name weight children) =
-              if all (== expected) totals
-              then do
-                childSum <- foldr1 (liftM2 (+)) totals
-                return (weight, childSum)
-              else do
-                anomaly <- findAnomaly weights
-                expectedTotal <- add $ head $ filter (/= Right anomaly) weights
-                Left $ expectedTotal - snd anomaly
-              where weights = map (go . (tree !)) children
-                    totals@(expected:_) = map add weights
 
 part2 :: String -> Int
-part2 input = findImbalance (part1 input) $ buildTree $ parsePrograms input
+part2 input = let programs = map (name . fst &&& id) $ parsePrograms input
+                  root = part1 input
+                  Just tree = unfoldTreeM (`lookup` programs) root
+              in fromLeft 0 $ findImbalance tree
