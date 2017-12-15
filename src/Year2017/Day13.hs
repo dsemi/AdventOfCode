@@ -3,7 +3,6 @@ module Year2017.Day13
     , part2
     ) where
 
-import Data.List (foldl')
 import Data.List.Split (splitOn)
 
 
@@ -16,7 +15,7 @@ part1 x = sum [ a * (b + 2) `div` 2 | (a, b) <- parse x
 
 findDelay :: [(Int, Int)] -> Int
 findDelay scrs = head $ filter f [0 ..]
-    where f c = all (\(a, b) -> (a + c) `mod` b /=0) scrs
+    where f c = all (\(a, b) -> (a + c) `mod` b /= 0) scrs
 
 part2 :: String -> Int
 part2 = findDelay . parse

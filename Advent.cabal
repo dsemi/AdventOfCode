@@ -1,8 +1,8 @@
--- This file has been generated from package.yaml by hpack version 0.20.0.
+-- This file has been generated from package.yaml by hpack version 0.21.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2f0ac353b8f9e1b0f31fb158033d5d3113958472d28b047892994f4524ad13c5
+-- hash: eeeda0c5dab7f81889c6970ca24be0c87a8a8382f2479a10a74fc4613e66d478
 
 name:                Advent
 version:             0.1.0.0
@@ -10,7 +10,7 @@ author:              Dan Seminara
 maintainer:          semi225599@gmail.com
 license:             UnspecifiedLicense
 build-type:          Custom
-cabal-version:       >= 1.10
+cabal-version:       >= 1.24
 
 custom-setup
   setup-depends:
@@ -92,6 +92,7 @@ executable Advent
     Year2017.Day11
     Year2017.Day12
     Year2017.Day13
+    Year2017.Day14
     Paths_Advent
   other-extensions: TemplateHaskell
   build-depends:
