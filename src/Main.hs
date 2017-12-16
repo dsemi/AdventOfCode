@@ -2,7 +2,7 @@
 
 module Main where
 
-import Days
+import Days (problems)
 
 import Control.DeepSeq
 import Control.Monad
@@ -18,7 +18,7 @@ import Text.Printf
 
 
 data Args = Args { year :: Integer
-                 , probs :: [Integer]
+                 , probNums :: [Integer]
                  }
 
 parseArgs :: [String] -> Args
@@ -68,5 +68,5 @@ maybeRun y n = maybe notfound run $ lookup y problems >>= lookup n
 main :: IO ()
 main = do
   args <- parseArgs <$> getArgs
-  totalTime <- foldM (\acc -> liftM (+acc) . maybeRun (year args)) 0 $ probs args
+  totalTime <- foldM (\acc -> liftM (+acc) . maybeRun (year args)) 0 $ probNums args
   printf "Total: %53.3f seconds\n" totalTime

@@ -1,19 +1,16 @@
-{-# LANGUAGE FlexibleInstances, QuasiQuotes, TemplateHaskell, TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances, QuasiQuotes, TemplateHaskell #-}
 
 module DaysTH
     ( buildProbs
     ) where
 
-import Utils
-
-import Control.Monad
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.Int
 import Data.Text (Text)
-import qualified Data.Text as T
 import Data.Word
+import qualified Data.Text as T
 import Language.Haskell.TH
 import System.Path.Glob
 import Text.Regex.PCRE.Heavy
@@ -23,6 +20,10 @@ class PType a where
     un :: Text -> a
     to :: a -> IO Text
 
+instance (PType a) => PType (IO a) where
+    un = return . un
+    to = (>>= to)
+
 instance PType String where
     un = T.unpack
     to = return . T.pack
@@ -30,6 +31,10 @@ instance PType String where
 instance PType ByteString where
     un = B.pack . T.unpack
     to = return . T.pack . B.unpack
+
+instance PType Text where
+    un = id
+    to = return
 
 instance PType Int where
     un = read . T.unpack
@@ -51,9 +56,9 @@ instance PType Int64 where
     un = read . T.unpack
     to = return . T.pack . show
 
-instance PType Text where
-    un = id
-    to = return
+instance PType Word where
+    un = read . T.unpack
+    to = return . T.pack . show
 
 instance PType Word8 where
     un = read . T.unpack
@@ -70,10 +75,6 @@ instance PType Word32 where
 instance PType Word64 where
     un = read . T.unpack
     to = return . T.pack . show
-
-instance (PType a) => PType (IO a) where
-    un = return . un
-    to = (>>= to)
 
 apply :: (PType a, PType b) => (a -> b) -> Text -> IO Text
 apply f = to . f . un
