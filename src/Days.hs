@@ -71,5 +71,6 @@ import Year2017.Day13
 import Year2017.Day14
 import Year2017.Day15
 import Year2017.Day16
+import Year2017.Day17
 
 $(buildProbs)
