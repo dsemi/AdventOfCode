@@ -24,7 +24,7 @@ parseMarker = do
 
 decompressedLength :: (String -> Int) -> String -> Int
 decompressedLength _ "" = 0
-decompressedLength f input@(s:ss) =
+decompressedLength f input@(_:ss) =
     case (parse parseMarker "" input) of
       (Right marker) -> let input' = drop (markerLen marker) input
                             (repeatedChars, rest) = splitAt (dataLen marker) input'

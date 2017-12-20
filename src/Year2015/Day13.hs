@@ -9,7 +9,7 @@ import Utils
 
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
-import Data.List (permutations, foldl1')
+import Data.List (permutations)
 import Data.Maybe
 import Text.Megaparsec (parseMaybe, some, try, (<|>))
 import Text.Megaparsec.Char (alphaNumChar, char, spaceChar, string)
@@ -29,12 +29,9 @@ parseLine = fromJust . parseMaybe parser
             return $ op' i
           parser :: Parser Edge
           parser = do
-            p1 <- some alphaNumChar
-            string " would "
-            hap <- parseValue
-            string " happiness units by sitting next to "
-            p2 <- some alphaNumChar
-            char '.'
+            p1 <- some alphaNumChar <* string " would "
+            hap <- parseValue <* string " happiness units by sitting next to "
+            p2 <- some alphaNumChar <* char '.'
             return $ Edge (head p1) (head p2) hap
 
 
@@ -46,8 +43,10 @@ constructMap = foldr addEdgeToMap M.empty
 maxHappinessOrdering :: HashMap Char (HashMap Char Int) -> Int
 maxHappinessOrdering m = maximum $ map happinessDiff orders
     where orders = permutations $ M.keys m
+          happinessDiff [] = error "No vals"
           happinessDiff xss@(x:_) = go 0 xss
-              where go !c [y] = c + hd x y
+              where go _ [] = error "No vals"
+                    go !c [y] = c + hd x y
                     go !c (a:b:xs) = go (c + hd a b) (b:xs)
           hd a b = m ! a ! b + m ! b ! a
 

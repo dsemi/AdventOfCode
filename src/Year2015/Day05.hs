@@ -31,8 +31,7 @@ part2 = length . filter isNice2 . lines
                     twoDoubles = isRight $ parse parser "" s
                     findSkip = do
                       a <- anyChar
-                      anyChar
-                      void $ char a
+                      anyChar >> void (char a)
                     parser' :: Parser ()
                     parser' = searchAll (try findSkip)
                     everyOther = isRight $ parse parser' "" s

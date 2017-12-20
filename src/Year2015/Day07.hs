@@ -21,10 +21,14 @@ parseNode f line =
       [(parse -> a), "OR",     (parse -> b), "->", v] -> (v, f a .|. f b)
       [(parse -> a), "LSHIFT", (parse -> b), "->", v] -> (v, f a `shiftL` fromIntegral (f b))
       [(parse -> a), "RSHIFT", (parse -> b), "->", v] -> (v, f a `shiftR` fromIntegral (f b))
+      _ -> error "Invalid line"
     where parse :: String -> Either String Word16
           parse x = maybeToEither x $ maybeRead x
 
+(!) :: Eq a1 => [(a1, a2)] -> a1 -> a2
 m ! k = fromJust $ lookup k m
+
+build :: [(String, Word16)] -> String -> [(String, Word16)]
 build m = map (parseNode (either (m !) id)) . lines
 
 part1 :: String -> Word16

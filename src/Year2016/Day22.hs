@@ -18,23 +18,20 @@ import Text.Megaparsec.Char.Lexer (decimal)
 
 
 type Coord = (Int, Int)
-data Node = Node { path :: String
-                 , coords :: Coord
-                 , size :: Int
+data Node = Node { coords :: Coord
                  , used :: Int
                  , avail :: Int
-                 , usePercent :: Int
                  } deriving (Eq, Show)
 
 parseNode :: Parser Node
 parseNode = do
   p <- some $ noneOf " "
   let [_,'x':x,'y':y] = splitOn "-" p
-  s <- space *> int <* char 'T'
+  _ <- space *> int <* char 'T'
   u <- space *> int <* char 'T'
   a <- space *> int <* char 'T'
-  up <- space *> int <* char '%'
-  return $ Node p (read x, read y) s u a up
+  _ <- space *> int <* char '%'
+  return $ Node (read x, read y) u a
     where int = fromInteger <$> decimal
 
 viablePairs :: [Node] -> [(Node, Node)]

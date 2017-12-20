@@ -14,6 +14,7 @@ dirFun '^' = _2 %~ (+1)
 dirFun 'v' = _2 %~ subtract 1
 dirFun '>' = _1 %~ (+1)
 dirFun '<' = _1 %~ subtract 1
+dirFun  _  = error "Invalid character"
 
 visitedSquares :: String -> HashSet (Int, Int)
 visitedSquares = HS.fromList . scanl (flip ($)) (0,0) . map dirFun

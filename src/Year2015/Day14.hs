@@ -6,7 +6,7 @@ module Year2015.Day14
 import Utils
 
 import Data.Ord
-import Data.HashMap.Strict (HashMap, (!))
+import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import qualified Data.IntMultiSet as MS
 import Data.List (sortBy, transpose)
@@ -30,14 +30,10 @@ getDistancesAtEachSecond input = M.fromList [ (name, take totalTime distStages)
     where int = fromInteger <$> decimal
           parser :: Parser (String, Int, Int, Int)
           parser = do
-            name <- some alphaNumChar
-            string " can fly "
-            speed <- int
-            string " km/s for "
-            flyTime <- int
-            string " seconds, but then must rest for "
-            restTime <- int
-            string " seconds."
+            name <- some alphaNumChar <* string " can fly "
+            speed <- int <* string " km/s for "
+            flyTime <- int <* string " seconds, but then must rest for "
+            restTime <- int <* string " seconds."
             return (name, speed, flyTime, restTime)
 
 maxesBy :: Ord b => (a -> b) -> [a] -> [a]

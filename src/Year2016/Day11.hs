@@ -9,7 +9,7 @@ import Control.Lens (_1, _2, both, ix, over)
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.List (delete, lookup, sort, tails)
+import Data.List (delete, lookup, sort)
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
 import Text.Megaparsec (choice, some)
@@ -18,11 +18,6 @@ import Text.Megaparsec.Char (noneOf, spaceChar, string)
 
 type Pair = (Int, Int) -- First number is floor of Microchip, second is floor of Generator
 type Floors = (Int, [Pair])
-
-combinations :: Int -> [a] -> [[a]]
-combinations 0 _  = [ [] ]
-combinations n xs = [ y:ys | y:xs' <- tails xs
-                    , ys <- combinations (n-1) xs']
 
 isDone :: Floors -> Bool
 isDone = all (==(3, 3)) . snd
@@ -33,10 +28,12 @@ heuristic = sum . map (3-) . concatMap (\(a, b) -> [a, b]) . snd
 applyToTwo :: (Pair -> Pair) -> [Pair] -> [[Pair]]
 applyToTwo f [x, y] = [[f x, f y]]
 applyToTwo f (x:xs) = (map (f x :) $ applyToEach f xs) ++ (map (x :) $ applyToTwo f xs)
+applyToTwo _ _ = error "Invalid state"
 
 applyToEach :: (Pair -> Pair) -> [Pair] -> [[Pair]]
 applyToEach f [x] = [[f x]]
 applyToEach f (x:xs) = (f x : xs) : (map (x :) $ applyToEach f xs)
+applyToEach _ _ = error "Invalid state"
 
 isValid :: [Pair] -> Bool
 isValid = go []

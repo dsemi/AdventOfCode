@@ -5,7 +5,7 @@ module Year2015.Day09
 
 import Utils
 
-import Data.HashMap.Strict (HashMap, (!))
+import Data.HashMap.Strict ((!))
 import qualified Data.HashMap.Strict as M
 import Data.List (permutations)
 import Data.Maybe

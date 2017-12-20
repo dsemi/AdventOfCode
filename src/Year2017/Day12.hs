@@ -19,10 +19,10 @@ parse input = M.fromList [ (read a, Q.fromList $ map read $ splitOn ", " b)
 
 bfs :: HashMap Int (Seq Int) -> Int -> HashSet Int
 bfs m = go m S.empty . Q.singleton
-    where go m visited Empty = visited
-          go m visited (a :<| queue)
-              | S.member a visited = go m visited queue
-              | otherwise = go m (S.insert a visited) $ queue >< m ! a
+    where go _ visited Empty = visited
+          go m' visited (a :<| queue)
+              | S.member a visited = go m' visited queue
+              | otherwise = go m' (S.insert a visited) $ queue >< m' ! a
 
 
 part1 :: String -> Int

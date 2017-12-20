@@ -15,7 +15,7 @@ import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.Ix (inRange, range)
 import Data.List (foldl')
-import Data.List.Split (chunksOf, splitOn)
+import Data.List.Split (chunksOf)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Word (Word8)
@@ -31,7 +31,7 @@ knotHash = B.pack . map (foldr1 xor) . chunksOf 16 . V.toList . hash 64
                               vals = V.backpermute v $ V.reverse idcs
 
 hashes :: String -> [ByteString]
-hashes key = map (knotHash . ((key ++ "-") ++) . show) [0..127]
+hashes key = map (knotHash . ((key ++ "-") ++) . show) ([0..127] :: [Int])
 
 part1 :: String -> Int
 part1 = sum . map (B.foldl' (\c x -> c + popCount x) 0) . hashes

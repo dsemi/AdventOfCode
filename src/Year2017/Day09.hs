@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Year2017.Day09
     ( part1
     , part2
@@ -12,7 +14,7 @@ data Stream = Stream { score :: Int
 
 process :: Stream -> String -> Stream
 process stream [] = stream
-process stream@(Stream score depth inGarbage garbageCount) (x:xs)
+process stream@(Stream {..}) (x:xs)
     | inGarbage =
         case x of
           '!' -> process stream $ tail xs
@@ -24,6 +26,7 @@ process stream@(Stream score depth inGarbage garbageCount) (x:xs)
     | x == '<' = process stream { inGarbage = True } xs
     | otherwise = process stream xs
 
+beginStream :: Stream
 beginStream = Stream 0 0 False 0
 
 part1 :: String -> Int

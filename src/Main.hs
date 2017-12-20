@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Main where
@@ -9,7 +10,6 @@ import Control.Monad
 import Data.List.Split
 import Data.String.Interpolate
 import Data.Text (Text)
-import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import System.Console.ANSI
 import System.Clock
@@ -33,7 +33,7 @@ parseArgs (y:args) = let probs = foldr pa [] args
               | otherwise                     = undefined -- again
 
 findInput :: Integer -> Integer -> IO Text
-findInput yr pday = T.strip <$> T.readFile [i|inputs/#{yr}/input#{pday}.txt|]
+findInput yr pday = T.readFile [i|inputs/#{yr}/input#{pday}.txt|]
 
 colorizeTime :: Double -> String
 colorizeTime n = printf "%s%.3f%s" startCode n endCode

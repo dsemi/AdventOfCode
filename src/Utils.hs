@@ -3,7 +3,7 @@
 module Utils where
 
 import Control.Concurrent (setNumCapabilities)
-import Control.Concurrent.Async (async, wait)
+import Control.Concurrent.Async (async)
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TMQueue
 import Control.Monad
@@ -37,7 +37,7 @@ multi isSolution nextToCheck start = do
   liftIO $ setNumCapabilities threads
   current <- liftIO $ atomically $ newTVar start
   solutions <- liftIO $ atomically $ newTMQueue
-  ps <- liftIO $ replicateM threads $ async $ process current solutions
+  _ <- liftIO $ replicateM threads $ async $ process current solutions
   sourceTMQueue solutions
     where bufferSize = 64
           threads = 4

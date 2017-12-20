@@ -51,8 +51,10 @@ parseInstructions = Simulator 0 0 0 . V.fromList
           parseJie = string "jie " >> Jie <$> letterChar <* string ", " <*> int
           parseJio = string "jio " >> Jio <$> letterChar <* string ", " <*> int
 
+reg :: Functor f => Char -> (Int -> f Int) -> Simulator -> f Simulator
 reg 'a' = a
 reg 'b' = b
+reg  _  = error "Invalid register"
 
 eval :: Instruction -> State Simulator (Int -> Int)
 eval (Hlf r) = do

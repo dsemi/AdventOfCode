@@ -33,8 +33,8 @@ singleReplacements k v src = map (intercalate k) parts
                                      , if i == 0
                                        then (p ++ v ++ head s) : tail s
                                        else p : s
-                                     )) (i, []) pieces
-                  | i <- [ 1 .. length pieces - 1 ]
+                                     )) (idx, []) pieces
+                  | idx <- [ 1 .. length pieces - 1 ]
                   ]
 
 uniqueSubs :: [(String, String)] -> String -> HashSet String

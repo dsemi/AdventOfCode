@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Year2016.Day04
     ( part1
     , part2
@@ -6,7 +8,7 @@ module Year2016.Day04
 import Utils
 
 import Control.Arrow ((&&&))
-import Data.List (group, intercalate, isInfixOf, sort, sortBy)
+import Data.List (group, intercalate, isInfixOf, sort)
 import Data.List.Split (splitOn)
 import Data.Maybe (mapMaybe)
 import Text.Megaparsec (parseMaybe, some)
@@ -23,12 +25,12 @@ getRooms = mapMaybe (parseMaybe parseRoom) . lines
     where parseRoom :: Parser Room
           parseRoom = do
             encryptedPlusSector <- some (noneOf "[") <* char '['
-            checksum <- some (noneOf "]") <* char ']'
+            checksum' <- some (noneOf "]") <* char ']'
             let ss = splitOn "-" encryptedPlusSector
-            return $ Room (intercalate "-" $ init ss) (read $ last ss) checksum
+            return $ Room (intercalate "-" $ init ss) (read $ last ss) checksum'
 
 roomIsValid :: Room -> Bool
-roomIsValid (Room en _ ch) = nCommonChars 5 (filter (/= '-') en) == ch
+roomIsValid (Room {..}) = nCommonChars 5 (filter (/= '-') encryptedName) == checksum
     where nCommonChars n = take n . map snd . sort . map (negate . length &&& head) . group . sort
 
 part1 :: String -> Int

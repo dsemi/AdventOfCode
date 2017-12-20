@@ -26,8 +26,8 @@ find3 = let parser = try threeChar <|> (anyChar >> parser)
     where threeChar = anyChar >>= char >>= char
 
 find :: (Monad m) => ByteString -> (ByteString -> ByteString) -> Int -> Source m Int
-find seed hash n = L.sourceList (map (id &&& hashNum) [0..]) .| go S.empty
-    where hashNum = (!! n) . tail . iterate hash . (seed <>) . B.pack . show
+find seed hash' n = L.sourceList (map (id &&& hashNum) [0..]) .| go S.empty
+    where hashNum = (!! n) . tail . iterate hash' . (seed <>) . B.pack . show
           go :: (Monad m) => Seq (Int, Char) -> Conduit (Int, ByteString) m Int
           go pot = do
             Just (i, hashed) <- await

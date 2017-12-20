@@ -22,19 +22,19 @@ heuristic :: (Int, Int) -> Int
 heuristic (x, y) = abs (x - fst target) + abs (y - snd target)
 
 neighbors :: ((Int, Int) -> Bool) -> (Int, Int) -> [(Int, Int)]
-neighbors isOpen (x, y) = filter isOpen $ filter isValid [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
-    where isValid (x, y) = x >=0 && y >= 0
+neighbors isOpen' (x, y) = filter isOpen' $ filter isValid [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
+    where isValid (x', y') = x' >= 0 && y' >= 0
 
 part1 :: Int -> Int
 part1 = fromJust . fmap length .
         (\x -> aStar (S.fromList . neighbors (isOpen x)) (\_ -> const 1) heuristic (==target) (1, 1))
 
 bfs :: (Eq a, Hashable a) => a -> Int -> (a -> [a]) -> HashSet a
-bfs start depth neighbors = search [(0, start)] S.empty
+bfs start depth neighbors' = search [(0, start)] S.empty
     where search [] visited = visited
           search ((d, node):ns) visited
               | d == depth || S.member node visited = search ns visited'
-              | otherwise = search (ns ++ map (d+1,) (neighbors node)) visited'
+              | otherwise = search (ns ++ map (d+1,) (neighbors' node)) visited'
               where visited' = S.insert node visited
 
 part2 :: Int -> Int

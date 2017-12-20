@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Year2017.Day07
     ( part1
     , part2
@@ -32,14 +34,14 @@ parsePrograms :: String -> [(Program, [String])]
 parsePrograms = map (fromJust . parseMaybe parser) . lines
     where parser :: Parser (Program, [String])
           parser = do
-            name <- many letterChar
-            weight <- string " (" *> decimal <* string ")"
+            name' <- many letterChar
+            weight' <- string " (" *> decimal <* string ")"
             children <- optional $ string " -> " *> many letterChar `sepBy` string ", "
-            return (Program name weight, fromMaybe [] children)
+            return (Program name' weight', fromMaybe [] children)
 
 findImbalance :: Tree Program -> Either Int (Int, Int)
-findImbalance (Node (Program name weight) []) = return (weight, 0)
-findImbalance (Node (Program name weight) children) = do
+findImbalance (Node (Program {..}) []) = return (weight, 0)
+findImbalance (Node (Program {..}) children) = do
   let weights = map findImbalance children
       totals@(expected:_) = map add weights
   if all (== expected) totals

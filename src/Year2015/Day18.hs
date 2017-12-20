@@ -4,9 +4,9 @@ module Year2015.Day18
     ) where
 
 import Data.Array.Unboxed
-import Data.Ix
 
 
+count :: Eq a => a -> [a] -> Int
 count x = length . filter (==x)
 
 adjacents :: ((Int, Int), (Int, Int)) -> (Int, Int) -> [(Int, Int)]
@@ -17,6 +17,8 @@ adjacents bds (i, j) = [ (x, y)
                        , inRange bds (x, y)
                        ]
 
+nextGrid :: (UArray (Int, Int) Char -> (Int, Int) -> String -> Char)
+         -> UArray (Int, Int) Char -> UArray (Int, Int) Char
 nextGrid f a = array bds [ (xy, f a xy adjStates)
                          | xy <- range bds
                          , let adjStates = map (a !) $ adjacents bds xy

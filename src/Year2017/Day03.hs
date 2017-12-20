@@ -25,6 +25,7 @@ data Dir = R | U | L | D deriving (Show)
 buildSpiralInts :: [Int]
 buildSpiralInts = go (M.singleton (0, 0) 1) (0, 0) spiralPath
     where go :: HashMap Coord Int -> Coord -> [Dir] -> [Int]
+          go _ _ [] = error "Invalid state"
           go m (x, y) (dir : rest) =
               let coord = case dir of
                         R -> (x+1, y)

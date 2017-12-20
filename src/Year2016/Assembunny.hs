@@ -2,7 +2,9 @@
 
 module Year2016.Assembunny
     ( Simulator(..)
-    , a, b, c, d, output, instructions
+    , regs
+    , output
+    , instructions
     , evaluate
     , evaluateUntilOutputLengthIs
     , parseInstructions
@@ -10,12 +12,13 @@ module Year2016.Assembunny
 
 import Utils
 
-import Control.Lens (ix, over, (^.), (%~), (.~), (+~), (-~))
-import Control.Lens.TH (makeLenses)
+import Control.Lens (at, ix, makeLenses, over, (^.), (?~), (%~), (+~))
 import Control.Monad (guard, when)
 import Control.Monad.ST (ST, runST)
 import Data.Function ((&))
-import Data.Maybe (fromJust, mapMaybe)
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
+import Data.Maybe (fromJust, fromMaybe)
 import Data.Sequence (Seq, empty, (|>))
 import Data.STRef (modifySTRef', newSTRef, readSTRef)
 import Data.Vector (Vector)
@@ -34,10 +37,7 @@ data Instruction = Cpy Value Value
                  | Out Value
                  | Jnz Value Value deriving (Eq, Show)
 
-data Simulator = Sim { _a :: Int
-                     , _b :: Int
-                     , _c :: Int
-                     , _d :: Int
+data Simulator = Sim { _regs :: HashMap Char Int
                      , _currentLine :: Int
                      , _output :: Seq Int
                      , _instructions :: Vector Instruction
@@ -46,7 +46,7 @@ data Simulator = Sim { _a :: Int
 makeLenses ''Simulator
 
 parseInstructions :: String -> Simulator
-parseInstructions = Sim 0 0 0 0 0 empty . V.fromList
+parseInstructions = Sim M.empty 0 empty . V.fromList
                     . map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parser Instruction
           parseInstruction = parseCpy
@@ -64,11 +64,6 @@ parseInstructions = Sim 0 0 0 0 0 empty . V.fromList
           parseTgl = string "tgl " >> Tgl <$> register
           parseOut = string "out " >> Out <$> value
           parseJnz = string "jnz " >> Jnz <$> value <* spaceChar <*> value
-
-reg 'a' = a
-reg 'b' = b
-reg 'c' = c
-reg 'd' = d
 
 either' :: (Char -> a) -> (Int -> a) -> Value -> a
 either' f g v = case v of
@@ -102,27 +97,28 @@ evalNextInstr :: Simulator -> Simulator
 evalNextInstr sim@(Sim{_currentLine=cl}) =
     let (sim', i) = eval $ V.unsafeDrop cl $ sim ^. instructions
     in sim' & currentLine +~ i
-    where value :: Value -> Int
-          value = either' (\r -> sim ^. reg r) id
+    where reg c = regs . at c
+          value :: Value -> Int
+          value = either' (\r -> fromMaybe 0 (sim ^. reg r)) id
           eval :: Vector Instruction -> (Simulator, Int)
           eval (multiplication -> Just (a, b, c, d)) =
-              ( sim & reg c +~ (value a * sim ^. reg b)
-                    & reg b .~ 0
-                    & reg d .~ 0
+              ( sim & reg c %~ (fmap (+ (value a * value (Reg b))))
+                    & reg b ?~ 0
+                    & reg d ?~ 0
               , 6 )
           eval (plusEquals -> Just (a, b)) =
-              ( sim & reg a +~ sim ^. (reg b)
-                    & reg b .~ 0
+              ( sim & reg a %~ (fmap (+ value (Reg b)))
+                    & reg b ?~ 0
               , 3 )
           eval instrs =
               case V.unsafeHead instrs of
-                (Cpy v v') -> ( sim & either' (\r -> reg r .~ value v) (const id) v'
+                (Cpy v v') -> ( sim & either' (\r -> reg r ?~ value v) (const id) v'
                               , 1 )
-                (Inc r)    -> ( sim & reg r +~ 1
+                (Inc r)    -> ( sim & reg r %~ (fmap succ)
                               , 1 )
-                (Dec r)    -> ( sim & reg r -~ 1
+                (Dec r)    -> ( sim & reg r %~ (fmap pred)
                               , 1 )
-                (Tgl r)    -> ( sim & over (instructions . ix (sim ^. reg r + cl)) tgl
+                (Tgl r)    -> ( sim & over (instructions . ix (value (Reg r) + cl)) tgl
                               , 1 )
                 (Out v)    -> ( sim & output %~ (|> value v)
                               , 1 )
@@ -133,6 +129,7 @@ evalNextInstr sim@(Sim{_currentLine=cl}) =
                     tgl (Dec r)    = Inc r
                     tgl (Jnz v v') = Cpy v v'
                     tgl (Tgl r)    = Inc r
+                    tgl _ = error "Invalid toggle"
 
 evaluateWhile :: (Simulator -> Bool) -> Simulator -> ST s Simulator
 evaluateWhile f s = do

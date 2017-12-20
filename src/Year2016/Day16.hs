@@ -5,9 +5,6 @@ module Year2016.Day16
 
 import Data.Bits
 import Data.Char
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Char8 as B
-import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
 
 

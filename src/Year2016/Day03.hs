@@ -6,7 +6,6 @@ module Year2016.Day03
 import Utils
 
 import Data.Maybe (mapMaybe)
-import Data.List.Split (chunksOf)
 import Text.Megaparsec (parseMaybe)
 import Text.Megaparsec.Char (space)
 import Text.Megaparsec.Char.Lexer (decimal)
@@ -33,6 +32,7 @@ part1 = numValidTriangles . parseTriangles
 byCols :: [Triangle] -> [Triangle]
 byCols ((a, b, c):(d, e, f):(g, h, i):rest) = (a, d, g) : (b, e, h) : (c, f, i) : byCols rest
 byCols [] = []
+byCols _ = error "Bad state"
 
 part2 :: String -> Int
 part2 = numValidTriangles . byCols . parseTriangles

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Year2016.Day05
@@ -7,8 +8,6 @@ module Year2016.Day05
 
 import Utils
 
-import Control.Monad (replicateM)
-import Control.Monad.State (State, evalState, state)
 import Crypto.Hash.MD5 (hash)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
@@ -19,13 +18,6 @@ import Data.Maybe
 import Data.Monoid ((<>))
 import qualified Data.HashMap.Strict as M
 
-
-findHashPrefixedByFiveZeros :: ByteString -> State Int ByteString
-findHashPrefixedByFiveZeros seed =
-    state $ \start -> head [ (checksum, num + 1) | num <- [start..]
-                           , let checksum = encode . hash . (seed <>) . B.pack $ show num
-                           , fiveZeros `B.isPrefixOf` checksum]
-        where fiveZeros = B.pack "00000"
 
 part1 :: ByteString -> IO String
 part1 seed = map (B.head . B.drop 5 . hashNum) <$> (multi f (+1) 0 $$ L.take 8)

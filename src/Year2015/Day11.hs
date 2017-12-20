@@ -22,8 +22,7 @@ isValid :: String -> Bool
 isValid s = not (any (`elem` s) "iol") && isSuccessive s
             && length (fromRight $ parse parser "" s) > 1
     where dupChars = do
-            a <- anyChar
-            char a
+            a <- anyChar >>= char
             return $ a : a : ""
           parser :: Parser [String]
           parser = try (many (searchAll dupChars)) <|> return []

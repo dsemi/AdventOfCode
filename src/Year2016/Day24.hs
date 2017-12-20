@@ -16,6 +16,7 @@ import Data.Ord (comparing)
 
 data Node = Wall | Space | Target Int deriving (Eq, Ord, Show)
 
+unwrap :: Node -> Int
 unwrap Wall       = -2
 unwrap Space      = -1
 unwrap (Target n) = n
@@ -35,6 +36,7 @@ parseGrid s = array bds . concatMap (\(y, row) -> zipWith (\x c -> ((x, y), pars
               | c == '#'            = Wall
               | c == '.'            = Space
               | c `elem` ['0'..'9'] = Target (digitToInt c)
+              | otherwise = error "Invalid node"
 
 findDistances :: Grid -> [((Int, Int), Node)] -> HashMap (Node, Node) Int
 findDistances grid ns = M.fromList $ findDist <$> ns <*> ns
@@ -54,7 +56,6 @@ allPathsAndDistanceMap grid = (allPaths, findDistances grid pts)
     where pts = sortBy (comparing snd) . filter ((>=0) . unwrap . snd) $ assocs grid
           (start:targets) = map snd pts
           allPaths = map (start :) $ permutations targets
-          distMap = findDistances grid pts
 
 part1 :: String -> Int
 part1 s = minimum $ map (\xs -> sum . map (distMap M.!) . zip xs $ tail xs) allPaths

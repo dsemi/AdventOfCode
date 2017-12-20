@@ -17,15 +17,13 @@ import Text.Megaparsec.Char.Lexer (decimal)
 
 data Action = Off | On | Toggle deriving (Show)
 
-data Command = Command { cmd :: Action
-                       , start :: (Int, Int)
-                       , end :: (Int, Int)
-                       } deriving (Show)
+data Command = Command Action (Int, Int) (Int, Int) deriving (Show)
 
 action :: String -> Action
 action "turn off" = Off
 action "turn on"  = On
 action "toggle"   = Toggle
+action _ = error "Invalid string"
 
 command :: String -> Command
 command = fromJust . parseMaybe parser

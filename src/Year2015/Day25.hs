@@ -10,10 +10,11 @@ import Utils
 import Math.NumberTheory.Moduli.Class (Mod, getVal, (^%))
 
 
+parseCoord :: String -> (Int, Int)
 parseCoord input = let (Right [r, c]) = findAllInts input
                    in (r, c)
 
-makeCode :: Integer -> Int
+makeCode :: Int -> Int
 makeCode n = fromInteger . getVal $ (252533 :: Mod 33554393) ^% n + 20151125
 
 part1 :: String -> Int

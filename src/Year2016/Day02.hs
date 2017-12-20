@@ -16,6 +16,7 @@ dirFunc 'U' = over _1 pred
 dirFunc 'R' = over _2 succ
 dirFunc 'D' = over _1 succ
 dirFunc 'L' = over _2 pred
+dirFunc  _  = error "Invalid direction"
 
 pad :: [String] -> Pad
 pad s = let r = length s
@@ -23,14 +24,14 @@ pad s = let r = length s
         in listArray ((1, 1), (r, c)) $ concat s
 
 findCode :: Char -> Pad -> String -> String
-findCode start pad = go start . lines
+findCode start pad' = go start . lines
     where nextKey key dir
-              | inRange (bounds pad) coord
+              | inRange (bounds pad') coord
                 && val /= ' ' = val
               | otherwise     = key
               where coord = dirFunc dir $ findCoord key
-                    val   = pad ! coord
-          findCoord c = fst . head . filter ((==c) . snd) $ assocs pad
+                    val   = pad' ! coord
+          findCoord c = fst . head . filter ((==c) . snd) $ assocs pad'
           go _ [] = []
           go s (x:xs) = c : go c xs
               where c = foldl nextKey s x

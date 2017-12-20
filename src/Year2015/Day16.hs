@@ -5,6 +5,7 @@ module Year2015.Day16
 
 import Utils
 
+import Control.Monad
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.Maybe
@@ -31,13 +32,13 @@ parseLines = map (M.fromList . fromJust . parseMaybe parser) . lines
     where int = fromInteger <$> decimal
           parser :: Parser [(String, Int)]
           parser = do
-            string "Sue " >> some digitChar >> string ": "
+            void $ string "Sue " >> some digitChar >> string ": "
             let counts = (,) <$> some lowerChar <* string ": " <*> int
             counts `sepBy1` string ", "
 
 -- Sue 480: goldfish: 1, children: 9, vizslas: 3
 couldMatch :: HashMap String (Int -> Bool) -> HashMap String Int -> Bool
-couldMatch tape = all (uncurry (tape !)) . M.toList
+couldMatch tape' = all (uncurry (tape' !)) . M.toList
 
 solve :: HashMap String (Int -> Bool) -> String -> Int
 solve tape' = fst . head . filter (couldMatch tape' . snd) . zip [1..] . parseLines

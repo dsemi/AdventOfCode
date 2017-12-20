@@ -10,6 +10,7 @@ import Data.Maybe
 floorDiff :: Char -> Int
 floorDiff '(' =  1
 floorDiff ')' = -1
+floorDiff  _  = error "Invalid character"
 
 part1 :: String -> Int
 part1 = sum . map floorDiff

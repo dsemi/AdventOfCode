@@ -21,6 +21,7 @@ dirFun "se" = over _1 succ . over _2 pred
 dirFun "s"  = over _3 succ . over _2 pred
 dirFun "sw" = over _3 succ . over _1 pred
 dirFun "nw" = over _2 succ . over _1 pred
+dirFun _ = error "Invalid direction"
 
 path :: [Text] -> [Coord]
 path = scanl (flip ($)) (0, 0, 0) . map dirFun

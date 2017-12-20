@@ -21,9 +21,7 @@ parseAbba :: Parser String
 parseAbba = do
   a <- anyChar
   b <- noneOf [a]
-  char b
-  char a
-  return [a, b, b, a]
+  char b >> char a >> return [a, b, b, a]
 
 part1 :: String -> Int
 part1 = length . filter (valid . splitSupernetsAndHypernets) . lines
@@ -34,8 +32,7 @@ expectedBab :: Parser String
 expectedBab = do
   a <- anyChar
   b <- noneOf [a]
-  char a
-  return [b, a, b]
+  char a >> return [b, a, b]
 
 part2 :: String -> Int
 part2 = length . filter (valid . splitSupernetsAndHypernets) . lines

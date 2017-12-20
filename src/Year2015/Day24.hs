@@ -11,6 +11,7 @@ combinations  _ 0 = [[]]
 combinations xs n = [ y:ys | y:xs' <- tails xs
                     , ys <- combinations xs' $ n-1 ]
 
+day24 :: [Int] -> Int -> Int
 day24 wts nGroups =
     minimum $ head [ quantumEntanglements
                    | cs <- map (combinations wts) [1..]

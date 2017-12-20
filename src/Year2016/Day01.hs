@@ -16,6 +16,7 @@ turn 'R' West  = North
 turn 'R' dir   = succ dir
 turn 'L' North = West
 turn 'L' dir   = pred dir
+turn  _ _ = error "Invalid direction"
 
 move :: Direction -> Coord -> Coord
 move North = over _2 succ
@@ -29,6 +30,7 @@ path = go North (0, 0) . split ", "
           go dir pos ((d:n):xs) = pathPart ++ go dir' (last pathPart) xs
               where dir' = turn d dir
                     pathPart = take (read n) . tail $ iterate (move dir') pos
+          go _ _ _ = error "Bad state"
 
 manhattanDist :: Coord -> Int
 manhattanDist (a, b) = abs a + abs b
@@ -38,7 +40,8 @@ part1 = manhattanDist . last . path
 
 findDup :: [Coord] -> Coord
 findDup = go empty
-    where go s (x:xs)
+    where go _ [] = error "Bad state"
+          go s (x:xs)
               | member x s = x
               | otherwise  = go (insert x s) xs
 

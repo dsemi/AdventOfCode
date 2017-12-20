@@ -5,7 +5,6 @@ module Year2015.Day15
 
 import Utils
 
-import Control.Applicative
 import Data.List (transpose)
 
 

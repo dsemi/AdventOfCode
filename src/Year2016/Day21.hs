@@ -37,6 +37,7 @@ parser = parseSwap <|> parseSwapC <|> parseRotateR <|> parseRotateL
           parseReverse = Reverse <$> (string "reverse positions " *> int) <*> (string " through " *> int)
           parseMove = Move <$> (string "move position " *> int) <*> (string " to position " *> int)
 
+rotateByCharIndex :: Int -> Int
 rotateByCharIndex i = if i >= 4 then i + 2 else i + 1
 
 eval :: Seq Char -> Action -> Seq Char
@@ -50,10 +51,10 @@ eval s (Rotate R n) = eval s $ Rotate L (length s - n)
 eval s (RotateByChar c) = eval s $ Rotate R i
     where Just i = rotateByCharIndex <$> S.elemIndexL c s
 eval s (RotateByCharInv c) = go s 0
-    where go s n
-              | i == n = s
-              | otherwise = go (eval s (Rotate L 1)) (n+1)
-              where Just i = rotateByCharIndex <$> S.elemIndexL c s
+    where go s' n
+              | i == n = s'
+              | otherwise = go (eval s' (Rotate L 1)) (n+1)
+              where Just i = rotateByCharIndex <$> S.elemIndexL c s'
 eval s (Reverse x y) = a >< S.reverse b >< c
     where (a, (b, c)) = over _2 (S.splitAt (y-x+1)) $ S.splitAt x s
 eval s (Move a b) = S.insertAt b (s `S.index` a) (S.deleteAt a s)

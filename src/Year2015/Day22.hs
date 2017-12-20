@@ -8,9 +8,6 @@ module Year2015.Day22
 import Utils
 
 import Control.Lens
-import Control.Lens.TH
-import Data.List (minimumBy)
-import Data.Ord
 import Text.Megaparsec (parseMaybe)
 import Text.Megaparsec.Char (space, string)
 import Text.Megaparsec.Char.Lexer (decimal)
@@ -41,35 +38,47 @@ makeLenses ''GameState
 
 data EndGame = PlayerWon Int | PlayerLost Int
 
+won :: EndGame -> Bool
 won (PlayerWon _) = True
 won _             = False
 
-int (PlayerWon  i) = i
-int (PlayerLost i) = i
+val :: EndGame -> Int
+val (PlayerWon  i) = i
+val (PlayerLost i) = i
 
-ints = map int
+vals :: [EndGame] -> [Int]
+vals = map val
 
+magicMissile :: Spell
 magicMissile = SingleSpell M 53 $ bHealth -~ 4
 
+drain :: Spell
 drain = SingleSpell D 73 f
     where f = (pHealth +~ 2) . (bHealth -~ 2)
 
+shield :: Spell
 shield = EffectSpell S 113 es
     where es = (S, [pArmor +~ 7, id, id, id, id, pArmor -~ 7])
 
+poison :: Spell
 poison = EffectSpell P 173 es
     where es = (P, replicate 6 $ bHealth -~ 3)
 
+recharge :: Spell
 recharge = EffectSpell R 229 es
     where es = (R, replicate 5 $ pMana +~ 101)
 
+spells :: [Spell]
 spells = [ magicMissile, drain, shield, poison, recharge ]
 
+gameOver :: GameState -> Bool
 gameOver state = state ^. bHealth <= 0 || state ^. pHealth <= 0
 
+applyEffects :: GameState -> GameState
 applyEffects state = foldr ($) (effects %~ filter (not . null . snd) . map (_2 %~ tail) $ state) es
     where es = map (head . snd) $ _effects state
 
+turn :: Bool -> GameState -> Int -> Bool -> [EndGame]
 turn hard state m pt
     | gameOver state' = if _bHealth state' <= 0
                         then [PlayerWon m]
@@ -111,7 +120,7 @@ parseBoss input = let (Just (h, d)) = parseMaybe parser input
 
 
 part1 :: String -> Int
-part1 input = minimum . ints . filter won $ turn False (parseBoss input) 0 True
+part1 input = minimum . vals . filter won $ turn False (parseBoss input) 0 True
 
 part2 :: String -> Int
-part2 input = minimum . ints . filter won $ turn True (parseBoss input) 0 True
+part2 input = minimum . vals . filter won $ turn True (parseBoss input) 0 True

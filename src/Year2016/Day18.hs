@@ -3,7 +3,7 @@ module Year2016.Day18
     , part2
     ) where
 
-import Data.Vector.Unboxed (Vector, (!))
+import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
 
 

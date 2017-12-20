@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Year2017.Day08
     ( part1
     , part2
@@ -11,15 +13,19 @@ data Instr = Instr { cmd :: HashMap String Int -> HashMap String Int
                    , cond :: HashMap String Int -> Bool
                    }
 
+op :: Num a => [Char] -> a -> a -> a
 op "inc" = (+)
 op "dec" = subtract
+op _ = error "Invalid op"
 
+comp :: Ord a => [Char] -> a -> a -> Bool
 comp "!=" = (/=)
 comp "==" = (==)
 comp ">=" = (>=)
 comp ">"  = (>)
 comp "<=" = (<=)
 comp "<"  = (<)
+comp _ = error "Invalid comp"
 
 parseInstrs :: String -> [Instr]
 parseInstrs = map parseInstr . lines
@@ -31,7 +37,7 @@ parseInstrs = map parseInstr . lines
                        }
 
 eval :: HashMap String Int -> Instr -> HashMap String Int
-eval m (Instr cmd cond) = if cond m then cmd m else m
+eval m (Instr {..}) = if cond m then cmd m else m
 
 part1 :: String -> Int
 part1 = maximum . foldl eval M.empty . parseInstrs

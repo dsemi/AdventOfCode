@@ -18,9 +18,12 @@ import Text.Megaparsec.Char.Lexer (decimal)
 
 type Coord = (Int, Int)
 
+int :: Parser Int
 int = fromInteger <$> decimal
 
+w :: Int
 w = 50
+h :: Int
 h = 6
 
 parseRect :: Parser (HashSet Coord -> HashSet Coord)
