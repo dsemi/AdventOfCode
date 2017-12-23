@@ -50,6 +50,7 @@ dependencies:
   - conduit-combinators
   - interpolate
   - transformers
+  - hashtables
 executables:
   Advent:
     main: Main.hs

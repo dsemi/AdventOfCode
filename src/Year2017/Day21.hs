@@ -11,6 +11,7 @@ import qualified Data.HashMap.Strict as M
 import Data.List (transpose)
 import Data.List.Split
 
+
 type ExpansionMap = HashMap String String
 type Image = UArray (Int, Int) Char
 
