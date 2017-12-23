@@ -62,9 +62,12 @@ step (Socket {..}) sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
             send (value v)
             pure $ line +~ 1 $ sim
           eval (Set r v) = pure $ line +~ 1 $ (regs . at r) ?~ value v $ sim
-          eval (Add r v) = pure $ line +~ 1 $ (regs . at r) %~ (fmap (+value v)) $ sim
-          eval (Mul r v) = pure $ line +~ 1 $ (regs . at r) %~ (fmap (*value v)) $ sim
-          eval (Mod r v) = pure $ line +~ 1 $ (regs . at r) %~ (fmap (`mod` value v)) $ sim
+          eval (Add r v) = pure $ line +~ 1
+                           $ (regs . at r) %~ (pure . (+value v) . fromMaybe 0) $ sim
+          eval (Mul r v) = pure $ line +~ 1
+                           $ (regs . at r) %~ (pure . (*value v) . fromMaybe 0) $ sim
+          eval (Mod r v) = pure $ line +~ 1
+                           $ (regs . at r) %~ (pure . (`mod` value v) . fromMaybe 0) $ sim
           eval (Rcv r) = do
             v <- recv $ value $ Left r
             pure $ line +~ 1 $ (regs . at r) ?~ v $ sim

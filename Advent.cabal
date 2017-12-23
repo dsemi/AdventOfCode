@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f53110ff88ff36e7773dd8dcddf7dad7952c74f23d9081407d2466c9c0587cf4
+-- hash: b0c04947828fa60cf819ad21aeada00f044ca8de7349da97c6efb390618349d7
 
 name:                Advent
 version:             0.1.0.0
@@ -100,6 +100,7 @@ executable Advent
     Year2017.Day20
     Year2017.Day21
     Year2017.Day22
+    Year2017.Day23
     Paths_Advent
   other-extensions: TemplateHaskell
   build-depends:
@@ -146,8 +147,7 @@ executable Advent
     text,
     transformers,
     unordered-containers,
-    vector,
-    vector-th-unbox
+    vector
   ghc-options: -O2 -threaded -Wall
   hs-source-dirs:
     src
