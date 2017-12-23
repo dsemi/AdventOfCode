@@ -5,6 +5,7 @@ module Year2017.Day18
     , part2
     ) where
 
+import Data.Array
 import Control.Concurrent (forkIO, killThread, newChan, readChan, writeChan)
 import Control.Exception
 import Control.Monad
@@ -12,10 +13,8 @@ import Control.Monad.State
 import Control.Lens
 import Data.Conduit
 import Data.Either.Utils (maybeToEither)
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
-import Data.Maybe
 import Data.IORef
+import Data.Maybe
 import Data.String.Utils (maybeRead)
 import Data.Vector (Vector, fromList)
 
@@ -30,7 +29,7 @@ data Instr = Snd Value
            | Rcv Register
            | Jgz Value Value
 
-data Sim = Sim { _regs :: HashMap Register Int
+data Sim = Sim { _regs :: Array Register Int
                , _line :: Int
                , _instrs :: Vector Instr
                }
@@ -41,7 +40,7 @@ data Socket m = Socket { send :: Int -> m ()
                        }
 
 parseInstrs :: String -> Sim
-parseInstrs = Sim M.empty 0 . fromList . map parseInstr . lines
+parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList . map parseInstr . lines
     where parseInstr instr =
               case words instr of
                 ["snd",             parse -> v] -> Snd v
@@ -57,20 +56,17 @@ parseInstrs = Sim M.empty 0 . fromList . map parseInstr . lines
 
 step :: (Monad m) => Socket m -> Sim -> m (Maybe Sim)
 step (Socket {..}) sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
-    where value = either (\v -> fromMaybe 0 (sim ^. (regs . at v))) id
+    where value = either (\v -> sim ^?! (regs . ix v)) id
           eval (Snd v) = do
             send (value v)
             pure $ line +~ 1 $ sim
-          eval (Set r v) = pure $ line +~ 1 $ (regs . at r) ?~ value v $ sim
-          eval (Add r v) = pure $ line +~ 1
-                           $ (regs . at r) %~ (pure . (+value v) . fromMaybe 0) $ sim
-          eval (Mul r v) = pure $ line +~ 1
-                           $ (regs . at r) %~ (pure . (*value v) . fromMaybe 0) $ sim
-          eval (Mod r v) = pure $ line +~ 1
-                           $ (regs . at r) %~ (pure . (`mod` value v) . fromMaybe 0) $ sim
+          eval (Set r v) = pure $ line +~ 1 $ (regs . ix r) .~ value v $ sim
+          eval (Add r v) = pure $ line +~ 1 $ (regs . ix r) %~ (+value v) $ sim
+          eval (Mul r v) = pure $ line +~ 1 $ (regs . ix r) %~ (*value v) $ sim
+          eval (Mod r v) = pure $ line +~ 1 $ (regs . ix r) %~ (`mod` value v) $ sim
           eval (Rcv r) = do
             v <- recv $ value $ Left r
-            pure $ line +~ 1 $ (regs . at r) ?~ v $ sim
+            pure $ line +~ 1 $ (regs . ix r) .~ v $ sim
           eval (Jgz a b) = pure $ line +~ (if value a > 0 then value b else 1) $ sim
 
 run :: (Monad m) => Socket m -> Sim -> m ()
@@ -93,7 +89,7 @@ part2 input = do
   chan0 <- newChan
   chan1 <- newChan
   let sim0 = parseInstrs input
-      sim1 = (regs . at 'p') ?~ 1 $ parseInstrs input
+      sim1 = (regs . ix 'p') .~ 1 $ parseInstrs input
       socket0 = Socket { send = writeChan chan1
                        , recv = const $ readChan chan0
                        }

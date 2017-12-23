@@ -6,10 +6,9 @@ module Year2016.Day12
 import Year2016.Assembunny
 
 import Control.Lens
-import Data.Maybe
 
 part1 :: String -> Int
-part1 = fromJust . view (regs . at 'a') . evaluate . parseInstructions
+part1 = (^?! (regs . ix 'a')) . evaluate . parseInstructions
 
 part2 :: String -> Int
-part2 = fromJust . view (regs . at 'a') . evaluate . ((regs . at 'c') ?~ 1) . parseInstructions
+part2 = (^?! (regs . ix 'a')) . evaluate . ((regs . ix 'c') .~ 1) . parseInstructions

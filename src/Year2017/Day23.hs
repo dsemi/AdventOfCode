@@ -5,12 +5,10 @@ module Year2017.Day23
     , part2
     ) where
 
+import Data.Array
 import Control.Lens
 import Control.Monad.State
 import Data.Either.Utils
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
-import Data.Maybe
 import Data.String.Utils
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -24,7 +22,7 @@ data Instr = Set Register Value
            | Mul Register Value
            | Jnz Value Value deriving (Show)
 
-data Sim = Sim { _regs :: HashMap Register Int
+data Sim = Sim { _regs :: Array Register Int
                , _line :: Int
                , _instrs :: Vector Instr
                } deriving (Show)
@@ -34,7 +32,7 @@ data Tracker m = Tracker { mul :: m ()
                          }
 
 parseInstrs :: String -> Sim
-parseInstrs = Sim M.empty 0 . V.fromList . map parseLine . lines
+parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLine . lines
     where parseLine ln =
               case words ln of
                 ["set",  head -> r, parse -> v] -> Set r v
@@ -47,13 +45,13 @@ parseInstrs = Sim M.empty 0 . V.fromList . map parseLine . lines
 
 step :: (Monad m) => Tracker m -> Sim -> m (Maybe Sim)
 step tracker sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
-    where value = either (\v -> fromMaybe 0 (sim ^. (regs . at v))) id
-          eval (Set r v) = pure $ line +~ 1 $ (regs . at r) ?~ value v $ sim
-          eval (Sub r v) = pure $ line +~ 1
-                           $ (regs . at r) %~ (pure . (subtract $ value v) . fromMaybe 0) $ sim
+    where value :: Value -> Int
+          value = either (\v -> sim ^?! (regs . ix v)) id
+          eval (Set r v) = pure $ line +~ 1 $ (regs . ix r) .~ value v $ sim
+          eval (Sub r v) = pure $ line +~ 1 $ (regs . ix r) %~ (subtract $ value v) $ sim
           eval (Mul r v) = do
             mul tracker
-            pure $ line +~ 1 $ (regs . at r) %~ (pure . (*value v) . fromMaybe 0) $ sim
+            pure $ line +~ 1 $ (regs . ix r) %~ (*value v) $ sim
           eval (Jnz a b) = pure $ line +~ (if value a /= 0 then value b else 1) $ sim
 
 run :: (Monad m) => Tracker m -> (Tracker m -> Sim -> m (Maybe Sim)) -> Sim -> m Sim
@@ -78,48 +76,37 @@ data PrimalityCheck = PCheck { toCheck :: Register
 primalityCheck :: Vector Instr -> Maybe PrimalityCheck
 primalityCheck ins = do
   guard $ V.length ins >= 14
-  Set e (Right 2) <- pure $ V.unsafeIndex ins 0
-  Set g (Left d) <- pure $ V.unsafeIndex ins 1
-  Mul g' (Left e') <- pure $ V.unsafeIndex ins 2
-  guard $ g == g' && e == e'
-  Sub g'' (Left b) <- pure $ V.unsafeIndex ins 3
-  guard $ g == g''
-  Jnz (Left g''') (Right 2) <- pure $ V.unsafeIndex ins 4
-  guard $ g == g'''
-  Set f (Right 0) <- pure $ V.unsafeIndex ins 5
-  Sub e'' (Right (-1)) <- pure $ V.unsafeIndex ins 6
-  guard $ e == e''
-  Set g'''' (Left e''') <- pure $ V.unsafeIndex ins 7
-  guard $ g == g'''' && e == e'''
-  Sub g''''' (Left b') <- pure $ V.unsafeIndex ins 8
-  guard $ g == g''''' && b == b'
-  Jnz (Left g'''''') (Right (-8)) <- pure $ V.unsafeIndex ins 9
-  guard $ g == g''''''
-  Sub d' (Right (-1)) <- pure $ V.unsafeIndex ins 10
-  guard $ d == d'
-  Set g''''''' (Left d'') <- pure $ V.unsafeIndex ins 11
-  guard $ g == g''''''' && d == d''
-  Sub g'''''''' (Left b'') <- pure $ V.unsafeIndex ins 12
-  guard $ g == g'''''''' && b == b''
-  Jnz (Left g''''''''') (Right (-13)) <- pure $ V.unsafeIndex ins 13
-  guard $ g == g'''''''''
+  Set                     e             (Right 2) <- pure $ V.unsafeIndex ins 0
+  Set                     g              (Left d) <- pure $ V.unsafeIndex ins 1
+  Mul      ((== g) -> True) ((== Left e) -> True) <- pure $ V.unsafeIndex ins 2
+  Sub      ((== g) -> True)              (Left b) <- pure $ V.unsafeIndex ins 3
+  Jnz ((== Left g) -> True)             (Right 2) <- pure $ V.unsafeIndex ins 4
+  Set                     f             (Right 0) <- pure $ V.unsafeIndex ins 5
+  Sub      ((== e) -> True)          (Right (-1)) <- pure $ V.unsafeIndex ins 6
+  Set      ((== g) -> True) ((== Left e) -> True) <- pure $ V.unsafeIndex ins 7
+  Sub      ((== g) -> True) ((== Left b) -> True) <- pure $ V.unsafeIndex ins 8
+  Jnz ((== Left g) -> True)          (Right (-8)) <- pure $ V.unsafeIndex ins 9
+  Sub      ((== d) -> True)          (Right (-1)) <- pure $ V.unsafeIndex ins 10
+  Set      ((== g) -> True) ((== Left d) -> True) <- pure $ V.unsafeIndex ins 11
+  Sub      ((== g) -> True) ((== Left b) -> True) <- pure $ V.unsafeIndex ins 12
+  Jnz ((== Left g) -> True)         (Right (-13)) <- pure $ V.unsafeIndex ins 13
   pure $ PCheck b e d g f
 
 step' :: (Monad m) => Tracker m -> Sim -> m (Maybe Sim)
 step' tracker sim =
     case (primalityCheck $ V.drop (sim ^. line) $ sim ^. instrs) of
-      Just (PCheck {..}) -> do
-        let b = fromMaybe 0 (sim ^. (regs . at toCheck))
-            sim' = line +~ 14
-                   $ (regs . at primeCheck) ?~ (if isPrime (fromIntegral b) then 1 else 0)
-                   $ (regs . at workspace) ?~ 0
-                   $ (regs . at outerCounter) ?~ b
-                   $ (regs . at innerCounter) ?~ b
-                   $ sim
-        pure $ Just sim'
+      Just (PCheck {..}) ->
+          let b = sim ^?! (regs . ix toCheck)
+              sim' = line +~ 14
+                     $ (regs . ix primeCheck) .~ (if isPrime (fromIntegral b) then 1 else 0)
+                     $ (regs . ix workspace) .~ 0
+                     $ (regs . ix outerCounter) .~ b
+                     $ (regs . ix innerCounter) .~ b
+                     $ sim
+          in pure $ Just sim'
       Nothing -> step tracker sim
 
 part2 :: String -> Int
-part2 = fromJust . view (regs . at 'h') . runIdentity
-        . run tracker step' . ((regs . at 'a') ?~ 1) . parseInstrs
+part2 = (^?! (regs . ix 'h')) . runIdentity
+        . run tracker step' . ((regs . ix 'a') .~ 1) . parseInstrs
     where tracker = Tracker { mul = pure () }

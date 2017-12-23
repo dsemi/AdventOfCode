@@ -12,13 +12,12 @@ module Year2016.Assembunny
 
 import Utils
 
-import Control.Lens (at, ix, makeLenses, over, (^.), (?~), (%~), (+~))
+import Data.Array
+import Control.Lens hiding ((|>))
 import Control.Monad (guard, when)
 import Control.Monad.ST (ST, runST)
 import Data.Function ((&))
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust)
 import Data.Sequence (Seq, empty, (|>))
 import Data.STRef (modifySTRef', newSTRef, readSTRef)
 import Data.Vector (Vector)
@@ -28,7 +27,8 @@ import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
-data Value = Reg Char | Const Int deriving (Eq, Show)
+type Register = Char
+type Value = Either Register Int
 
 data Instruction = Cpy Value Value
                  | Inc Char
@@ -37,7 +37,7 @@ data Instruction = Cpy Value Value
                  | Out Value
                  | Jnz Value Value deriving (Eq, Show)
 
-data Simulator = Sim { _regs :: HashMap Char Int
+data Simulator = Sim { _regs :: Array Char Int
                      , _currentLine :: Int
                      , _output :: Seq Int
                      , _instructions :: Vector Instruction
@@ -46,7 +46,7 @@ data Simulator = Sim { _regs :: HashMap Char Int
 makeLenses ''Simulator
 
 parseInstructions :: String -> Simulator
-parseInstructions = Sim M.empty 0 empty . V.fromList
+parseInstructions = Sim (listArray ('a', 'd') $ repeat 0) 0 empty . V.fromList
                     . map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parser Instruction
           parseInstruction = parseCpy
@@ -57,7 +57,7 @@ parseInstructions = Sim M.empty 0 empty . V.fromList
                              <|> parseJnz
           int = signed space $ fromInteger <$> decimal
           register = oneOf "abcd"
-          value = either Reg Const <$> eitherP register int
+          value = eitherP register int
           parseCpy = string "cpy " >> Cpy <$> value <* spaceChar <*> value
           parseInc = string "inc " >> Inc <$> register
           parseDec = string "dec " >> Dec <$> register
@@ -65,22 +65,17 @@ parseInstructions = Sim M.empty 0 empty . V.fromList
           parseOut = string "out " >> Out <$> value
           parseJnz = string "jnz " >> Jnz <$> value <* spaceChar <*> value
 
-either' :: (Char -> a) -> (Int -> a) -> Value -> a
-either' f g v = case v of
-                  (Reg   c) -> f c
-                  (Const i) -> g i
-
 multiplication :: Vector Instruction -> Maybe (Value, Char, Char, Char)
 multiplication instrs = do
   guard $ V.length instrs >= 6
-  Cpy a (Reg d) <- return $ V.unsafeIndex instrs 0
+  Cpy a (Left d) <- return $ V.unsafeIndex instrs 0
   Inc c <- return $ V.unsafeIndex instrs 1
   Dec d' <- return $ V.unsafeIndex instrs 2
   guard $ d == d'
-  Jnz (Reg d'') (Const (-2)) <- return $ V.unsafeIndex instrs 3
+  Jnz (Left d'') (Right (-2)) <- return $ V.unsafeIndex instrs 3
   guard $ d' == d''
   Dec b <- return $ V.unsafeIndex instrs 4
-  Jnz (Reg b') (Const (-5)) <- return $ V.unsafeIndex instrs 5
+  Jnz (Left b') (Right (-5)) <- return $ V.unsafeIndex instrs 5
   guard $ b == b'
   Just (a, b, c, d)
 
@@ -89,7 +84,7 @@ plusEquals instrs = do
   guard $ V.length instrs >= 3
   Inc a <- return $ V.unsafeIndex instrs 0
   Dec b <- return $ V.unsafeIndex instrs 1
-  Jnz (Reg b') (Const (-2)) <- return $ V.unsafeIndex instrs 2
+  Jnz (Left b') (Right (-2)) <- return $ V.unsafeIndex instrs 2
   guard $ b == b'
   Just (a, b)
 
@@ -97,28 +92,28 @@ evalNextInstr :: Simulator -> Simulator
 evalNextInstr sim@(Sim{_currentLine=cl}) =
     let (sim', i) = eval $ V.unsafeDrop cl $ sim ^. instructions
     in sim' & currentLine +~ i
-    where reg c = regs . at c
+    where reg c = regs . ix c
           value :: Value -> Int
-          value = either' (\r -> fromMaybe 0 (sim ^. reg r)) id
+          value = either (\r -> sim ^?! reg r) id
           eval :: Vector Instruction -> (Simulator, Int)
           eval (multiplication -> Just (a, b, c, d)) =
-              ( sim & reg c %~ (fmap (+ (value a * value (Reg b))))
-                    & reg b ?~ 0
-                    & reg d ?~ 0
+              ( sim & reg c %~ (+ (value a * value (Left b)))
+                    & reg b .~ 0
+                    & reg d .~ 0
               , 6 )
           eval (plusEquals -> Just (a, b)) =
-              ( sim & reg a %~ (fmap (+ value (Reg b)))
-                    & reg b ?~ 0
+              ( sim & reg a %~ (+ value (Left b))
+                    & reg b .~ 0
               , 3 )
           eval instrs =
               case V.unsafeHead instrs of
-                (Cpy v v') -> ( sim & either' (\r -> reg r ?~ value v) (const id) v'
+                (Cpy v v') -> ( sim & either (\r -> reg r .~ value v) (const id) v'
                               , 1 )
-                (Inc r)    -> ( sim & reg r %~ (fmap succ)
+                (Inc r)    -> ( sim & reg r %~ succ
                               , 1 )
-                (Dec r)    -> ( sim & reg r %~ (fmap pred)
+                (Dec r)    -> ( sim & reg r %~ pred
                               , 1 )
-                (Tgl r)    -> ( sim & over (instructions . ix (value (Reg r) + cl)) tgl
+                (Tgl r)    -> ( sim & over (instructions . ix (value (Left r) + cl)) tgl
                               , 1 )
                 (Out v)    -> ( sim & output %~ (|> value v)
                               , 1 )

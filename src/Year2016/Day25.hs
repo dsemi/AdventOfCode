@@ -15,7 +15,7 @@ import Data.Maybe (fromJust)
 
 part1 :: String -> Int
 part1 s = fromJust . findIndex outputMatches
-          $ map (\x -> evaluateUntilOutputLengthIs 10 $ (regs . at 'a') ?~ x $ sim) [0..]
+          $ map (\x -> evaluateUntilOutputLengthIs 10 $ (regs . ix 'a') .~ x $ sim) [0..]
     where sim = parseInstructions s
           outputMatches = and . zipWith (==) (cycle [0, 1]) . toList . view output
 
