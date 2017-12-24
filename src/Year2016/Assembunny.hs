@@ -14,12 +14,10 @@ import Utils
 
 import Data.Array
 import Control.Lens hiding ((|>))
-import Control.Monad (guard, when)
-import Control.Monad.ST (ST, runST)
+import Control.Monad (guard)
 import Data.Function ((&))
 import Data.Maybe (fromJust)
 import Data.Sequence (Seq, empty, (|>))
-import Data.STRef (modifySTRef', newSTRef, readSTRef)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Text.Megaparsec (eitherP, parseMaybe, (<|>))
@@ -68,25 +66,21 @@ parseInstructions = Sim (listArray ('a', 'd') $ repeat 0) 0 empty . V.fromList
 multiplication :: Vector Instruction -> Maybe (Value, Char, Char, Char)
 multiplication instrs = do
   guard $ V.length instrs >= 6
-  Cpy a (Left d) <- return $ V.unsafeIndex instrs 0
-  Inc c <- return $ V.unsafeIndex instrs 1
-  Dec d' <- return $ V.unsafeIndex instrs 2
-  guard $ d == d'
-  Jnz (Left d'') (Right (-2)) <- return $ V.unsafeIndex instrs 3
-  guard $ d' == d''
-  Dec b <- return $ V.unsafeIndex instrs 4
-  Jnz (Left b') (Right (-5)) <- return $ V.unsafeIndex instrs 5
-  guard $ b == b'
-  Just (a, b, c, d)
+  Cpy a (Left d) <- pure $ V.unsafeIndex instrs 0
+  Inc c <- pure $ V.unsafeIndex instrs 1
+  Dec ((== d) -> True) <- pure $ V.unsafeIndex instrs 2
+  Jnz (Left ((== d) -> True)) (Right (-2)) <- pure $ V.unsafeIndex instrs 3
+  Dec b <- pure $ V.unsafeIndex instrs 4
+  Jnz (Left ((== b) -> True)) (Right (-5)) <- pure $ V.unsafeIndex instrs 5
+  pure (a, b, c, d)
 
 plusEquals :: Vector Instruction -> Maybe (Char, Char)
 plusEquals instrs = do
   guard $ V.length instrs >= 3
-  Inc a <- return $ V.unsafeIndex instrs 0
-  Dec b <- return $ V.unsafeIndex instrs 1
-  Jnz (Left b') (Right (-2)) <- return $ V.unsafeIndex instrs 2
-  guard $ b == b'
-  Just (a, b)
+  Inc a <- pure $ V.unsafeIndex instrs 0
+  Dec b <- pure $ V.unsafeIndex instrs 1
+  Jnz (Left ((== b) -> True)) (Right (-2)) <- pure $ V.unsafeIndex instrs 2
+  pure (a, b)
 
 evalNextInstr :: Simulator -> Simulator
 evalNextInstr sim@(Sim{_currentLine=cl}) =
@@ -107,35 +101,30 @@ evalNextInstr sim@(Sim{_currentLine=cl}) =
               , 3 )
           eval instrs =
               case V.unsafeHead instrs of
-                (Cpy v v') -> ( sim & either (\r -> reg r .~ value v) (const id) v'
-                              , 1 )
-                (Inc r)    -> ( sim & reg r %~ succ
-                              , 1 )
-                (Dec r)    -> ( sim & reg r %~ pred
-                              , 1 )
-                (Tgl r)    -> ( sim & over (instructions . ix (value (Left r) + cl)) tgl
-                              , 1 )
-                (Out v)    -> ( sim & output %~ (|> value v)
-                              , 1 )
-                (Jnz v v') -> ( sim
-                              , if value v /= 0 then value v' else 1 )
-              where tgl (Cpy v v') = Jnz v v'
-                    tgl (Inc r)    = Dec r
-                    tgl (Dec r)    = Inc r
-                    tgl (Jnz v v') = Cpy v v'
-                    tgl (Tgl r)    = Inc r
+                (Cpy a b) -> ( sim & either (\r -> reg r .~ value a) (const id) b
+                             , 1 )
+                (Inc r)   -> ( sim & reg r %~ succ
+                             , 1 )
+                (Dec r)   -> ( sim & reg r %~ pred
+                             , 1 )
+                (Tgl r)   -> ( sim & over (instructions . ix (value (Left r) + cl)) tgl
+                             , 1 )
+                (Out v)   -> ( sim & output %~ (|> value v)
+                             , 1 )
+                (Jnz a b) -> ( sim
+                             , if value a /= 0 then value b else 1 )
+              where tgl (Cpy a b) = Jnz a b
+                    tgl (Inc r)   = Dec r
+                    tgl (Dec r)   = Inc r
+                    tgl (Jnz a b) = Cpy a b
+                    tgl (Tgl r)   = Inc r
                     tgl _ = error "Invalid toggle"
 
-evaluateWhile :: (Simulator -> Bool) -> Simulator -> ST s Simulator
-evaluateWhile f s = do
-  ref <- newSTRef s
-  go ref
-  readSTRef ref
-    where go ref = do
-            cond <- f <$> readSTRef ref
-            when cond $ do
-              modifySTRef' ref evalNextInstr
-              go ref
+evaluateWhile :: (Simulator -> Bool) -> Simulator -> Simulator
+evaluateWhile cond = go
+    where go sim
+              | cond sim  = go $ evalNextInstr sim
+              | otherwise = sim
 
 lineInBounds :: Simulator -> Bool
 lineInBounds (Sim {_currentLine=line, _instructions=instrs}) =
@@ -145,8 +134,8 @@ outLengthIs :: Int -> Simulator -> Bool
 outLengthIs n (Sim {_output=out}) = length out <= n
 
 evaluate :: Simulator -> Simulator
-evaluate sim = runST $ evaluateWhile lineInBounds sim
+evaluate = evaluateWhile lineInBounds
 
 evaluateUntilOutputLengthIs :: Int -> Simulator -> Simulator
-evaluateUntilOutputLengthIs n sim =
-    runST (evaluateWhile ((&&) <$> outLengthIs n <*> lineInBounds) sim)
+evaluateUntilOutputLengthIs n =
+    evaluateWhile ((&&) <$> outLengthIs n <*> lineInBounds)
