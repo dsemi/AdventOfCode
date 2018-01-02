@@ -59,15 +59,15 @@ step (Socket {..}) sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
     where value = either (\v -> sim ^?! (regs . ix v)) id
           eval (Snd v) = do
             send (value v)
-            pure $ line +~ 1 $ sim
-          eval (Set r v) = pure $ line +~ 1 $ (regs . ix r) .~ value v $ sim
-          eval (Add r v) = pure $ line +~ 1 $ (regs . ix r) %~ (+value v) $ sim
-          eval (Mul r v) = pure $ line +~ 1 $ (regs . ix r) %~ (*value v) $ sim
-          eval (Mod r v) = pure $ line +~ 1 $ (regs . ix r) %~ (`mod` value v) $ sim
+            pure $ sim & line +~ 1
+          eval (Set r v) = pure $ sim & line +~ 1 & (regs . ix r) .~ value v
+          eval (Add r v) = pure $ sim & line +~ 1 & (regs . ix r) %~ (+value v)
+          eval (Mul r v) = pure $ sim & line +~ 1 & (regs . ix r) %~ (*value v)
+          eval (Mod r v) = pure $ sim & line +~ 1 & (regs . ix r) %~ (`mod` value v)
           eval (Rcv r) = do
             v <- recv $ value $ Left r
-            pure $ line +~ 1 $ (regs . ix r) .~ v $ sim
-          eval (Jgz a b) = pure $ line +~ (if value a > 0 then value b else 1) $ sim
+            pure $ sim & line +~ 1 & (regs . ix r) .~ v
+          eval (Jgz a b) = pure $ sim & line +~ (if value a > 0 then value b else 1)
 
 run :: (Monad m) => Socket m -> Sim -> m ()
 run socket = go . Just
