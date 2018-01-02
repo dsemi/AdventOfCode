@@ -1,11 +1,15 @@
-{-# LANGUAGE RecordWildCards, StrictData, TemplateHaskell, TupleSections, ViewPatterns #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Year2016.Assembunny
     ( Simulator(..)
     , regs
     , evaluate
     , evaluateOutput
-    , evaluateUntilOutputLengthIs
     , parseInstructions
     ) where
 
@@ -15,7 +19,6 @@ import Data.Array
 import Control.Lens
 import Control.Monad (guard, void)
 import Data.Conduit
-import qualified Data.Conduit.List as L
 import Data.Maybe (fromJust, listToMaybe, mapMaybe)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -134,12 +137,8 @@ run actions = go
 
 evaluate :: Simulator -> Simulator
 evaluate = runIdentity . run actions
-    where actions = Actions { transmit = const (pure ()) }
+    where actions = Actions { transmit = \_ -> pure () }
 
-evaluateOutput :: Simulator -> [Int]
-evaluateOutput sim = runIdentity (void (run actions sim) $$ L.consume)
-    where actions = Actions { transmit = yield }
-
-evaluateUntilOutputLengthIs :: Int -> Simulator -> [Int]
-evaluateUntilOutputLengthIs n sim = runIdentity (void (run actions sim) $$ L.take n)
+evaluateOutput :: (Monad m) => Simulator -> Producer m Int
+evaluateOutput sim = void (run actions sim)
     where actions = Actions { transmit = yield }
