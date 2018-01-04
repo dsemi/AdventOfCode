@@ -18,10 +18,10 @@ import Utils
 import Data.Array
 import Control.Lens
 import Control.Monad (guard, void)
-import Data.Conduit
 import Data.Maybe (fromJust, listToMaybe, mapMaybe)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import Pipes
 import Text.Megaparsec (eitherP, parseMaybe, (<|>))
 import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
@@ -139,6 +139,6 @@ evaluate :: Simulator -> Simulator
 evaluate = runIdentity . run actions
     where actions = Actions { transmit = \_ -> pure () }
 
-evaluateOutput :: (Monad m) => Simulator -> Producer m Int
+evaluateOutput :: (Monad m) => Simulator -> Producer Int m ()
 evaluateOutput sim = void (run actions sim)
     where actions = Actions { transmit = yield }

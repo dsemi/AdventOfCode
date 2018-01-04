@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7290d2ef2de1e3006ad5586c18a34a1acf4936a8ff2ec904845963146d27394a
+-- hash: e9f1782af3b064b2c9ef97549116a66623019584f7eca7430a59d70e6e36df86
 
 name:                Advent
 version:             0.1.0.0
@@ -139,6 +139,7 @@ executable Advent
     multiset,
     pcre-heavy,
     pcre-light,
+    pipes,
     recursion-schemes,
     split,
     stm,

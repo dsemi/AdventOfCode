@@ -51,6 +51,7 @@ dependencies:
   - interpolate
   - transformers
   - hashtables
+  - pipes
 executables:
   Advent:
     main: Main.hs
