@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e9f1782af3b064b2c9ef97549116a66623019584f7eca7430a59d70e6e36df86
+-- hash: 34c3fa91b44b556b1d783b00c969d2f30e2a36451fb78b0662b3c41474bb6819
 
 name:                Advent
 version:             0.1.0.0
@@ -118,8 +118,6 @@ executable Advent
     base16-bytestring,
     bytestring,
     clock,
-    conduit,
-    conduit-combinators,
     containers >=0.5.8.1,
     cryptohash-md5,
     data-ordlist,
@@ -137,14 +135,12 @@ executable Advent
     monad-loops,
     mtl,
     multiset,
+    parallel,
     pcre-heavy,
     pcre-light,
     pipes,
     recursion-schemes,
     split,
-    stm,
-    stm-chans,
-    stm-conduit,
     string-conv,
     template-haskell,
     text,

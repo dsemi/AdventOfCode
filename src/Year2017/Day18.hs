@@ -11,12 +11,13 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.State
 import Control.Lens
-import Data.Conduit
 import Data.Either.Utils (maybeToEither)
 import Data.IORef
 import Data.Maybe
 import Data.String.Utils (maybeRead)
 import Data.Vector (Vector, fromList)
+import Pipes
+import qualified Pipes.Prelude as P
 
 
 type Register = Char
@@ -75,7 +76,7 @@ run socket = go . Just
           go (Just sim) = step socket sim >>= go
 
 part1 :: String -> Int
-part1 input = fromJust $ evalState (run socket (parseInstrs input) $$ await) 0
+part1 input = fromJust $ evalState (P.head $ run socket (parseInstrs input)) 0
     where socket = Socket { send = put
                           , recv = \v -> do
                                      val <- get

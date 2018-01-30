@@ -6,52 +6,47 @@ license: UnspecifiedLicense
 other-extensions:
   - TemplateHaskell
 dependencies:
-  - base >=4.9 && <5
-  - deepseq
-  - split
-  - template-haskell
-  - ansi-terminal
-  - unordered-containers
-  - array
-  - MissingH
-  - lens
   - aeson
-  - bytestring
-  - vector
-  - text
-  - lens-aeson
-  - multiset
-  - cryptohash-md5
+  - ansi-terminal
   - arithmoi
-  - containers >=0.5.8.1
-  - attoparsec
-  - megaparsec
-  - pcre-light
-  - pcre-heavy
-  - base16-bytestring
-  - mtl
-  - hashable
-  - string-conv
-  - data-ordlist
+  - array
   - astar
-  - errors
-  - either
-  - monad-loops
-  - free
-  - recursion-schemes
-  - stm
   - async
-  - extra
+  - attoparsec
+  - base >=4.9 && <5
+  - base16-bytestring
+  - bytestring
   - clock
-  - stm-chans
-  - monad-loops
-  - conduit
-  - stm-conduit
-  - conduit-combinators
-  - interpolate
-  - transformers
+  - containers >=0.5.8.1
+  - cryptohash-md5
+  - data-ordlist
+  - deepseq
+  - either
+  - errors
+  - extra
+  - free
+  - hashable
   - hashtables
+  - interpolate
+  - lens
+  - lens-aeson
+  - megaparsec
+  - MissingH
+  - monad-loops
+  - mtl
+  - multiset
+  - parallel
+  - pcre-heavy
+  - pcre-light
   - pipes
+  - recursion-schemes
+  - split
+  - string-conv
+  - template-haskell
+  - text
+  - transformers
+  - unordered-containers
+  - vector
 executables:
   Advent:
     main: Main.hs
