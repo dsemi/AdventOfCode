@@ -16,15 +16,15 @@ import qualified Data.HashMap.Strict as M
 
 -- TODO: parallel
 part1 :: ByteString -> String
-part1 seed = map (B.head . B.drop 5 . hashNum) $ take 8 $ filter f [0..]
+part1 seed = map (B.head . B.drop 5) $ take 8 $ filter f $ map hashNum [0..]
     where hashNum = encode . hash . (seed <>) . B.pack . show
-          f = ("00000" `B.isPrefixOf`) . hashNum
+          f = ("00000" `B.isPrefixOf`)
 
 -- TODO: parallel
 part2 :: ByteString -> ByteString
-part2 seed = findPassword M.empty $ filter f [0..]
+part2 seed = findPassword M.empty $ filter f $ map hashNum [0..]
     where hashNum = encode . hash . (seed <>) . B.pack . show
-          f = ("00000" `B.isPrefixOf`) . hashNum
+          f = ("00000" `B.isPrefixOf`)
           indices = "01234567"
           addChar m pos char
               | pos `elem` indices && not (M.member pos m) = M.insert pos char m
@@ -33,5 +33,5 @@ part2 seed = findPassword M.empty $ filter f [0..]
           findPassword m (x:xs)
               | M.size m == 8 = findPassword m []
               | otherwise =
-                  let [p, c] = B.unpack . B.take 2 . B.drop 5 $ hashNum x
+                  let [p, c] = B.unpack $ B.take 2 $ B.drop 5 x
                   in findPassword (addChar m p c) xs

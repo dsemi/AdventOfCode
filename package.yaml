@@ -3,6 +3,9 @@ version: '0.1.0.0'
 author: Dan Seminara
 maintainer: semi225599@gmail.com
 license: UnspecifiedLicense
+default-extensions:
+  - LambdaCase
+  - MultiWayIf
 other-extensions:
   - TemplateHaskell
 dependencies:
@@ -33,6 +36,7 @@ dependencies:
   - megaparsec
   - MissingH
   - monad-loops
+  - monad-par
   - mtl
   - multiset
   - parallel

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 34c3fa91b44b556b1d783b00c969d2f30e2a36451fb78b0662b3c41474bb6819
+-- hash: 3452814aa6a0d1954716ea549ee879af120bf0a8f88043e70bcd45c4b74142ef
 
 name:                Advent
 version:             0.1.0.0
@@ -133,6 +133,7 @@ executable Advent
     lens-aeson,
     megaparsec,
     monad-loops,
+    monad-par,
     mtl,
     multiset,
     parallel,
@@ -150,4 +151,5 @@ executable Advent
   ghc-options: -O2 -threaded -Wall
   hs-source-dirs:
     src
+  default-extensions: LambdaCase MultiWayIf
   default-language: Haskell2010
