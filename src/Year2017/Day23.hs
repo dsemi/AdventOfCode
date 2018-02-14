@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, TemplateHaskell, ViewPatterns #-}
+{-# LANGUAGE NamedFieldPuns, TemplateHaskell, ViewPatterns #-}
 
 module Year2017.Day23
     ( part1
@@ -95,7 +95,7 @@ primalityCheck ins = do
 step' :: (Monad m) => Tracker m -> Sim -> m (Maybe Sim)
 step' tracker sim =
     case (primalityCheck $ V.drop (sim ^. line) $ sim ^. instrs) of
-      Just (PCheck {..}) ->
+      Just (PCheck {toCheck, innerCounter, outerCounter, workspace, primeCheck}) ->
           let b = sim ^?! (regs . ix toCheck)
               sim' = line +~ 14
                      $ (regs . ix primeCheck) .~ (if isPrime (fromIntegral b) then 1 else 0)

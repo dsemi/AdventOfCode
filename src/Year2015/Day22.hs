@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, TemplateHaskell, ViewPatterns #-}
+{-# LANGUAGE NamedFieldPuns, TemplateHaskell, ViewPatterns #-}
 
 module Year2015.Day22
     ( part1
@@ -73,10 +73,10 @@ minCostToWin = minimum . go 0
     where go mana (beginTurn -> state)
               | gameOver state = [ mana | state ^. bHealth <= 0 ]
               | state ^. pTurn =
-                  [ v | (Spell {..}) <- [ s | s <- spells
-                                        , state ^. pMana >= cost s
-                                        , notElem (ident s) . map fst $ state ^. effects
-                                        ]
+                  [ v | (Spell {cost, func}) <- [ s | s <- spells
+                                                , state ^. pMana >= cost s
+                                                , notElem (ident s) . map fst $ state ^. effects
+                                                ]
                   , v <- go (mana + cost) $ pTurn %~ not $ pMana -~ cost $ func state
                   ]
               | otherwise = go mana $ pTurn %~ not $ bossAttack state

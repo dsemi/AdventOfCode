@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Year2017.Day07
     ( part1
@@ -40,14 +40,14 @@ parsePrograms = map (fromJust . parseMaybe parser) . lines
             return (Program name' weight', fromMaybe [] children)
 
 findImbalance :: Tree Program -> Either Int (Int, Int)
-findImbalance (Node (Program {..}) []) = return (weight, 0)
-findImbalance (Node (Program {..}) children) = do
+findImbalance (Node (Program {weight}) []) = return (weight, 0)
+findImbalance (Node (Program {weight}) children) = do
   let weights = map findImbalance children
       totals@(expected:_) = map add weights
   if all (== expected) totals
   then do
     childSum <- foldr1 (liftM2 (+)) totals
-    return (weight, childSum)
+    pure (weight, childSum)
   else do
     anomaly <- findAnomaly weights
     expectedTotal <- add $ head $ filter (/= Right anomaly) weights

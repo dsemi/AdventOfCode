@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards, TemplateHaskell, ViewPatterns #-}
+{-# LANGUAGE NamedFieldPuns, TemplateHaskell, ViewPatterns #-}
 
 module Year2017.Day18
     ( part1
@@ -56,7 +56,7 @@ parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList . map parseInst
           parse x = maybeToEither (head x) $ maybeRead x
 
 step :: (Monad m) => Socket m -> Sim -> m (Maybe Sim)
-step (Socket {..}) sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
+step (Socket {send, recv}) sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
     where value = either (\v -> sim ^?! (regs . ix v)) id
           eval (Snd v) = do
             send (value v)

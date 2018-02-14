@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Year2017.Day08
     ( part1
@@ -37,7 +37,7 @@ parseInstrs = map parseInstr . lines
                        }
 
 eval :: HashMap String Int -> Instr -> HashMap String Int
-eval m (Instr {..}) = if cond m then cmd m else m
+eval m (Instr {cmd, cond}) = if cond m then cmd m else m
 
 part1 :: String -> Int
 part1 = maximum . foldl eval M.empty . parseInstrs

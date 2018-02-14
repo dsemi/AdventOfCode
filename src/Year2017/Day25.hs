@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Year2017.Day25
     ( part1
@@ -55,11 +55,11 @@ parseMachine input = do
           int = signed (return ()) decimal
 
 step :: Int -> Machine s -> ST s Int
-step 0 (Machine {..}) = do
+step 0 (Machine {tape}) = do
   H.foldM (\a (_, v) -> pure $ a + v) 0 tape
-step n (Machine {..}) = do
+step n (Machine {tape, cursor, state, rules}) = do
   val <- fromMaybe 0 <$> H.lookup tape cursor
-  let Rule {..} = rules ! (state, val)
+  let Rule {valueToWrite, dirFun, nextState} = rules ! (state, val)
   H.insert tape cursor valueToWrite
   step (n-1) $ Machine tape (dirFun cursor) nextState rules
 

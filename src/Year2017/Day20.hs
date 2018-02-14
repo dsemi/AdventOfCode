@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Year2017.Day20
     ( part1
@@ -54,7 +54,7 @@ part1 :: String -> Int
 part1 = fst . minimumBy (comparing (acceleration . snd)) . zip [0..] . parseParticles
 
 step :: Particle -> Particle
-step (Particle {..}) = Particle position' velocity' acceleration
+step (Particle {position, velocity, acceleration}) = Particle position' velocity' acceleration
     where velocity' = velocity `plus` acceleration
           position' = position `plus` velocity'
 

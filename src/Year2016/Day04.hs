@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Year2016.Day04
     ( part1
@@ -30,7 +30,8 @@ getRooms = mapMaybe (parseMaybe parseRoom) . lines
             return $ Room (intercalate "-" $ init ss) (read $ last ss) checksum'
 
 roomIsValid :: Room -> Bool
-roomIsValid (Room {..}) = nCommonChars 5 (filter (/= '-') encryptedName) == checksum
+roomIsValid (Room {encryptedName, checksum}) =
+    nCommonChars 5 (filter (/= '-') encryptedName) == checksum
     where nCommonChars n = take n . map snd . sort . map (negate . length &&& head) . group . sort
 
 part1 :: String -> Int

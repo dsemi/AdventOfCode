@@ -1,5 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TupleSections #-}
@@ -103,7 +103,7 @@ plusEquals = Peephole $ \is -> do
           & line +~ 3
 
 evalNextInstr :: (Monad m) => Actions m -> Simulator -> m (Maybe Simulator)
-evalNextInstr (Actions {..}) sim =
+evalNextInstr (Actions {transmit}) sim =
     case maybeOptimize $ V.drop cl $ sim ^. instrs of
       Nothing -> traverse eval $ sim ^? (instrs . ix cl)
       x -> pure x
