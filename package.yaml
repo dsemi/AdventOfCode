@@ -20,6 +20,7 @@ dependencies:
   - base16-bytestring
   - bytestring
   - clock
+  - conduit
   - containers >=0.5.8.1
   - cryptohash-md5
   - data-ordlist

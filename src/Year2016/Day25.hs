@@ -22,6 +22,5 @@ part1 input = fromJust $ findIndex outputMatches [0..]
               where sim' = (regs . ix 'a') .~ x $ sim
 
 part2 :: String -> IO String
-part2 _ =
-  readFile "inputs/2016/bonuschallenge.txt"
-  >>= pure . D8.part2 . map chr . P.toList . evaluateOutput . parseInstructions
+part2 _ = D8.part2 . map chr . P.toList . evaluateOutput . parseInstructions
+          <$> readFile "inputs/2016/bonuschallenge.txt"
