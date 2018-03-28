@@ -5,12 +5,15 @@ module Year2017.Day18
     , part2
     ) where
 
-import Data.Array
 import Conduit
+import Control.Error.Util
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
+import Control.Monad.Writer
 import Control.Lens
+import Data.Array
 import Data.Either.Utils (maybeToEither)
+import Data.Maybe
 import Data.String.Utils (maybeRead)
 import Data.Vector (Vector, fromList)
 
@@ -52,7 +55,7 @@ parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList . map parseInst
 
 step :: (Monad m) => Socket m -> Sim -> m (Maybe Sim)
 step (Socket {send, recv}) sim =
-    maybe (pure Nothing) (runMaybeT . eval) $ sim ^? (instrs . ix (sim ^. line))
+    runMaybeT $ hoistMaybe (sim ^? (instrs . ix (sim ^. line))) >>= eval
     where value = either (\v -> sim ^?! (regs . ix v)) id
           eval (Snd v) = do
             lift $ send (value v)
@@ -65,7 +68,7 @@ step (Socket {send, recv}) sim =
             val <- lift $ recv $ value $ Left r
             case val of
               Just v -> pure $ sim & line +~ 1 & (regs . ix r) .~ v
-              Nothing -> MaybeT $ pure Nothing
+              Nothing -> hoistMaybe Nothing
           eval (Jgz a b) = pure $ sim & line +~ (if value a > 0 then value b else 1)
 
 run :: (Monad m) => Socket m -> Sim -> m ()
@@ -74,13 +77,12 @@ run socket = go . Just
           go (Just sim) = step socket sim >>= go
 
 part1 :: String -> Int
-part1 input = let sent = runIdentity $ sourceToList $
-                         yieldMany sent .| run socket (parseInstrs input)
-              in last sent
-    where socket = Socket { send = yield
-                          , recv = \v -> if v /= 0
-                                         then pure Nothing -- Stop execution
-                                         else await
+part1 input = fromJust $ getAlt $ evalState (execWriterT (run socket (parseInstrs input))) 0
+    where socket = Socket { send = put
+                          , recv = \v -> do
+                              val <- Just <$> get
+                              when (v /= 0) $ tell $ Alt val
+                              pure val
                           }
 
 data Action = Send Int | Receive
