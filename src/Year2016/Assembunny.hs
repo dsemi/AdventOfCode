@@ -2,7 +2,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
 
 module Year2016.Assembunny

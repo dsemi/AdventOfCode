@@ -14,6 +14,7 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Conduit.List as L
 import Data.Sequence ((|>), Seq)
 import qualified Data.Sequence as S
+import Data.Maybe
 import Data.Monoid ((<>))
 
 
@@ -30,7 +31,7 @@ find seed hash' n = yieldMany (map (id &&& hashNum) [0..]) .| go S.empty
     where hashNum = (!! n) . tail . iterate hash' . (seed <>) . B.pack . show
           go :: (Monad m) => Seq (Int, Char) -> ConduitT (Int, ByteString) Int m ()
           go pot = do
-            Just (i, hashed) <- await
+            (i, hashed) <- fromJust <$> await
             let threeInARow = parseOnly find3 hashed
                 pot' = S.dropWhileL ((>1000) . (i-) . fst) pot
                 hasFive p = B.replicate 5 (snd p) `B.isInfixOf` hashed

@@ -35,10 +35,9 @@ botStage1 n (Targets t1 t2) v1 =
 propagate :: Target -> Int -> State (Map Target Node) ()
 propagate target value = do
   m <- get
-  case M.lookup target m of
-    Just (Bot _ (Just (ActiveBot bf)) _) -> bf value
+  case M.lookup target m >>= botFunc of
+    Just (ActiveBot bf) -> bf value
     Nothing -> modify $ M.insert target (Output value)
-    _ -> error "Invalid target"
 
 parse :: [String] -> State (Map Target Node) ()
 parse ["bot",n0,_,_,_,o1,n1,_,_,_,o2,n2] =

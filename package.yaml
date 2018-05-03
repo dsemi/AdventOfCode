@@ -4,8 +4,12 @@ author: Dan Seminara
 maintainer: semi225599@gmail.com
 license: UnspecifiedLicense
 default-extensions:
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveTraversable
   - LambdaCase
   - MultiWayIf
+  - TupleSections
 other-extensions:
   - TemplateHaskell
 dependencies:
@@ -54,7 +58,15 @@ executables:
   Advent:
     main: Main.hs
     source-dirs: src
-    ghc-options: -O2 -threaded -Wall
+    ghc-options:
+      - -O2
+      - -threaded
+      - -Wall
+      - -Wcompat
+      - -Wincomplete-record-updates
+      - -Wincomplete-uni-patterns
+      - -Wredundant-constraints
+      - -Wnoncanonical-monad-instances
 build-type: Custom
 custom-setup:
   dependencies:

@@ -1,5 +1,3 @@
-{-# LANGUAGE TupleSections #-}
-
 module Year2016.Day08
     ( part1
     , part2

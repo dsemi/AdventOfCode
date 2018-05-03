@@ -3,19 +3,18 @@ module Year2015.Day08
     , part2
     ) where
 
-import Data.Functor.Foldable
+import Control.Arrow
 
 
 part1 :: String -> Int
-part1 = cata lenDiff . lines
-    where parseStr ('\\': '\\': xs)      = '\\' : parseStr xs
-          parseStr ('\\': '"': xs)       = '"' : parseStr xs
-          parseStr ('\\': 'x': _: _: xs) = '_' : parseStr xs
-          parseStr (x:xs)                = x : parseStr xs
-          parseStr []                    = []
-          lenDiff (Nil) = 0
-          lenDiff (Cons line t) = let str = parseStr $ init $ tail line
-                                  in t + length line - length str
+part1 = sum . map (uncurry (-) . (length &&& length . parseStr)) . lines
+    where parseStr = go . init . tail
+          go = \case
+               ('\\':'\\':xs)    -> '\\' : go xs
+               ('\\':'"':xs)     -> '"' : go xs
+               ('\\':'x':_:_:xs) -> '_' : go xs
+               (x:xs)            -> x : go xs
+               []                -> []
 
 
 part2 :: String -> Int
