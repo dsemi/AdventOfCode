@@ -16,4 +16,4 @@ part1 :: String -> Int
 part1 = sum . map floorDiff
 
 part2 :: String -> Int
-part2 = (+1) . fromJust . findIndex (<0) . scanl1 (+) . map floorDiff
+part2 = fromJust . findIndex (<0) . scanl (+) 0 . map floorDiff

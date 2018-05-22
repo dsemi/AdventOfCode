@@ -19,22 +19,24 @@ parseNode f line =
       [              "NOT",    (parse -> a), "->", v] -> (v, complement $ f a)
       [(parse -> a), "AND",    (parse -> b), "->", v] -> (v, f a .&. f b)
       [(parse -> a), "OR",     (parse -> b), "->", v] -> (v, f a .|. f b)
-      [(parse -> a), "LSHIFT", (parse -> b), "->", v] -> (v, f a `shiftL` fromIntegral (f b))
-      [(parse -> a), "RSHIFT", (parse -> b), "->", v] -> (v, f a `shiftR` fromIntegral (f b))
+      [(parse -> a), "LSHIFT", (parse -> b), "->", v] -> (v, f a .<<. f b)
+      [(parse -> a), "RSHIFT", (parse -> b), "->", v] -> (v, f a .>>. f b)
       _ -> error "Invalid line"
     where parse :: String -> Either String Word16
           parse x = maybeToEither x $ maybeRead x
+          (.<<.) a b = shiftL a $ fromIntegral b
+          (.>>.) a b = shiftR a $ fromIntegral b
 
-(!) :: Eq a1 => [(a1, a2)] -> a1 -> a2
+(!) :: (Eq a) => [(a, b)] -> a -> b
 m ! k = fromJust $ lookup k m
 
-build :: [(String, Word16)] -> String -> [(String, Word16)]
-build m = map (parseNode (either (m !) id)) . lines
+build :: (String -> Word16) -> String -> [(String, Word16)]
+build f = map (parseNode (either f id)) . lines
 
 part1 :: String -> Word16
-part1 input = let m = build m input
+part1 input = let m = build (m !) input
               in m ! "a"
 
 part2 :: String -> Word16
-part2 input = let m = ("b", part1 input) : build m input
+part2 input = let m = ("b", part1 input) : build (m !) input
               in m ! "a"
