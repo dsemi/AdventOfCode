@@ -1,15 +1,12 @@
+{-# LANGUAGE QuasiQuotes #-}
+
 module Year2015.Day05
     ( part1
     , part2
     ) where
 
-import Utils
-
-import Control.Monad
 import Data.List (group, isInfixOf)
-import Data.Either
-import Text.Megaparsec (parse, try)
-import Text.Megaparsec.Char (anyChar, char)
+import Text.Regex.PCRE.Heavy
 
 
 part1 :: String -> Int
@@ -21,17 +18,5 @@ part1 = length . filter isNice . lines
 
 part2 :: String -> Int
 part2 = length . filter isNice2 . lines
-    where isNice2 s = twoDoubles && everyOther
-              where findDoubles = do
-                      a <- anyChar
-                      b <- anyChar
-                      void $ searchAll (try (char a >> char b))
-                    parser :: Parser ()
-                    parser = searchAll (try findDoubles)
-                    twoDoubles = isRight $ parse parser "" s
-                    findSkip = do
-                      a <- anyChar
-                      anyChar >> void (char a)
-                    parser' :: Parser ()
-                    parser' = searchAll (try findSkip)
-                    everyOther = isRight $ parse parser' "" s
+    where isNice2 :: String -> Bool
+          isNice2 s = s =~ [re|(.)(.).*\1\2|] && s =~ [re|(.).\1|]

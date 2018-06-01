@@ -7,12 +7,12 @@ import Control.Arrow
 
 
 part1 :: String -> Int
-part1 = sum . map (uncurry (-) . (length &&& length . parseStr)) . lines
-    where parseStr = go . init . tail
-          go = \case
+part1 = sum . map (uncurry (-) . (length &&& length . go)) . lines
+    where go = \case
                ('\\':'\\':xs)    -> '\\' : go xs
                ('\\':'"':xs)     -> '"' : go xs
                ('\\':'x':_:_:xs) -> '_' : go xs
+               ('"':xs)          -> go xs
                (x:xs)            -> x : go xs
                []                -> []
 

@@ -15,7 +15,7 @@ parseCoord input = let (Right [r, c]) = findAllInts input
                    in (r, c)
 
 makeCode :: Int -> Int
-makeCode n = fromInteger . getVal $ (252533 :: Mod 33554393) ^% n + 20151125
+makeCode n = fromInteger . getVal $ (252533 :: Mod 33554393) ^% n * 20151125
 
 part1 :: String -> Int
 part1 input = makeCode index
