@@ -24,7 +24,7 @@ neighbors isOpen' (x, y) = filter isOpen' $ filter isValid [(x+1, y), (x-1, y), 
     where isValid (x', y') = x' >= 0 && y' >= 0
 
 part1 :: Int -> Int
-part1 = fromJust . fmap length .
+part1 = length . fromJust .
         (\x -> aStar (S.fromList . neighbors (isOpen x)) (\_ -> const 1) heuristic (==target) (1, 1))
 
 bfs :: (Eq a, Hashable a) => a -> Int -> (a -> [a]) -> HashSet a

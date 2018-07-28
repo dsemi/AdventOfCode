@@ -34,8 +34,5 @@ decompressedLength f input@(_:ss) =
 part1 :: String -> Int
 part1 = decompressedLength length
 
-recursive :: String -> Int
-recursive = decompressedLength recursive
-
 part2 :: String -> Int
-part2 = decompressedLength recursive
+part2 = decompressedLength part2

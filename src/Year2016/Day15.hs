@@ -24,7 +24,7 @@ findTarget :: [(Int, Int)] -> Int
 findTarget ds = go 0 ds
     where go c ds'
               | map fst ds' == target = c
-              | otherwise            = go (c+1) $ nextState ds'
+              | otherwise             = go (c+1) $ nextState ds'
           target = zipWith (\i (_, ps) -> i `mod` ps) [-1, -2 ..] ds
           nextState = map (\(p, ps) -> ((p + 1) `mod` ps, ps))
 
