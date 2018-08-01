@@ -3,60 +3,36 @@ module Year2016.Day10
     , part2
     ) where
 
-import Data.Coerce
-import Control.Monad.State
 import Data.List (sort)
-import Data.Map.Strict ((!), Map)
-import qualified Data.Map.Strict as M
+import Data.Map.Lazy ((!), Map)
+import qualified Data.Map.Lazy as M
 
-data BotInputs = None | One Int | Two Int Int deriving (Eq)
-newtype BotId = BotId Int deriving (Eq, Ord)
-newtype OutId = OutId Int deriving (Eq, Ord)
-data Target = B BotId | O OutId deriving (Eq, Ord)
-data Targets = Targets Target Target
 
-data Node = Bot { bId :: BotId
-                , botFunc :: Maybe ActiveBot
-                , inputs :: BotInputs
-                }
-          | Output { input :: Int
-                   }
+data Node = Bot Int | Output Int
+            deriving (Eq, Ord)
+type Edge = (Node, [Int])
+type Graph = Map Node [Int]
 
-data ActiveBot = ActiveBot (Int -> State (Map Target Node) ())
+parse :: (Node -> [Int]) -> [String] -> [Edge]
+parse f ["bot",n0,_,_,_,o1,n1,_,_,_,o2,n2] =
+    let botNode = Bot $ read n0
+        minNode = cns o1 $ read n1
+        maxNode = cns o2 $ read n2
+    in sort [ (minNode, [minimum $ f botNode])
+            , (maxNode, [maximum $ f botNode])]
+    where cns "bot" = Bot
+          cns _     = Output
+parse _ ["value",v,_,_,_,n] = [(Bot (read n), [read v])]
+parse _ _ = error "Invalid input"
 
-botStage1 :: BotId -> Targets -> Int -> State (Map Target Node) ()
-botStage1 n (Targets t1 t2) v1 =
-    modify $ M.insert (B n) (Bot n (Just (ActiveBot botStage2)) (One v1))
-    where botStage2 v2 = do
-            let xs@[i1, i2] = sort [v1, v2]
-            modify $ M.insert (B n) (Bot n Nothing (Two i1 i2))
-            zipWithM_ propagate [t1, t2] xs
-
-propagate :: Target -> Int -> State (Map Target Node) ()
-propagate target value = do
-  m <- get
-  case M.lookup target m >>= botFunc of
-    Just (ActiveBot bf) -> bf value
-    Nothing -> modify $ M.insert target (Output value)
-
-parse :: [String] -> State (Map Target Node) ()
-parse ["bot",n0,_,_,_,o1,n1,_,_,_,o2,n2] =
-    let botNum = BotId $ read n0
-        targets' = Targets (f o1 n1) (f o2 n2)
-        bot = Bot botNum (Just $ ActiveBot $ botStage1 botNum targets') None
-    in modify $ M.insert (B botNum) bot
-    where f "output" n = O (OutId $ read n)
-          f "bot" n    = B (BotId $ read n)
-          f _ _ = error "Invalid parse"
-parse ["value",v,_,_,_,n] = propagate (B (BotId $ read n)) (read v)
-parse _ = error "Invalid input"
-
-buildGraph :: String -> Map Target Node
-buildGraph = flip execState M.empty . mapM parse . sort . map words . lines
+build :: String -> Graph
+build xs = m
+    where m = M.fromListWith (++) . concatMap (parse (m !)) . map words $ lines xs
 
 part1 :: String -> Int
-part1 = coerce . bId . head . filter ((== Two 17 61) . inputs) . M.elems . buildGraph
+part1 s = n
+    where Bot n = fst . head . filter ((==[17, 61]) . snd) . M.toList $ build s
 
 part2 :: String -> Int
-part2 s = let graph = buildGraph s
-          in product . map input $ map ((graph !) . O . OutId) [0..2]
+part2 s = let m = build s
+          in product $ map (head . (m !) . Output) [0..2]

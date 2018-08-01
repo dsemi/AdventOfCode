@@ -5,6 +5,7 @@ module DaysTH
     , UnalteredString(..)
     ) where
 
+import Control.Monad.IO.Class
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
@@ -21,11 +22,11 @@ newtype UnalteredString = UnalteredString { unwrap :: String }
 
 class PType a where
     un :: Text -> a
-    to :: a -> IO Text
+    to :: (MonadIO m) => a -> m Text
 
 instance (PType a) => PType (IO a) where
     un = pure . un
-    to = (>>= to)
+    to = liftIO . (>>= to)
 
 instance PType String where
     un = T.unpack . un
@@ -83,7 +84,7 @@ instance PType Word64 where
     un = read . T.unpack . un
     to = pure . T.pack . show
 
-apply :: (PType a, PType b) => (a -> b) -> Text -> IO Text
+apply :: (MonadIO m, PType a, PType b) => (a -> b) -> Text -> m Text
 apply f = to . f . un
 
 buildProbs :: Q [Dec]

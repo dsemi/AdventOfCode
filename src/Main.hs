@@ -7,6 +7,7 @@ import Days (problems)
 
 import Control.DeepSeq
 import Control.Monad
+import Control.Monad.IO.Class
 import Data.List.Split
 import Data.String.Interpolate
 import Data.Text (Text)
@@ -43,12 +44,12 @@ colorizeTime n = printf "%s%.3f%s" startCode n endCode
             | n < 1     = Yellow
             | otherwise = Red
 
-timeFunc :: (NFData a) => IO a -> IO (a, Double)
+timeFunc :: (NFData a, MonadIO m) => m a -> m (a, Double)
 timeFunc f = do
-  start <- toNanoSecs <$> getTime Monotonic
+  start <- toNanoSecs <$> liftIO (getTime Monotonic)
   result <- f
   rnf result `seq` return ()
-  end <- toNanoSecs <$> getTime Monotonic
+  end <- toNanoSecs <$> liftIO (getTime Monotonic)
   let elapsedTime = fromIntegral (end - start) / 10^9
   return (result, elapsedTime)
 
