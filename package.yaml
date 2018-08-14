@@ -40,12 +40,14 @@ dependencies:
   - lens-aeson
   - megaparsec
   - MissingH
+  - monad-coroutine
   - monad-par
   - mtl
   - multiset
   - parallel
   - pcre-heavy
   - pcre-light
+  - pointedlist
   - recursion-schemes
   - split
   - string-conv

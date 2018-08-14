@@ -5,17 +5,22 @@ module Year2017.Day18
     , part2
     ) where
 
-import Conduit
-import Control.Error.Util
-import Control.Monad.State
-import Control.Monad.Trans.Maybe
-import Control.Monad.Writer
+import Utils
+
 import Control.Lens
+import Control.Monad.Cont
+import Control.Monad.Coroutine
+import Control.Monad.Coroutine.SuspensionFunctors
+import Control.Monad.ST
+import Control.Monad.State
 import Data.Array
-import Data.Either.Utils (maybeToEither)
 import Data.Maybe
-import Data.String.Utils (maybeRead)
+import Data.STRef
+import qualified Data.Sequence as S
 import Data.Vector (Vector, fromList)
+import Text.Megaparsec (choice, eitherP, parseMaybe)
+import Text.Megaparsec.Char (letterChar, spaceChar, string)
+import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
 type Register = Char
@@ -34,83 +39,86 @@ data Sim = Sim { _regs :: Array Register Int
                }
 makeLenses ''Sim
 
-data Socket m = Socket { send :: Int -> m ()
-                       , recv :: Int -> m (Maybe Int)
-                       }
+type Send m = Int -> m ()
+type Recv m = Int -> m (Maybe Int)
 
 parseInstrs :: String -> Sim
-parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList . map parseInstr . lines
-    where parseInstr instr =
-              case words instr of
-                ["snd",             parse -> v] -> Snd v
-                ["set",  head -> r, parse -> v] -> Set r v
-                ["add",  head -> r, parse -> v] -> Add r v
-                ["mul",  head -> r, parse -> v] -> Mul r v
-                ["mod",  head -> r, parse -> v] -> Mod r v
-                ["rcv",  head -> r            ] -> Rcv r
-                ["jgz", parse -> a, parse -> b] -> Jgz a b
-                _ -> error "Parse error"
-          parse :: String -> Value
-          parse x = maybeToEither (head x) $ maybeRead x
+parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
+              . map (fromJust . parseMaybe instr) . lines
+    where instr :: Parser Instr
+          instr = choice [ string "snd " >> Snd <$> value
+                         , string "set " >> Set <$> letterChar <* spaceChar <*> value
+                         , string "add " >> Add <$> letterChar <* spaceChar <*> value
+                         , string "mul " >> Mul <$> letterChar <* spaceChar <*> value
+                         , string "mod " >> Mod <$> letterChar <* spaceChar <*> value
+                         , string "rcv " >> Rcv <$> letterChar
+                         , string "jgz " >> Jgz <$> value <* spaceChar <*> value
+                         ]
+          value :: Parser Value
+          value = eitherP letterChar int
+          int :: Parser Int
+          int = signed (pure ()) decimal
 
-step :: (Monad m) => Socket m -> Sim -> m (Maybe Sim)
-step (Socket {send, recv}) sim =
-    runMaybeT $ hoistMaybe (sim ^? (instrs . ix (sim ^. line))) >>= eval
-    where value = either (\v -> sim ^?! (regs . ix v)) id
-          eval (Snd v) = do
-            lift $ send (value v)
-            pure $ sim & line +~ 1
-          eval (Set r v) = pure $ sim & line +~ 1 & (regs . ix r) .~ value v
-          eval (Add r v) = pure $ sim & line +~ 1 & (regs . ix r) %~ (+value v)
-          eval (Mul r v) = pure $ sim & line +~ 1 & (regs . ix r) %~ (*value v)
-          eval (Mod r v) = pure $ sim & line +~ 1 & (regs . ix r) %~ (`mod` value v)
-          eval (Rcv r) = do
-            val <- lift $ recv $ value $ Left r
-            case val of
-              Just v -> pure $ sim & line +~ 1 & (regs . ix r) .~ v
-              Nothing -> hoistMaybe Nothing
-          eval (Jgz a b) = pure $ sim & line +~ (if value a > 0 then value b else 1)
+reg :: Applicative f => Char -> (Int -> f Int) -> Sim -> f Sim
+reg r = regs . ix r
 
-run :: (Monad m) => Socket m -> Sim -> m ()
-run socket = go . Just
-    where go Nothing = pure ()
-          go (Just sim) = step socket sim >>= go
+step :: (Monad m) => Send m -> Recv m -> Instr -> Sim -> m Sim
+step send recv instr sim = do
+  let value = either (\v -> sim ^?! (regs . ix v)) id
+  f <- case instr of
+         (Snd v) -> send (value v) >> pure id
+         (Set r v) -> pure $ reg r .~ value v
+         (Add r v) -> pure $ reg r +~ value v
+         (Mul r v) -> pure $ reg r *~ value v
+         (Mod r v) -> pure $ reg r %~ (`mod` value v)
+         (Rcv r) -> maybe id (reg r .~) <$> recv (value (Left r))
+         (Jgz a b) -> pure $ if value a > 0 then line +~ value b - 1 else id
+  pure $ sim & f & line +~ 1
+
+run :: (Monad m) => Send m -> Recv m -> Sim -> m ()
+run send recv sim =
+    case sim ^? (instrs . ix (sim ^. line)) of
+      Just instr -> step send recv instr sim >>= run send recv
+      Nothing -> pure ()
 
 part1 :: String -> Int
-part1 input = fromJust $ getAlt $ evalState (execWriterT (run socket (parseInstrs input))) 0
-    where socket = Socket { send = put
-                          , recv = \v -> do
-                              val <- Just <$> get
-                              when (v /= 0) $ tell $ Alt val
-                              pure val
-                          }
-
-data Action = Send Int | Receive
-
-isSend :: Action -> Bool
-isSend (Send _) = True
-isSend _ = False
+part1 input = flip runCont fromJust $ callCC $ \k -> do
+                let send = put
+                    recv = \v -> do
+                      val <- Just <$> get
+                      when (v /= 0) $ lift $ k val
+                      pure val
+                evalStateT (run send recv (parseInstrs input)) 0
+                pure Nothing
 
 part2 :: String -> Int
-part2 input =
-    let sim0 = parseInstrs input
-        sim1 = (regs . ix 'p') .~ 1 $ parseInstrs input
-        recvCount = 0 :: Int
-        socket = Socket { send = \val -> modify' succ >> yield (Send val)
-                        , recv = const $ do
-                            yield Receive
-                            let go = do
-                                  val <- await
-                                  n <- get
-                                  case val of
-                                    Just Receive ->
-                                        if n == 0
-                                        then pure Nothing
-                                        else modify' pred >> go
-                                    Just (Send v) -> pure $ Just v
-                                    Nothing -> pure Nothing
-                            go
-                        }
-        sent0 = flip evalState recvCount $ sourceToList $ yieldMany sent1 .| run socket sim0
-        sent1 = flip evalState recvCount $ sourceToList $ yieldMany sent0 .| run socket sim1
-    in length $ filter isSend sent1
+part2 input = runST $ do
+  p1Sends <- newSTRef 0
+  p0Queue <- newSTRef S.empty
+  p1Queue <- newSTRef S.empty
+  let sim0 = parseInstrs input
+      sim1 = sim0 & reg 'p' .~ 1
+      send queue v = lift $ modifySTRef' queue (S.|> v)
+      recv queue1Ref queue2Ref _ = request (queue1Ref, queue2Ref)
+      p1Send v = do
+        lift $ modifySTRef' p1Sends (+1)
+        send p0Queue v
+      dequeue queueRef = S.viewl <$> lift (readSTRef queueRef) >>=
+                           \case
+                            S.EmptyL -> pure Nothing
+                            x S.:< xs -> do
+                              lift $ writeSTRef queueRef xs
+                              pure $ Just x
+  contRef <- do
+    Left (Request _ k) <- resume $ run (send p1Queue) (recv p0Queue p1Queue) sim0
+    newSTRef k
+  pogoStick (\(Request (queue1, queue2) k) -> do
+               dequeue queue1 >>=
+                 \case
+                  Nothing -> dequeue queue2 >>=
+                               \case
+                                Nothing -> pure ()
+                                x -> lift (swapSTRef contRef k) >>= ($ x)
+                  x -> k x)
+                $ run p1Send (recv p1Queue p0Queue) sim1
+  readSTRef p1Sends

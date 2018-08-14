@@ -16,12 +16,13 @@ import Utils
 
 import Conduit
 import Control.Lens
-import Control.Monad (guard, void)
+import Control.Monad (void)
 import Data.Array
-import Data.Maybe (fromJust, listToMaybe, mapMaybe)
+import Data.List (tails)
+import Data.Maybe
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Text.Megaparsec (eitherP, parseMaybe, (<|>))
+import Text.Megaparsec (choice, eitherP, parseMaybe)
 import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -34,32 +35,60 @@ data Instruction = Cpy Value Value
                  | Dec Char
                  | Tgl Char
                  | Out Value
-                 | Jnz Value Value deriving (Eq, Show)
-
-data Optimization = Peephole { apply :: Vector Instruction -> Maybe (Simulator -> Simulator)
-                             }
+                 | Jnz Value Value
+                 | Add Char Char
+                 | Mul Value Char Char Char
+                 | Nop deriving (Eq, Show)
 
 data Simulator = Sim { _regs :: Array Char Int
                      , _line :: Int
-                     , _optimizations :: [Optimization]
                      , _instrs :: Vector Instruction
                      }
 makeLenses ''Simulator
 
-data Actions m = Actions { transmit :: Int -> m () }
+type Transmit m = Int -> m ()
+
+type Optimization = [Instruction] -> Maybe [Instruction]
+
+multiplication :: Optimization
+multiplication ( Cpy a (Left d)
+               : Inc c : Dec ((== d) -> True)
+               : Jnz (Left ((== d) -> True)) (Right (-2))
+               : Dec b
+               : Jnz (Left ((== b) -> True)) (Right (-5)) : _) =
+    Just [ Mul a b c d
+         , Nop, Nop, Nop, Nop, Nop ]
+multiplication _ = Nothing
+
+plusEquals :: Optimization
+plusEquals (Inc a
+           : Dec b
+           : Jnz (Left ((== b) -> True)) (Right (-2)) : _) =
+    Just [ Add a b
+         , Nop, Nop ]
+plusEquals _ = Nothing
+
+optimize :: [Optimization] -> [Instruction] -> [Instruction]
+optimize [] v = v
+optimize (f:fs) v = optimize fs $ collapse [] opt
+    where opt = map (\x -> fromMaybe (take 1 x) $ f x) $ init $ tails v
+          collapse [] [] = []
+          collapse [] ((i:is):xs) = i : collapse is xs
+          collapse (i:is) (_:xs) = i : collapse is xs
+          collapse _ _ = error "Bad collapse"
 
 parseInstructions :: String -> Simulator
 parseInstructions = Sim (listArray ('a', 'd') $ repeat 0) 0
-                    [multiplication, plusEquals] . V.fromList
+                    . V.fromList . optimize [multiplication, plusEquals]
                     . map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parser Instruction
-          parseInstruction = parseCpy
-                             <|> parseInc
-                             <|> parseDec
-                             <|> parseTgl
-                             <|> parseOut
-                             <|> parseJnz
-          int = signed space $ fromInteger <$> decimal
+          parseInstruction = choice [ parseCpy
+                                    , parseInc
+                                    , parseDec
+                                    , parseTgl
+                                    , parseOut
+                                    , parseJnz ]
+          int = signed space decimal
           register = oneOf "abcd"
           value = eitherP register int
           parseCpy = string "cpy " >> Cpy <$> value <* spaceChar <*> value
@@ -75,50 +104,23 @@ val sim = either (\r -> sim ^?! (regs . ix r)) id
 reg :: Applicative f => Char -> (Int -> f Int) -> Simulator -> f Simulator
 reg c = regs . ix c
 
-multiplication :: Optimization
-multiplication = Peephole $ \is -> do
-  guard $ V.length is >= 6
-  Cpy a (Left d) <- pure $ V.unsafeIndex is 0
-  Inc c <- pure $ V.unsafeIndex is 1
-  Dec ((== d) -> True) <- pure $ V.unsafeIndex is 2
-  Jnz (Left ((== d) -> True)) (Right (-2)) <- pure $ V.unsafeIndex is 3
-  Dec b <- pure $ V.unsafeIndex is 4
-  Jnz (Left ((== b) -> True)) (Right (-5)) <- pure $ V.unsafeIndex is 5
-  pure $ \sim ->
-      sim & reg c +~ (val sim a * val sim (Left b))
-          & reg b .~ 0
-          & reg d .~ 0
-          & line +~ 6
-
-plusEquals :: Optimization
-plusEquals = Peephole $ \is -> do
-  guard $ V.length is >= 3
-  Inc a <- pure $ V.unsafeIndex is 0
-  Dec b <- pure $ V.unsafeIndex is 1
-  Jnz (Left ((== b) -> True)) (Right (-2)) <- pure $ V.unsafeIndex is 2
-  pure $ \sim ->
-      sim & reg a +~ val sim (Left b)
-          & reg b .~ 0
-          & line +~ 3
-
-evalNextInstr :: (Monad m) => Actions m -> Simulator -> m (Maybe Simulator)
-evalNextInstr (Actions {transmit}) sim =
-    case maybeOptimize $ V.drop cl $ sim ^. instrs of
-      Nothing -> traverse eval $ sim ^? (instrs . ix cl)
-      x -> pure x
-    where cl = sim  ^. line
+evalNextInstr :: (Monad m) => Transmit m -> Simulator -> m (Maybe Simulator)
+evalNextInstr transmit sim = traverse eval $ sim ^? (instrs . ix cl)
+    where cl = sim ^. line
           value = val sim
-          maybeOptimize is = listToMaybe
-                             $ mapMaybe (fmap ($ sim) . ($ is) . apply)
-                             $ sim ^. optimizations
-          eval (Cpy a b) = pure $ sim & either (\r -> reg r .~ value a) (const id) b & line +~ 1
-          eval (Inc r)   = pure $ sim & reg r %~ succ & line +~ 1
-          eval (Dec r)   = pure $ sim & reg r %~ pred & line +~ 1
-          eval (Tgl r)   = pure $ sim & over (instrs . ix (value (Left r) + cl)) tgl & line +~ 1
-          eval (Out v)   = do
-            transmit $ value v
-            pure $ sim & line +~ 1
-          eval (Jnz a b) = pure $ sim & line +~ (if value a /= 0 then value b else 1)
+          eval instr = do
+            f <- case instr of
+                   (Cpy a b)     -> pure $ either (\r -> reg r .~ value a) (const id) b
+                   (Inc r)       -> pure $ reg r +~ 1
+                   (Dec r)       -> pure $ reg r -~ 1
+                   (Tgl r)       -> pure $ over (instrs . ix (value (Left r) + cl)) tgl
+                   (Out v)       -> transmit (value v) >> pure id
+                   (Jnz a b)     -> pure $ if value a /= 0 then line +~ value b - 1 else id
+                   (Add a b)     -> pure $ (reg a +~ value (Left b)) . (reg b .~ 0)
+                   (Mul a b c d) -> pure $ (reg c +~ (value a * value (Left b)))
+                                    . (reg b .~ 0) . (reg d .~ 0)
+                   Nop           -> pure id
+            pure $ sim & f & line +~ 1
           tgl (Cpy a b) = Jnz a b
           tgl (Inc r)   = Dec r
           tgl (Dec r)   = Inc r
@@ -126,18 +128,12 @@ evalNextInstr (Actions {transmit}) sim =
           tgl (Tgl r)   = Inc r
           tgl _ = error "Invalid toggle"
 
-run :: (Monad m) => Actions m -> Simulator -> m Simulator
-run actions = go
-    where go sim = do
-            sim' <- evalNextInstr actions sim
-            case sim' of
-              Just s  -> go s
-              Nothing -> pure sim
+run :: (Monad m) => Transmit m -> Simulator -> m Simulator
+run transmit = go
+    where go sim = evalNextInstr transmit sim >>= maybe (pure sim) go
 
 evaluate :: Simulator -> Simulator
-evaluate = runIdentity . run actions
-    where actions = Actions { transmit = \_ -> pure () }
+evaluate = runIdentity . run (const (pure ()))
 
 evaluateOutput :: (Monad m) => Simulator -> ConduitT a Int m ()
-evaluateOutput sim = void (run actions sim)
-    where actions = Actions { transmit = yield }
+evaluateOutput sim = void (run yield sim)
