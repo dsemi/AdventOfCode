@@ -71,11 +71,11 @@ makeFloors = go [] . concatMap (\(f, fs) -> map (\(n, t) -> (n, (f, t))) fs) . z
                                          else go ((f', f) : fls) $ delete (n, x) xs
 
 part1 :: String -> Int
-part1 = fromJust . fmap length . aStar neighbors (\_ -> const 1) heuristic isDone
+part1 = length . fromJust . aStar neighbors (\_ -> const 1) heuristic isDone
         . makeFloors . map parseFloor . lines
 
 part2 :: String -> Int
-part2 = fromJust . fmap length . aStar neighbors (\_ -> const 1) heuristic isDone . makeFloors
+part2 = length . fromJust . aStar neighbors (\_ -> const 1) heuristic isDone . makeFloors
         . over (ix 0) (++ extraItems) . map parseFloor . lines
     where extraItems = [ ("elerium", "generator")
                        , ("elerium", "microchip")

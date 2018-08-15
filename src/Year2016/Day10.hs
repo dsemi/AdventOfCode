@@ -35,4 +35,4 @@ part1 s = n
 
 part2 :: String -> Int
 part2 s = let m = build s
-          in product $ map (head . (m !) . Output) [0..2]
+          in product $ concatMap ((m !) . Output) [0..2]
