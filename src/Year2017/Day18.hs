@@ -13,7 +13,7 @@ import Control.Monad.Coroutine
 import Control.Monad.Coroutine.SuspensionFunctors
 import Control.Monad.ST
 import Control.Monad.State
-import Data.Array
+import Data.Array.Unboxed
 import Data.Maybe
 import Data.STRef
 import qualified Data.Sequence as S
@@ -33,7 +33,7 @@ data Instr = Snd Value
            | Rcv Register
            | Jgz Value Value
 
-data Sim = Sim { _regs :: Array Register Int
+data Sim = Sim { _regs :: UArray Register Int
                , _line :: Int
                , _instrs :: Vector Instr
                }

@@ -19,7 +19,7 @@ part1 input = fromJust $ findIndex outputMatches [0..]
     where sim = parseInstructions input
           outputMatches x = and $ zipWith (==) (cycle [0, 1])
                             $ runConduitPure $ evaluateOutput sim' .| L.take 10
-              where sim' = (regs . ix 'a') .~ x $ sim
+              where sim' = a .~ x $ sim
 
 part2 :: String -> IO String
 part2 _ = D8.part2 . map chr . runConduitPure . (.| L.consume) . evaluateOutput . parseInstructions

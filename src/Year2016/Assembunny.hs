@@ -6,7 +6,7 @@
 
 module Year2016.Assembunny
     ( Simulator(..)
-    , regs
+    , a, b, c, d
     , evaluate
     , evaluateOutput
     , parseInstructions
@@ -17,7 +17,6 @@ import Utils
 import Conduit
 import Control.Lens
 import Control.Monad (void)
-import Data.Array
 import Data.List (tails)
 import Data.Maybe
 import Data.Vector (Vector)
@@ -40,7 +39,10 @@ data Instruction = Cpy Value Value
                  | Mul Value Char Char Char
                  | Nop deriving (Eq, Show)
 
-data Simulator = Sim { _regs :: Array Char Int
+data Simulator = Sim { _a :: Int
+                     , _b :: Int
+                     , _c :: Int
+                     , _d :: Int
                      , _line :: Int
                      , _instrs :: Vector Instruction
                      }
@@ -51,20 +53,20 @@ type Transmit m = Int -> m ()
 type Optimization = [Instruction] -> Maybe [Instruction]
 
 multiplication :: Optimization
-multiplication ( Cpy a (Left d)
-               : Inc c : Dec ((== d) -> True)
-               : Jnz (Left ((== d) -> True)) (Right (-2))
-               : Dec b
-               : Jnz (Left ((== b) -> True)) (Right (-5)) : _) =
-    Just [ Mul a b c d
+multiplication ( Cpy a' (Left d')
+               : Inc c' : Dec ((== d') -> True)
+               : Jnz (Left ((== d') -> True)) (Right (-2))
+               : Dec b'
+               : Jnz (Left ((== b') -> True)) (Right (-5)) : _) =
+    Just [ Mul a' b' c' d'
          , Nop, Nop, Nop, Nop, Nop ]
 multiplication _ = Nothing
 
 plusEquals :: Optimization
-plusEquals (Inc a
-           : Dec b
-           : Jnz (Left ((== b) -> True)) (Right (-2)) : _) =
-    Just [ Add a b
+plusEquals (Inc a'
+           : Dec b'
+           : Jnz (Left ((== b') -> True)) (Right (-2)) : _) =
+    Just [ Add a' b'
          , Nop, Nop ]
 plusEquals _ = Nothing
 
@@ -78,7 +80,7 @@ optimize (f:fs) v = optimize fs $ collapse [] opt
           collapse _ _ = error "Bad collapse"
 
 parseInstructions :: String -> Simulator
-parseInstructions = Sim (listArray ('a', 'd') $ repeat 0) 0
+parseInstructions = Sim 0 0 0 0 0
                     . V.fromList . optimize [multiplication, plusEquals]
                     . map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parser Instruction
@@ -99,10 +101,14 @@ parseInstructions = Sim (listArray ('a', 'd') $ repeat 0) 0
           parseJnz = string "jnz " >> Jnz <$> value <* spaceChar <*> value
 
 val :: Simulator -> Value -> Int
-val sim = either (\r -> sim ^?! (regs . ix r)) id
+val sim = either ((sim ^?!) . reg) id
 
-reg :: Applicative f => Char -> (Int -> f Int) -> Simulator -> f Simulator
-reg c = regs . ix c
+reg :: Applicative f => Register -> (Int -> f Int) -> Simulator -> f Simulator
+reg 'a' = a
+reg 'b' = b
+reg 'c' = c
+reg 'd' = d
+reg _ = error "Invalid register"
 
 evalNextInstr :: (Monad m) => Transmit m -> Simulator -> m (Maybe Simulator)
 evalNextInstr transmit sim = traverse eval $ sim ^? (instrs . ix cl)
@@ -110,21 +116,21 @@ evalNextInstr transmit sim = traverse eval $ sim ^? (instrs . ix cl)
           value = val sim
           eval instr = do
             f <- case instr of
-                   (Cpy a b)     -> pure $ either (\r -> reg r .~ value a) (const id) b
+                   (Cpy x y)     -> pure $ either (\r -> reg r .~ value x) (const id) y
                    (Inc r)       -> pure $ reg r +~ 1
                    (Dec r)       -> pure $ reg r -~ 1
                    (Tgl r)       -> pure $ over (instrs . ix (value (Left r) + cl)) tgl
                    (Out v)       -> transmit (value v) >> pure id
-                   (Jnz a b)     -> pure $ if value a /= 0 then line +~ value b - 1 else id
-                   (Add a b)     -> pure $ (reg a +~ value (Left b)) . (reg b .~ 0)
-                   (Mul a b c d) -> pure $ (reg c +~ (value a * value (Left b)))
-                                    . (reg b .~ 0) . (reg d .~ 0)
+                   (Jnz x y)     -> pure $ if value x /= 0 then line +~ value y - 1 else id
+                   (Add x y)     -> pure $ (reg x +~ value (Left y)) . (reg y .~ 0)
+                   (Mul w x y z) -> pure $ (reg y +~ (value w * value (Left x)))
+                                    . (reg x .~ 0) . (reg z .~ 0)
                    Nop           -> pure id
             pure $ sim & f & line +~ 1
-          tgl (Cpy a b) = Jnz a b
+          tgl (Cpy x y) = Jnz x y
           tgl (Inc r)   = Dec r
           tgl (Dec r)   = Inc r
-          tgl (Jnz a b) = Cpy a b
+          tgl (Jnz x y) = Cpy x y
           tgl (Tgl r)   = Inc r
           tgl _ = error "Invalid toggle"
 
