@@ -1,8 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE StrictData #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE StrictData, TemplateHaskell, ViewPatterns #-}
 
 module Year2016.Assembunny
     ( Simulator(..)
@@ -14,9 +10,7 @@ module Year2016.Assembunny
 
 import Utils
 
-import Conduit
 import Control.Lens
-import Control.Monad (void)
 import Data.List (tails)
 import Data.Maybe
 import Data.Vector (Vector)
@@ -29,15 +23,18 @@ import Text.Megaparsec.Char.Lexer (decimal, signed)
 type Register = Char
 type Value = Either Register Int
 
-data Instruction = Cpy Value Value
-                 | Inc Char
-                 | Dec Char
-                 | Tgl Char
-                 | Out Value
-                 | Jnz Value Value
-                 | Add Char Char
-                 | Mul Value Char Char Char
-                 | Nop deriving (Eq, Show)
+data Instr = Cpy Value Value
+           | Inc Char
+           | Dec Char
+           | Tgl Char
+           | Jnz Value Value
+           | Add Char Char
+           | Mul Value Char Char Char
+           | Nop deriving (Eq, Show)
+
+data Action = Out Value deriving (Eq, Show)
+
+type Instruction = Either Action Instr
 
 data Simulator = Sim { _a :: Int
                      , _b :: Int
@@ -48,26 +45,34 @@ data Simulator = Sim { _a :: Int
                      }
 makeLenses ''Simulator
 
-type Transmit m = Int -> m ()
+reg :: Applicative f => Register -> (Int -> f Int) -> Simulator -> f Simulator
+reg 'a' = a
+reg 'b' = b
+reg 'c' = c
+reg 'd' = d
+reg _ = error "Invalid register"
 
 type Optimization = [Instruction] -> Maybe [Instruction]
 
 multiplication :: Optimization
-multiplication ( Cpy a' (Left d')
-               : Inc c' : Dec ((== d') -> True)
-               : Jnz (Left ((== d') -> True)) (Right (-2))
-               : Dec b'
-               : Jnz (Left ((== b') -> True)) (Right (-5)) : _) =
-    Just [ Mul a' b' c' d'
-         , Nop, Nop, Nop, Nop, Nop ]
+multiplication ( Right (Cpy a' (Left d'))
+               : Right (Inc c' )
+               : Right (Dec ((== d') -> True))
+               : Right (Jnz (Left ((== d') -> True)) (Right (-2)))
+               : Right (Dec b')
+               : Right (Jnz (Left ((== b') -> True)) (Right (-5)))
+               : _) =
+    Just [ Right (Mul a' b' c' d')
+         , Right Nop, Right Nop, Right Nop, Right Nop, Right Nop ]
 multiplication _ = Nothing
 
 plusEquals :: Optimization
-plusEquals (Inc a'
-           : Dec b'
-           : Jnz (Left ((== b') -> True)) (Right (-2)) : _) =
-    Just [ Add a' b'
-         , Nop, Nop ]
+plusEquals ( Right (Inc a')
+           : Right (Dec b')
+           : Right (Jnz (Left ((== b') -> True)) (Right (-2)))
+           : _) =
+    Just [ Right (Add a' b')
+         , Right Nop, Right Nop ]
 plusEquals _ = Nothing
 
 optimize :: [Optimization] -> [Instruction] -> [Instruction]
@@ -82,14 +87,15 @@ optimize (f:fs) v = optimize fs $ collapse [] opt
 parseInstructions :: String -> Simulator
 parseInstructions = Sim 0 0 0 0 0
                     . V.fromList . optimize [multiplication, plusEquals]
-                    . map (fromJust . parseMaybe parseInstruction) . lines
-    where parseInstruction :: Parser Instruction
+                    . map (fromJust . parseMaybe (eitherP parseAction parseInstruction)) . lines
+    where parseInstruction :: Parser Instr
           parseInstruction = choice [ parseCpy
                                     , parseInc
                                     , parseDec
                                     , parseTgl
-                                    , parseOut
                                     , parseJnz ]
+          parseAction :: Parser Action
+          parseAction = parseOut
           int = signed space decimal
           register = oneOf "abcd"
           value = eitherP register int
@@ -103,30 +109,20 @@ parseInstructions = Sim 0 0 0 0 0
 val :: Simulator -> Value -> Int
 val sim = either ((sim ^?!) . reg) id
 
-reg :: Applicative f => Register -> (Int -> f Int) -> Simulator -> f Simulator
-reg 'a' = a
-reg 'b' = b
-reg 'c' = c
-reg 'd' = d
-reg _ = error "Invalid register"
-
-evalNextInstr :: (Monad m) => Transmit m -> Simulator -> m (Maybe Simulator)
-evalNextInstr transmit sim = traverse eval $ sim ^? (instrs . ix cl)
+evalInstr :: Simulator -> Instr -> Simulator
+evalInstr sim instr = eval sim
     where cl = sim ^. line
           value = val sim
-          eval instr = do
-            f <- case instr of
-                   (Cpy x y)     -> pure $ either (\r -> reg r .~ value x) (const id) y
-                   (Inc r)       -> pure $ reg r +~ 1
-                   (Dec r)       -> pure $ reg r -~ 1
-                   (Tgl r)       -> pure $ over (instrs . ix (value (Left r) + cl)) tgl
-                   (Out v)       -> transmit (value v) >> pure id
-                   (Jnz x y)     -> pure $ if value x /= 0 then line +~ value y - 1 else id
-                   (Add x y)     -> pure $ (reg x +~ value (Left y)) . (reg y .~ 0)
-                   (Mul w x y z) -> pure $ (reg y +~ (value w * value (Left x)))
+          eval = case instr of
+                   (Cpy x y)     -> either (\r -> reg r .~ value x) (const id) y
+                   (Inc r)       -> reg r +~ 1
+                   (Dec r)       -> reg r -~ 1
+                   (Tgl r)       -> (instrs . ix (value (Left r) + cl) . _Right) %~ tgl
+                   (Jnz x y)     -> if value x /= 0 then line +~ value y - 1 else id
+                   (Add x y)     -> (reg x +~ value (Left y)) . (reg y .~ 0)
+                   (Mul w x y z) -> (reg y +~ (value w * value (Left x)))
                                     . (reg x .~ 0) . (reg z .~ 0)
-                   Nop           -> pure id
-            pure $ sim & f & line +~ 1
+                   Nop           -> id
           tgl (Cpy x y) = Jnz x y
           tgl (Inc r)   = Dec r
           tgl (Dec r)   = Inc r
@@ -134,12 +130,15 @@ evalNextInstr transmit sim = traverse eval $ sim ^? (instrs . ix cl)
           tgl (Tgl r)   = Inc r
           tgl _ = error "Invalid toggle"
 
-run :: (Monad m) => Transmit m -> Simulator -> m Simulator
-run transmit = go
-    where go sim = evalNextInstr transmit sim >>= maybe (pure sim) go
+evalAction :: Simulator -> Action -> Int
+evalAction sim (Out v) = val sim v
 
 evaluate :: Simulator -> Simulator
-evaluate = runIdentity . run (const (pure ()))
+evaluate sim = maybe sim f $ sim ^? (instrs . ix (sim ^. line))
+    where f = evaluate . (line +~ 1) . either (error "") (evalInstr sim)
 
-evaluateOutput :: (Monad m) => Simulator -> ConduitT a Int m ()
-evaluateOutput sim = void (run yield sim)
+evaluateOutput :: Simulator -> [Int]
+evaluateOutput sim = maybe [] f $ sim ^? (instrs . ix (sim ^. line))
+    where f = \case
+              Right instr -> evaluateOutput (line +~ 1 $ evalInstr sim instr)
+              Left action -> evalAction sim action : evaluateOutput (line +~ 1 $ sim)
