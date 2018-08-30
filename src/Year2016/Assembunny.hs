@@ -62,8 +62,8 @@ multiplication ( Right (Cpy a' (Left d'))
                : Right (Dec b')
                : Right (Jnz (Left ((== b') -> True)) (Right (-5)))
                : _) =
-    Just [ Right (Mul a' b' c' d')
-         , Right Nop, Right Nop, Right Nop, Right Nop, Right Nop ]
+    Just $ map Right [ (Mul a' b' c' d')
+                     , Nop, Nop, Nop, Nop, Nop ]
 multiplication _ = Nothing
 
 plusEquals :: Optimization
@@ -71,8 +71,8 @@ plusEquals ( Right (Inc a')
            : Right (Dec b')
            : Right (Jnz (Left ((== b') -> True)) (Right (-2)))
            : _) =
-    Just [ Right (Add a' b')
-         , Right Nop, Right Nop ]
+    Just $ map Right [ (Add a' b')
+                     , Nop, Nop ]
 plusEquals _ = Nothing
 
 optimize :: [Optimization] -> [Instruction] -> [Instruction]
@@ -133,12 +133,14 @@ evalInstr sim instr = eval sim
 evalAction :: Simulator -> Action -> Int
 evalAction sim (Out v) = val sim v
 
+evaluate' :: Simulator -> ([Int], Simulator)
+evaluate' sim = maybe ([], sim) f $ sim ^? (instrs . ix (sim ^. line))
+    where f = \case
+              Right instr -> evaluate' (line +~ 1 $ evalInstr sim instr)
+              Left action -> _1 %~ (evalAction sim action :) $ evaluate' (line +~ 1 $ sim)
+
 evaluate :: Simulator -> Simulator
-evaluate sim = maybe sim f $ sim ^? (instrs . ix (sim ^. line))
-    where f = evaluate . (line +~ 1) . either (error "") (evalInstr sim)
+evaluate = snd . evaluate'
 
 evaluateOutput :: Simulator -> [Int]
-evaluateOutput sim = maybe [] f $ sim ^? (instrs . ix (sim ^. line))
-    where f = \case
-              Right instr -> evaluateOutput (line +~ 1 $ evalInstr sim instr)
-              Left action -> evalAction sim action : evaluateOutput (line +~ 1 $ sim)
+evaluateOutput = fst . evaluate'
