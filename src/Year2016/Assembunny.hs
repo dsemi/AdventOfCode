@@ -23,18 +23,15 @@ import Text.Megaparsec.Char.Lexer (decimal, signed)
 type Register = Char
 type Value = Either Register Int
 
-data Instr = Cpy Value Value
-           | Inc Char
-           | Dec Char
-           | Tgl Char
-           | Jnz Value Value
-           | Add Char Char
-           | Mul Value Char Char Char
-           | Nop deriving (Eq, Show)
-
-data Action = Out Value deriving (Eq, Show)
-
-type Instruction = Either Action Instr
+data Instruction = Cpy Value Value
+                 | Inc Char
+                 | Dec Char
+                 | Tgl Char
+                 | Out Value
+                 | Jnz Value Value
+                 | Add Char Char
+                 | Mul Value Char Char Char
+                 | Nop deriving (Eq, Show)
 
 data Simulator = Sim { _a :: Int
                      , _b :: Int
@@ -55,24 +52,24 @@ reg _ = error "Invalid register"
 type Optimization = [Instruction] -> Maybe [Instruction]
 
 multiplication :: Optimization
-multiplication ( Right (Cpy a' (Left d'))
-               : Right (Inc c' )
-               : Right (Dec ((== d') -> True))
-               : Right (Jnz (Left ((== d') -> True)) (Right (-2)))
-               : Right (Dec b')
-               : Right (Jnz (Left ((== b') -> True)) (Right (-5)))
+multiplication ( (Cpy a' (Left d'))
+               : (Inc c' )
+               : (Dec ((== d') -> True))
+               : (Jnz (Left ((== d') -> True)) (Right (-2)))
+               : (Dec b')
+               : (Jnz (Left ((== b') -> True)) (Right (-5)))
                : _) =
-    Just $ map Right [ (Mul a' b' c' d')
-                     , Nop, Nop, Nop, Nop, Nop ]
+    Just $ [ (Mul a' b' c' d')
+           , Nop, Nop, Nop, Nop, Nop ]
 multiplication _ = Nothing
 
 plusEquals :: Optimization
-plusEquals ( Right (Inc a')
-           : Right (Dec b')
-           : Right (Jnz (Left ((== b') -> True)) (Right (-2)))
+plusEquals ( (Inc a')
+           : (Dec b')
+           : (Jnz (Left ((== b') -> True)) (Right (-2)))
            : _) =
-    Just $ map Right [ (Add a' b')
-                     , Nop, Nop ]
+    Just $  [ (Add a' b')
+            , Nop, Nop ]
 plusEquals _ = Nothing
 
 optimize :: [Optimization] -> [Instruction] -> [Instruction]
@@ -87,15 +84,14 @@ optimize (f:fs) v = optimize fs $ collapse [] opt
 parseInstructions :: String -> Simulator
 parseInstructions = Sim 0 0 0 0 0
                     . V.fromList . optimize [multiplication, plusEquals]
-                    . map (fromJust . parseMaybe (eitherP parseAction parseInstruction)) . lines
-    where parseInstruction :: Parser Instr
+                    . map (fromJust . parseMaybe parseInstruction) . lines
+    where parseInstruction :: Parser Instruction
           parseInstruction = choice [ parseCpy
                                     , parseInc
                                     , parseDec
                                     , parseTgl
+                                    , parseOut
                                     , parseJnz ]
-          parseAction :: Parser Action
-          parseAction = parseOut
           int = signed space decimal
           register = oneOf "abcd"
           value = eitherP register int
@@ -109,20 +105,21 @@ parseInstructions = Sim 0 0 0 0 0
 val :: Simulator -> Value -> Int
 val sim = either ((sim ^?!) . reg) id
 
-evalInstr :: Simulator -> Instr -> Simulator
+evalInstr :: Simulator -> Instruction -> Either Int Simulator
 evalInstr sim instr = eval sim
     where cl = sim ^. line
           value = val sim
           eval = case instr of
-                   (Cpy x y)     -> either (\r -> reg r .~ value x) (const id) y
-                   (Inc r)       -> reg r +~ 1
-                   (Dec r)       -> reg r -~ 1
-                   (Tgl r)       -> (instrs . ix (value (Left r) + cl) . _Right) %~ tgl
-                   (Jnz x y)     -> if value x /= 0 then line +~ value y - 1 else id
-                   (Add x y)     -> (reg x +~ value (Left y)) . (reg y .~ 0)
-                   (Mul w x y z) -> (reg y +~ (value w * value (Left x)))
-                                    . (reg x .~ 0) . (reg z .~ 0)
-                   Nop           -> id
+                   Cpy x y     -> Right . either (\r -> reg r .~ value x) (const id) y
+                   Inc r       -> Right . (reg r +~ 1)
+                   Dec r       -> Right . (reg r -~ 1)
+                   Tgl r       -> Right . ((instrs . ix (value (Left r) + cl)) %~ tgl)
+                   Out v       -> Left . flip val v
+                   Jnz x y     -> Right . if value x /= 0 then line +~ value y - 1 else id
+                   Add x y     -> Right . (reg x +~ value (Left y)) . (reg y .~ 0)
+                   Mul w x y z -> Right . (reg y +~ (value w * value (Left x)))
+                                  . (reg x .~ 0) . (reg z .~ 0)
+                   Nop         -> Right
           tgl (Cpy x y) = Jnz x y
           tgl (Inc r)   = Dec r
           tgl (Dec r)   = Inc r
@@ -130,14 +127,11 @@ evalInstr sim instr = eval sim
           tgl (Tgl r)   = Inc r
           tgl _ = error "Invalid toggle"
 
-evalAction :: Simulator -> Action -> Int
-evalAction sim (Out v) = val sim v
-
 evaluate' :: Simulator -> ([Int], Simulator)
 evaluate' sim = maybe ([], sim) f $ sim ^? (instrs . ix (sim ^. line))
-    where f = \case
-              Right instr -> evaluate' (line +~ 1 $ evalInstr sim instr)
-              Left action -> _1 %~ (evalAction sim action :) $ evaluate' (line +~ 1 $ sim)
+    where f instr = case evalInstr sim instr of
+                      Right sim' -> evaluate' (line +~ 1 $ sim')
+                      Left v -> _1 %~ (v :) $ evaluate' (line +~ 1 $ sim)
 
 evaluate :: Simulator -> Simulator
 evaluate = snd . evaluate'
