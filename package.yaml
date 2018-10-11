@@ -39,6 +39,7 @@ dependencies:
   - pcre-heavy
   - pointedlist
   - recursion-schemes
+  - ref-fd
   - split
   - template-haskell
   - text

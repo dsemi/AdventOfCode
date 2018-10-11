@@ -1,4 +1,4 @@
-{-# LANGUAGE StrictData, TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts, StrictData, TemplateHaskell #-}
 
 module Year2015.Day23
     ( part1
@@ -7,12 +7,17 @@ module Year2015.Day23
 
 import Utils
 
-import Control.Lens (set, use, uses, view, (%=), (+=), (*=))
+import Control.Lens
 import Control.Lens.TH (makeLenses)
-import Control.Monad.State.Strict
+import Control.Monad.Cont
+import Control.Monad.Extra
+import Control.Monad.Ref
+import Control.Monad.State
+import Control.Monad.ST
 import Data.Maybe
-import Data.Vector (Vector, (!))
-import qualified Data.Vector as V
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
+import Data.STRef
 import Text.Megaparsec (parseMaybe, (<|>))
 import Text.Megaparsec.Char (letterChar, space, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
@@ -27,14 +32,11 @@ data Instruction = Hlf Char
 
 data Simulator = Simulator { _a :: Int
                            , _b :: Int
-                           , _currentLine :: Int
-                           , _instructions :: Vector Instruction
                            }
 makeLenses ''Simulator
 
-parseInstructions :: String -> Simulator
-parseInstructions = Simulator 0 0 0 . V.fromList
-                    . map (fromJust . parseMaybe parseInstruction) . lines
+parseInstructions :: String -> [Instruction]
+parseInstructions = map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parser Instruction
           parseInstruction = parseHlf
                              <|> parseTpl
@@ -56,43 +58,34 @@ reg 'a' = a
 reg 'b' = b
 reg  _  = error "Invalid register"
 
-eval :: Instruction -> State Simulator (Int -> Int)
-eval (Hlf r) = do
-  reg r %= (`div` 2)
-  return (+1)
-eval (Tpl r) = do
-  reg r *= 3
-  return (+1)
-eval (Inc r) = do
-  reg r += 1
-  return (+1)
-eval (Jmp o) = do
-  return (+o)
-eval (Jie r o) = do
-  v <- use $ reg r
-  return $ if even v then (+o) else (+1)
-eval (Jio r o) = do
-  v <- use $ reg r
-  return $ if v == 1 then (+o) else (+1)
+type Kont m = () -> m ()
+goto :: Kont m -> m ()
+goto k = k ()
 
-evaluateWhile :: State Simulator Bool -> State Simulator ()
-evaluateWhile f = do
-  line <- use currentLine
-  cond <- f
-  when cond $ do
-    instr <- uses instructions (! line)
-    cl <- eval instr
-    currentLine %= cl
-    evaluateWhile f
+go :: (MonadState Simulator m, MonadCont m, MonadRef ref m) =>
+      ref (HashMap Int (Kont m)) -> Kont m -> [(Int, Instruction)] -> m ()
+go _ _ [] = pure ()
+go labels kont ((i, instr) : xs) = do
+  callCC $ \k -> do
+    modifyRef' labels (M.insert i k)
+    go labels kont xs
+  let follow o = readRef labels >>= goto . M.lookupDefault kont (i + o)
+  case instr of
+    Hlf r -> reg r %= (`div` 2)
+    Tpl r -> reg r *= 3
+    Inc r -> reg r += 1
+    Jmp o -> follow o
+    Jie r o -> whenM (even <$> use (reg r)) $ follow o
+    Jio r o -> whenM ((== 1) <$> use (reg r)) $ follow o
 
-lineInBounds :: State Simulator Bool
-lineInBounds = do
-  instrs <- use instructions
-  line <- use currentLine
-  return $ line >= 0 && line < V.length instrs
+run :: Int -> [Instruction] -> Int
+run a' instrs = runST $ do
+  labels <- newSTRef M.empty
+  flip evalStateT (Simulator a' 0) $ flip runContT (const $ use b)
+           $ callCC $ \k -> go labels k $ reverse $ zip [0..] instrs
 
 part1 :: String -> Int
-part1 = view b . execState (evaluateWhile lineInBounds) . parseInstructions
+part1 = run 0 . parseInstructions
 
 part2 :: String -> Int
-part2 = view b . execState (evaluateWhile lineInBounds) . set a 1 . parseInstructions
+part2 = run 1 . parseInstructions
