@@ -81,5 +81,29 @@ import Year2017.Day23
 import Year2017.Day24
 import Year2017.Day25
 import Year2018.Day01
+import Year2018.Day02
+import Year2018.Day03
+import Year2018.Day04
+import Year2018.Day05
+import Year2018.Day06
+import Year2018.Day07
+import Year2018.Day08
+import Year2018.Day09
+import Year2018.Day10
+import Year2018.Day11
+import Year2018.Day12
+import Year2018.Day13
+import Year2018.Day14
+import Year2018.Day15
+import Year2018.Day16
+import Year2018.Day17
+import Year2018.Day18
+import Year2018.Day19
+import Year2018.Day20
+import Year2018.Day21
+import Year2018.Day22
+import Year2018.Day23
+import Year2018.Day24
+import Year2018.Day25
 
 $(buildProbs)

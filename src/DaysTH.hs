@@ -2,6 +2,8 @@
 
 module DaysTH
     ( buildProbs
+    , input
+    , PType'(..)
     , UnalteredString(..)
     ) where
 
@@ -10,15 +12,30 @@ import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.Int
+import Data.String.Interpolate
+import Data.String.Utils
 import Data.Text (Text)
 import Data.Word
 import qualified Data.Text as T
 import Language.Haskell.TH
+import Language.Haskell.TH.Syntax
 import System.Path.Glob
 import Text.Regex.PCRE.Heavy
 
 
 newtype UnalteredString = UnalteredString { unwrap :: String }
+
+class PType' a where
+    un' :: String -> a
+
+instance PType' String where
+    un' = strip
+
+instance PType' Int where
+    un' = read . un'
+
+instance PType' UnalteredString where
+    un' = UnalteredString
 
 class PType a where
     un :: Text -> a
@@ -107,3 +124,12 @@ buildProbs = do
           toLit (a, b) = TupE [ LitE (IntegerL a)
                               , ListE b
                               ]
+
+input :: Q Exp
+input = do
+  moduleName <- loc_module <$> qLocation
+  let [year, day] = map read . snd . head $ scan r moduleName :: [Int]
+      inputFile = [i|inputs/#{year}/input#{day}.txt|]
+  inp <- runIO (readFile inputFile)
+  pure $ AppE (VarE 'un') (LitE (StringL inp))
+    where r = [re|Year(\d+)\.Day(\d+)|]
