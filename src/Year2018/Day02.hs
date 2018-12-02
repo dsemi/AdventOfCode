@@ -3,6 +3,7 @@ module Year2018.Day02
     , part2
     ) where
 
+import Data.Maybe (catMaybes)
 import Data.List (group, sort, tails)
 
 
@@ -14,10 +15,6 @@ part1 input = length (filter (any (==2)) letterCounts)
 
 part2 :: String -> String
 part2 = head . concatMap findAlmostMatching . tails . lines
-    where keepCommon [] _ = []
-          keepCommon _ [] = []
-          keepCommon (x:xs) (y:ys)
-              | x == y = x : keepCommon xs ys
-              | otherwise = keepCommon xs ys
+    where keepCommon xs ys = catMaybes $ zipWith (\x y -> if x == y then Just x else Nothing) xs ys
           findAlmostMatching [] = error "Can't find almost matching IDs"
           findAlmostMatching (x:xs) = filter ((== length x - 1) . length) $ map (keepCommon x) xs
