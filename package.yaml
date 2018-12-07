@@ -38,6 +38,7 @@ dependencies:
   - multiset
   - pcre-heavy
   - pointedlist
+  - psqueues
   - recursion-schemes
   - ref-fd
   - split
