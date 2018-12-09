@@ -3,12 +3,10 @@ module Year2018.Day03
     , part2
     ) where
 
-import Utils
-
 import Data.Ix
 import Data.Array.Unboxed
 import Data.Maybe
-import Text.Megaparsec (parseMaybe, sepBy)
+import Text.Megaparsec
 import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -19,9 +17,9 @@ data Claim = Claim { num :: Int
                    }
 
 parseClaims :: String -> [Claim]
-parseClaims = map (fromJust . parseMaybe parse) . lines
-    where parse :: Parser Claim
-          parse = do
+parseClaims = map (fromJust . parseMaybe parseClaim) . lines
+    where parseClaim :: Parsec () String Claim
+          parseClaim = do
             n <- char '#' *> decimal
             [x, y] <- string " @ " *> (decimal `sepBy` char ',')
             [w, h] <- string ": " *> (decimal `sepBy` char 'x')

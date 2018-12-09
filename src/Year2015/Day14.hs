@@ -3,15 +3,13 @@ module Year2015.Day14
     , part2
     ) where
 
-import Utils
-
 import Data.Ord
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import qualified Data.IntMultiSet as MS
 import Data.List (sortBy, transpose)
 import Data.Maybe
-import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -28,7 +26,7 @@ getDistancesAtEachSecond input = M.fromList [ (name, take totalTime distStages)
                                                                ++ replicate restTime 0
                                             ]
     where int = fromInteger <$> decimal
-          parser :: Parser (String, Int, Int, Int)
+          parser :: Parsec () String (String, Int, Int, Int)
           parser = do
             name <- some alphaNumChar <* string " can fly "
             speed <- int <* string " km/s for "

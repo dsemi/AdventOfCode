@@ -3,16 +3,14 @@ module Year2016.Day15
     , part2
     ) where
 
-import Utils
-
 import Control.Monad
 import Data.Maybe (mapMaybe)
-import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (digitChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
 
-parser :: Parser (Int, Int)
+parser :: Parsec () String (Int, Int)
 parser = do
   void $ string "Disc #" >> some digitChar >> string " has "
   ps <- int <* string " positions; at time=0, it is at position "

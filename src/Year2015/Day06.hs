@@ -3,14 +3,12 @@ module Year2015.Day06
     , part2
     ) where
 
-import Utils
-
 import Control.Monad
 import Data.Array.ST
 import Data.Array.Unboxed
 import Data.Bits
 import Data.Maybe
-import Text.Megaparsec (choice, parseMaybe)
+import Text.Megaparsec
 import Text.Megaparsec.Char (char, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -28,10 +26,10 @@ action _ = error "Invalid string"
 command :: String -> Command
 command = fromJust . parseMaybe parser
     where parseAction = action <$> choice (map string ["toggle", "turn off", "turn on"])
-          parseIntTuple :: Parser (Int, Int)
+          parseIntTuple :: Parsec () String (Int, Int)
           parseIntTuple = (,) <$> (fromInteger <$> decimal <* char ',')
                               <*> (fromInteger <$> decimal)
-          parser :: Parser Command
+          parser :: Parsec () String Command
           parser = Command <$> parseAction <* spaceChar <*> parseIntTuple
                            <* string " through " <*> parseIntTuple
 

@@ -5,15 +5,13 @@ module Year2017.Day25
     , part2
     ) where
 
-import Utils
-
 import Control.Lens
 import Data.Either.Utils (fromEither)
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List.PointedList
 import Data.Maybe
-import Text.Megaparsec (eitherP, parseMaybe, sepBy)
+import Text.Megaparsec
 import Text.Megaparsec.Char (anyChar, char, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -33,18 +31,18 @@ right t = fromMaybe (insertRight 0 t) $ next t
 
 parseMachine :: String -> (Int, Machine)
 parseMachine input =
-    let (steps, start, rules) = fromJust $ parseMaybe parse input
+    let Just (steps, start, rules) = parseMaybe parse input
     in (steps, Machine (PointedList [] 0 []) start rules)
     where parse = do
             start <- string "Begin in state " *> anyChar <* string ".\n"
             steps <- string "Perform a diagnostic checksum after " *> int <* string " steps.\n\n"
             rules <- M.fromList . concat <$> parseState `sepBy` string "\n\n"
             return $ (steps, start, rules)
-          parseState :: Parser [((Char, Int), Rule)]
+          parseState :: Parsec () String [((Char, Int), Rule)]
           parseState = do
             c <- string "In state " *> anyChar <* string ":\n"
             sequence [parseRule c <* char '\n', parseRule c]
-          parseRule :: Char -> Parser ((Char, Int), Rule)
+          parseRule :: Char -> Parsec () String ((Char, Int), Rule)
           parseRule c = do
             i <- string "  If the current value is " *> int <* string ":\n"
             v <- string "    - Write the value " *> int <* string ".\n"

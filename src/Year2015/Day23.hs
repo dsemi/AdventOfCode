@@ -5,8 +5,6 @@ module Year2015.Day23
     , part2
     ) where
 
-import Utils
-
 import Control.Lens
 import Control.Lens.TH (makeLenses)
 import Control.Monad.Cont
@@ -18,7 +16,7 @@ import Data.Maybe
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import Data.STRef
-import Text.Megaparsec (parseMaybe, (<|>))
+import Text.Megaparsec
 import Text.Megaparsec.Char (letterChar, space, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -37,7 +35,7 @@ makeLenses ''Simulator
 
 parseInstructions :: String -> [Instruction]
 parseInstructions = map (fromJust . parseMaybe parseInstruction) . lines
-    where parseInstruction :: Parser Instruction
+    where parseInstruction :: Parsec () String Instruction
           parseInstruction = parseHlf
                              <|> parseTpl
                              <|> parseInc
@@ -45,7 +43,7 @@ parseInstructions = map (fromJust . parseMaybe parseInstruction) . lines
                              <|> parseJie
                              <|> parseJio
           int = signed space $ fromInteger <$> decimal
-          parseHlf :: Parser Instruction
+          parseHlf :: Parsec () String Instruction
           parseHlf = string "hlf " >> Hlf <$> letterChar
           parseTpl = string "tpl " >> Tpl <$> letterChar
           parseInc = string "inc " >> Inc <$> letterChar

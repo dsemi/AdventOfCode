@@ -5,8 +5,6 @@ module Year2017.Day18
     , part2
     ) where
 
-import Utils
-
 import Control.Lens
 import Control.Monad.Except
 import Control.Monad.State
@@ -15,7 +13,7 @@ import Data.Array.Unboxed
 import Data.Either
 import Data.Maybe
 import Data.Vector (Vector, fromList)
-import Text.Megaparsec (choice, eitherP, parseMaybe)
+import Text.Megaparsec
 import Text.Megaparsec.Char (letterChar, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -42,7 +40,7 @@ type Recv m = Int -> m Int
 parseInstrs :: String -> Sim
 parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
               . map (fromJust . parseMaybe instr) . lines
-    where instr :: Parser Instr
+    where instr :: Parsec () String Instr
           instr = choice [ string "snd " >> Snd <$> value
                          , string "set " >> Set <$> letterChar <* spaceChar <*> value
                          , string "add " >> Add <$> letterChar <* spaceChar <*> value
@@ -51,9 +49,7 @@ parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
                          , string "rcv " >> Rcv <$> letterChar
                          , string "jgz " >> Jgz <$> value <* spaceChar <*> value
                          ]
-          value :: Parser Value
           value = eitherP letterChar int
-          int :: Parser Int
           int = signed (pure ()) decimal
 
 reg :: Applicative f => Char -> (Int -> f Int) -> Sim -> f Sim

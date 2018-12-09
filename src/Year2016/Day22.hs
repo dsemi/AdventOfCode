@@ -3,8 +3,6 @@ module Year2016.Day22
     , part2
     ) where
 
-import Utils
-
 import Data.Array
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
@@ -12,7 +10,7 @@ import qualified Data.HashSet as S
 import Data.Maybe (mapMaybe)
 import Data.List (tails)
 import Data.List.Split (splitOn)
-import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (char, noneOf, space)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -23,7 +21,7 @@ data Node = Node { coords :: Coord
                  , avail :: Int
                  } deriving (Eq, Show)
 
-parseNode :: Parser Node
+parseNode :: Parsec () String Node
 parseNode = do
   p <- some $ noneOf " "
   let [_,'x':x,'y':y] = splitOn "-" p

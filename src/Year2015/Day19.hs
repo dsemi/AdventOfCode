@@ -3,8 +3,6 @@ module Year2015.Day19
     , part2
     ) where
 
-import Utils
-
 import Control.Arrow
 import Data.ByteString.Char8 (pack)
 import Data.HashSet (HashSet)
@@ -13,14 +11,14 @@ import Data.List (intercalate)
 import Data.Maybe
 import Data.String.Utils
 import Data.Tuple
-import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, string)
 import Text.Regex.PCRE.Heavy (Regex, compileM, sub)
 
 
 parseMapping :: String -> (String, String)
 parseMapping = fromJust . parseMaybe parser
-    where parser :: Parser (String, String)
+    where parser :: Parsec () String (String, String)
           parser = (,) <$> some alphaNumChar <* string " => " <*> some alphaNumChar
 
 -- E.g. singleReplacements "aa" "xx" "abskaalkjdsaajlkdaa" ->

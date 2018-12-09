@@ -7,7 +7,7 @@ import Utils
 
 import Data.Either.Utils
 import Data.List (tails)
-import Text.Megaparsec (many, parse, try, (<|>))
+import Text.Megaparsec
 import Text.Megaparsec.Char (anyChar, char)
 
 
@@ -24,7 +24,7 @@ isValid s = not (any (`elem` s) "iol") && isSuccessive s
     where dupChars = do
             a <- anyChar >>= char
             return $ a : a : ""
-          parser :: Parser [String]
+          parser :: Parsec () String [String]
           parser = try (many (searchAll dupChars)) <|> return []
           isSuccessive = any ordered . windows 3
               where ordered []  = True

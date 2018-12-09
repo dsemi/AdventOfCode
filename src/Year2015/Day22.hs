@@ -5,10 +5,8 @@ module Year2015.Day22
     , part2
     ) where
 
-import Utils
-
 import Control.Lens
-import Text.Megaparsec (parseMaybe)
+import Text.Megaparsec
 import Text.Megaparsec.Char (space, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -95,7 +93,7 @@ parseBoss hardMode input =
             , _effects = []
             }
     where int = fromInteger <$> decimal
-          parser :: Parser (Int, Int)
+          parser :: Parsec () String (Int, Int)
           parser = do
             h <- string "Hit Points: " *> int
             space

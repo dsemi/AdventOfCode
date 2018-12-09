@@ -5,14 +5,13 @@ module Year2015.Day20
 
 import Control.Monad (forM_)
 import Control.Monad.ST (runST)
-import Data.Maybe (fromJust)
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as M
 
 
-part1 :: Int -> Int
-part1 n = fromJust $ V.findIndex (>=n) vec
+part1 :: Int -> Maybe Int
+part1 n = V.findIndex (>=n) vec
     where vec :: Vector Int
           vec = runST $ do
                   let lim = n `div` 10
@@ -23,8 +22,8 @@ part1 n = fromJust $ V.findIndex (>=n) vec
                       M.modify v (+ (i*10)) j
                   V.unsafeFreeze v
 
-part2 :: Int -> Int
-part2 n = fromJust $ V.findIndex (>=n) vec
+part2 :: Int -> Maybe Int
+part2 n = V.findIndex (>=n) vec
     where vec :: Vector Int
           vec = runST $ do
                   let lim = n `div` 11

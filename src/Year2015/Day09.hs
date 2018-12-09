@@ -3,13 +3,11 @@ module Year2015.Day09
     , part2
     ) where
 
-import Utils
-
 import Data.HashMap.Strict ((!))
 import qualified Data.HashMap.Strict as M
 import Data.List (permutations)
 import Data.Maybe
-import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -21,7 +19,7 @@ opposite (Edge p1 p2 d) = Edge p2 p1 d
 
 parseLine :: String -> Edge
 parseLine = fromJust . parseMaybe parser
-    where parser :: Parser Edge
+    where parser :: Parsec () String Edge
           parser = Edge <$> some alphaNumChar <* string " to "
                         <*> some alphaNumChar <* string " = "
                         <*> (fromInteger <$> decimal)

@@ -3,9 +3,7 @@ module Year2016.Day09
     , part2
     ) where
 
-import Utils
-
-import Text.Megaparsec (parse)
+import Text.Megaparsec
 import Text.Megaparsec.Char (char)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -14,7 +12,7 @@ data Marker = Marker { dataLen :: Int
                      , markerLen :: Int
                      }
 
-parseMarker :: Parser Marker
+parseMarker :: Parsec () String Marker
 parseMarker = do
   dl <- char '(' *> int
   rc <- char 'x' *> int <* char ')'

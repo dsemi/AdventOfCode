@@ -5,13 +5,11 @@ module Year2015.Day13
     , part2
     ) where
 
-import Utils
-
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (permutations)
 import Data.Maybe
-import Text.Megaparsec (parseMaybe, some, try, (<|>))
+import Text.Megaparsec
 import Text.Megaparsec.Char (alphaNumChar, char, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -21,13 +19,13 @@ data Edge = Edge Char Char Int
 parseLine :: String -> Edge
 parseLine = fromJust . parseMaybe parser
     where int = fromInteger <$> decimal
-          parseValue :: Parser Int
+          parseValue :: Parsec () String Int
           parseValue = do
             op <- (try (string "lose") <|> (string "gain")) <* spaceChar
             i <- int
             let op' = if op == "lose" then negate else id
             return $ op' i
-          parser :: Parser Edge
+          parser :: Parsec () String Edge
           parser = do
             p1 <- some alphaNumChar <* string " would "
             hap <- parseValue <* string " happiness units by sitting next to "

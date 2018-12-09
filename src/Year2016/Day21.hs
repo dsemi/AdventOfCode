@@ -3,15 +3,13 @@ module Year2016.Day21
     , part2
     ) where
 
-import Utils
-
 import Control.Lens (_2, over)
 import Data.Foldable (toList)
 import Data.List (foldl')
 import Data.Maybe (mapMaybe)
 import Data.Sequence (Seq, (><))
 import qualified Data.Sequence as S
-import Text.Megaparsec (optional, parseMaybe, (<|>))
+import Text.Megaparsec
 import Text.Megaparsec.Char (anyChar, char, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -25,7 +23,7 @@ data Action = SwapPosition Int Int
             | Reverse Int Int
             | Move Int Int deriving (Show)
 
-parser :: Parser Action
+parser :: Parsec () String Action
 parser = parseSwap <|> parseSwapC <|> parseRotateR <|> parseRotateL
          <|> parseRotateC <|> parseReverse <|> parseMove
     where int = fromInteger <$> decimal

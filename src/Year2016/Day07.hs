@@ -6,6 +6,7 @@ module Year2016.Day07
 import Utils
 
 import Data.List (isInfixOf)
+import Text.Megaparsec
 import Text.Megaparsec.Char (anyChar, char, noneOf)
 
 
@@ -17,7 +18,7 @@ splitSupernetsAndHypernets = go ([], [])
                                      (']': xs) -> go (sns, segment : hns) xs
                                      _         -> (segment : sns, hns)
 
-parseAbba :: Parser String
+parseAbba :: Parsec () String String
 parseAbba = do
   a <- anyChar
   b <- noneOf [a]
@@ -28,7 +29,7 @@ part1 = length . filter (valid . splitSupernetsAndHypernets) . lines
     where hasAbba = not . null . findAll parseAbba
           valid (sns, hns) = any hasAbba sns && all (not . hasAbba) hns
 
-expectedBab :: Parser String
+expectedBab :: Parsec () String String
 expectedBab = do
   a <- anyChar
   b <- noneOf [a]

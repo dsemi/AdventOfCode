@@ -5,15 +5,13 @@ module Year2017.Day20
     , part2
     ) where
 
-import Utils
-
 import Control.Monad (void)
 import Data.Hashable (Hashable, hashWithSalt)
 import qualified Data.HashSet as S
 import Data.Maybe (fromJust)
 import Data.Ord (comparing)
 import Data.List (foldl', minimumBy)
-import Text.Megaparsec (between, parseMaybe, sepBy)
+import Text.Megaparsec
 import Text.Megaparsec.Char (char, letterChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -37,16 +35,14 @@ instance Hashable Vector where
     hashWithSalt s (Vector x y z) = hashWithSalt s (x, y, z)
 
 parseParticles :: String -> [Particle]
-parseParticles = map (fromJust . parseMaybe parse) . lines
-    where int :: Parser Int
-          int = signed (pure ()) decimal
-          parseVector :: Parser Vector
+parseParticles = map (fromJust . parseMaybe parseParticle) . lines
+    where int = signed (pure ()) decimal
           parseVector = do
             void $ letterChar
             [x, y, z] <- between (string "=<") (char '>') $ int `sepBy` char ','
             pure $ Vector x y z
-          parse :: Parser Particle
-          parse = do
+          parseParticle :: Parsec () String Particle
+          parseParticle = do
             [p, v, a] <- parseVector `sepBy` string ", "
             pure $ Particle p v a
 

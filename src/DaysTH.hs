@@ -12,6 +12,7 @@ import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.Int
+import Data.Maybe
 import Data.String.Interpolate
 import Data.String.Utils
 import Data.Text (Text)
@@ -44,6 +45,10 @@ class PType a where
 instance (PType a) => PType (IO a) where
     un = pure . un
     to = liftIO . (>>= to)
+
+instance (PType a) => PType (Maybe a) where
+    un = Just . un
+    to = to . fromJust
 
 instance PType String where
     un = T.unpack . un

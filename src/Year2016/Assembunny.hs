@@ -8,14 +8,12 @@ module Year2016.Assembunny
     , parseInstructions
     ) where
 
-import Utils
-
 import Control.Lens
 import Data.List (tails)
 import Data.Maybe
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Text.Megaparsec (choice, eitherP, parseMaybe)
+import Text.Megaparsec
 import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -85,7 +83,7 @@ parseInstructions :: String -> Simulator
 parseInstructions = Sim 0 0 0 0 0
                     . V.fromList . optimize [multiplication, plusEquals]
                     . map (fromJust . parseMaybe parseInstruction) . lines
-    where parseInstruction :: Parser Instruction
+    where parseInstruction :: Parsec () String Instruction
           parseInstruction = choice [ parseCpy
                                     , parseInc
                                     , parseDec

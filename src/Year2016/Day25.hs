@@ -9,11 +9,10 @@ import qualified Year2016.Day08 as D8
 import Control.Lens
 import Data.Char (chr)
 import Data.List (findIndex)
-import Data.Maybe (fromJust)
 
 
-part1 :: String -> Int
-part1 input = fromJust $ findIndex outputMatches [0..]
+part1 :: String -> Maybe Int
+part1 input = findIndex outputMatches [0..]
     where sim = parseInstructions input
           outputMatches x = and $ zipWith (==) (cycle [0, 1])
                             $ take 10 $ evaluateOutput $ a .~ x $ sim

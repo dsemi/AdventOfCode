@@ -5,13 +5,11 @@ module Year2016.Day04
     , part2
     ) where
 
-import Utils
-
 import Control.Arrow ((&&&))
 import Data.List (group, intercalate, isInfixOf, sort)
 import Data.List.Split (splitOn)
 import Data.Maybe (mapMaybe)
-import Text.Megaparsec (parseMaybe, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (char, noneOf)
 
 
@@ -22,7 +20,7 @@ data Room = Room { encryptedName :: String
 
 getRooms :: String -> [Room]
 getRooms = mapMaybe (parseMaybe parseRoom) . lines
-    where parseRoom :: Parser Room
+    where parseRoom :: Parsec () String Room
           parseRoom = do
             encryptedPlusSector <- some (noneOf "[") <* char '['
             checksum' <- some (noneOf "]") <* char ']'

@@ -11,7 +11,6 @@ import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.List (delete, lookup, sort)
 import Data.List.Split (splitOn)
-import Data.Maybe (fromJust)
 import Text.Megaparsec (choice, some)
 import Text.Megaparsec.Char (noneOf, spaceChar, string)
 
@@ -70,12 +69,12 @@ makeFloors = go [] . concatMap (\(f, fs) -> map (\(n, t) -> (n, (f, t))) fs) . z
                                          then go ((f, f') : fls) $ delete (n, x) xs
                                          else go ((f', f) : fls) $ delete (n, x) xs
 
-part1 :: String -> Int
-part1 = length . fromJust . aStar neighbors (\_ -> const 1) heuristic isDone
+part1 :: String -> Maybe Int
+part1 = fmap length . aStar neighbors (\_ -> const 1) heuristic isDone
         . makeFloors . map parseFloor . lines
 
-part2 :: String -> Int
-part2 = length . fromJust . aStar neighbors (\_ -> const 1) heuristic isDone . makeFloors
+part2 :: String -> Maybe Int
+part2 = fmap length . aStar neighbors (\_ -> const 1) heuristic isDone . makeFloors
         . over (ix 0) (++ extraItems) . map parseFloor . lines
     where extraItems = [ ("elerium", "generator")
                        , ("elerium", "microchip")

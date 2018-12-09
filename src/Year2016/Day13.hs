@@ -8,7 +8,6 @@ import Data.Graph.AStar
 import Data.Hashable (Hashable)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.Maybe (fromJust)
 
 isOpen :: Int -> (Int, Int) -> Bool
 isOpen n (x, y) = even $ popCount $ x*x + 3*x + 2*x*y + y + y*y + n
@@ -23,9 +22,9 @@ neighbors :: ((Int, Int) -> Bool) -> (Int, Int) -> [(Int, Int)]
 neighbors isOpen' (x, y) = filter isOpen' $ filter isValid [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
     where isValid (x', y') = x' >= 0 && y' >= 0
 
-part1 :: Int -> Int
-part1 = length . fromJust .
-        (\x -> aStar (S.fromList . neighbors (isOpen x)) (\_ -> const 1) heuristic (==target) (1, 1))
+part1 :: Int -> Maybe Int
+part1 x = fmap length
+          $ aStar (S.fromList . neighbors (isOpen x)) (\_ -> const 1) heuristic (==target) (1, 1)
 
 bfs :: (Eq a, Hashable a) => a -> Int -> (a -> [a]) -> HashSet a
 bfs start depth neighbors' = search [(0, start)] S.empty

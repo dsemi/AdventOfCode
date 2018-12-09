@@ -5,8 +5,6 @@ module Year2017.Day07
     , part2
     ) where
 
-import Utils (Parser)
-
 import Control.Arrow ((&&&))
 import Control.Monad (liftM2)
 import Data.Either (fromLeft)
@@ -16,7 +14,7 @@ import Data.List (groupBy, sortBy, transpose)
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Tree (Tree(..), unfoldTreeM)
-import Text.Megaparsec (optional, many, parseMaybe, sepBy)
+import Text.Megaparsec
 import Text.Megaparsec.Char (letterChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -32,7 +30,7 @@ data Program = Program { name :: String
 
 parsePrograms :: String -> [(Program, [String])]
 parsePrograms = map (fromJust . parseMaybe parser) . lines
-    where parser :: Parser (Program, [String])
+    where parser :: Parsec () String (Program, [String])
           parser = do
             name' <- many letterChar
             weight' <- string " (" *> decimal <* string ")"

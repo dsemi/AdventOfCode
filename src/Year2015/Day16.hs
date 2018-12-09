@@ -3,13 +3,11 @@ module Year2015.Day16
     , part2
     ) where
 
-import Utils
-
 import Control.Monad
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.Maybe
-import Text.Megaparsec (parseMaybe, sepBy1, some)
+import Text.Megaparsec
 import Text.Megaparsec.Char (digitChar, lowerChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
@@ -30,7 +28,7 @@ tape = M.fromList [ ("children", (==3))
 parseLines :: String -> [HashMap String Int]
 parseLines = map (M.fromList . fromJust . parseMaybe parser) . lines
     where int = fromInteger <$> decimal
-          parser :: Parser [(String, Int)]
+          parser :: Parsec () String [(String, Int)]
           parser = do
             void $ string "Sue " >> some digitChar >> string ": "
             let counts = (,) <$> some lowerChar <* string ": " <*> int
