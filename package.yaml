@@ -32,6 +32,7 @@ dependencies:
   - interpolate
   - lens
   - lens-aeson
+  - linear
   - megaparsec
   - MissingH
   - mtl
