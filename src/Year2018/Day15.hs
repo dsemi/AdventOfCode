@@ -42,23 +42,22 @@ firstMove path = go Nothing
               | otherwise = p
 
 findNextMove :: STArray s Coord Val -> Char -> Coord -> ST s (Maybe Coord)
-findNextMove grid enemy c = go (1 :: Int) M.empty S.empty $ Q.singleton c 0 ()
-    where go np path closed frontier =
-              case Q.minView frontier of
-                Nothing -> pure Nothing
-                Just (pos, _, _, frontier') -> do
-                  let neighbs = neighbors pos
-                  found <- anyM (fmap ((==enemy) . fst) . readArray grid) neighbs
-                  if found
-                  then pure $ firstMove path pos
-                  else do
-                    ns <- filterM (\x -> pure (not (S.member x closed) && not (Q.member x frontier))
-                                         &&^ fmap ((=='.') . fst) (readArray grid x)) neighbs
-                    let closed' = S.insert pos closed
-                        path' = M.union path $ M.fromList $ map (,pos) ns
-                        (np', frontier'') = foldl' (\(p, q) n -> (p+1, Q.insert n p () q))
-                                            (np, frontier') ns
-                    go np' path' closed' frontier''
+findNextMove grid enemy c = go (1 :: Int) M.empty S.empty $ Q.minView $ Q.singleton c 0 ()
+    where go np path closed = \case
+              Nothing -> pure Nothing
+              Just (pos, _, _, frontier) -> do
+                let neighbs = neighbors pos
+                found <- anyM (fmap ((==enemy) . fst) . readArray grid) neighbs
+                if found
+                then pure $ firstMove path pos
+                else do
+                  ns <- filterM (\x -> pure (not (S.member x closed) && not (Q.member x frontier))
+                                       &&^ fmap ((=='.') . fst) (readArray grid x)) neighbs
+                  let closed' = S.insert pos closed
+                      path' = M.union path $ M.fromList $ map (,pos) ns
+                      (np', frontier') = foldl' (\(p, q) n -> (p+1, Q.insert n p () q))
+                                         (np, frontier) ns
+                  go np' path' closed' $ Q.minView frontier'
 
 sortByM :: (Monad m, Ord b) => (a -> m b) -> [a] -> m [a]
 sortByM f xs = do
@@ -88,27 +87,25 @@ runRound grid elfPower allowElfDeath = runExceptT $ do
         then if not allowElfDeath && t == 'E'
              then throwError ()
              else lift $ writeArray grid tPos ('.', 0)
-        else lift $ writeArray grid tPos (t, hp-pwr)
+        else lift $ writeArray grid tPos (t, hp - pwr)
+
+outcomeOr :: Int -> STArray s Coord Val -> ST s Int -> ST s Int
+outcomeOr c grid m = do
+  es <- map fst <$> getElems grid
+  if 'E' `notElem` es || 'G' `notElem` es
+  then (*c) . sum . map snd <$> getElems grid
+  else m
 
 part1 :: String -> Int
 part1 input = runST $ thaw (parseGraph input) >>= go 0
     where go :: Int -> STArray s Coord Val -> ST s Int
-          go c grid = do
-            _ <- runRound grid 3 True
-            es <- map fst <$> getElems grid
-            if 'E' `notElem` es || 'G' `notElem` es
-            then (*c) . sum . map snd <$> getElems grid
-            else go (c+1) grid
+          go c grid = runRound grid 3 True >> outcomeOr c grid (go (c+1) grid)
 
 part2 :: String -> Int
 part2 input = runST $ thaw grid' >>= go 0 3
     where grid' = parseGraph input
           go :: Int -> Int -> STArray s Coord Val -> ST s Int
-          go c elfPwr grid = do
-            runRound grid elfPwr False >>= \case
-              Left _ -> thaw grid' >>= go 0 (elfPwr+1)
-              Right _ -> do
-                es <- map fst <$> getElems grid
-                if 'E' `notElem` es || 'G' `notElem` es
-                then (*c) . sum . map snd <$> getElems grid
-                else go (c+1) elfPwr grid
+          go c elfPwr grid =
+              runRound grid elfPwr False >>= \case
+                Left _ -> thaw grid' >>= go 0 (elfPwr+1)
+                Right _ -> outcomeOr c grid $ go (c+1) elfPwr grid
