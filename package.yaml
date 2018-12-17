@@ -35,6 +35,7 @@ dependencies:
   - linear
   - megaparsec
   - MissingH
+  - monad-loops
   - mtl
   - multiset
   - pcre-heavy
