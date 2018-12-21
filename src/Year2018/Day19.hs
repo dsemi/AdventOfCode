@@ -12,6 +12,7 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Vector.Unboxed ((!), (//))
 import qualified Data.Vector.Unboxed as U
+import Math.NumberTheory.ArithmeticFunctions
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
@@ -45,7 +46,7 @@ parseInstrs = fromJust . parseMaybe @() (do
                          , string "eqir" *> pure Eqir
                          , string "eqri" *> pure Eqri
                          , string "eqrr" *> pure Eqrr ]
-            [a, b, c] <- spaceChar *> (decimal `sepBy` char ' ')
+            [a, b, c] <- char ' ' *> (decimal `sepBy` char ' ')
             pure $ Instr op a b c
 
 eval :: U.Vector Int -> Instr -> U.Vector Int
@@ -80,4 +81,4 @@ part1 = (! 0) . uncurry (runProg $ U.replicate 6 0) . parseInstrs
 
 -- Not sure if there's a better way than just deconstructing the assembly
 part2 :: String -> Int
-part2 _ = sum $ filter ((==0) . (10551361 `rem`)) [1..10551361]
+part2 _ = sigma 1 10551361
