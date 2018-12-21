@@ -72,7 +72,7 @@ eval v (Instr op a b c) =
 runProg :: U.Vector Int -> Int -> Vector Instr -> U.Vector Int
 runProg registers ip instrs = go 0 registers
     where go i regs
-              | i < 0 || i > V.length instrs = regs
+              | i < 0 || i >= V.length instrs = regs
               | otherwise = let regs' = eval (regs // [(ip, i)]) (instrs V.! i)
                             in go (regs' ! ip + 1) regs'
 
