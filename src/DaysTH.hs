@@ -66,6 +66,10 @@ instance PType UnalteredString where
     un = UnalteredString . T.unpack
     to = pure . T.pack . unwrap
 
+instance PType Integer where
+    un = read . T.unpack . un
+    to = pure . T.pack . show
+
 instance PType Int where
     un = read . T.unpack . un
     to = pure . T.pack . show
