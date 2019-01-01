@@ -44,7 +44,6 @@ dependencies:
   - psqueues
   - recursion-schemes
   - ref-fd
-  - sbv
   - split
   - template-haskell
   - text
