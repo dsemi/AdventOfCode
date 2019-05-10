@@ -8,6 +8,7 @@ module Year2018.Day21
 import Control.Monad.Writer.Lazy
 import Data.Bits
 import Data.Bool
+import Data.Either
 import qualified Data.IntSet as S
 import Data.Maybe
 import Data.Vector (Vector)
@@ -98,11 +99,11 @@ runProg registers ip instrs = execWriter (go 0 registers)
 part1 :: String -> Int
 part1 = head . uncurry (runProg $ U.replicate 6 0) . parseInstrs
 
-findCycle :: [Int] -> Int
-findCycle = go S.empty 0
-    where go s y (x:xs)
-              | S.member x s = y
-              | otherwise = go (S.insert x s) x xs
+lastUnique :: [Int] -> Int
+lastUnique = fromLeft undefined . foldM go (S.empty, 0)
+    where go (s, y) x
+              | S.member x s = Left y
+              | otherwise = Right (S.insert x s, x)
 
 part2 :: String -> Int
-part2 = findCycle . uncurry (runProg $ U.replicate 6 0) . parseInstrs
+part2 = lastUnique . uncurry (runProg $ U.replicate 6 0) . parseInstrs

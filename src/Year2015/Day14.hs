@@ -3,46 +3,21 @@ module Year2015.Day14
     , part2
     ) where
 
-import Data.Ord
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
-import qualified Data.IntMultiSet as MS
-import Data.List (sortBy, transpose)
-import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char (alphaNumChar, string)
-import Text.Megaparsec.Char.Lexer (decimal)
+import Utils
+
+import Data.Bool
+import Data.List (transpose)
 
 
-totalTime :: Int
-totalTime = 2503
-
-getDistancesAtEachSecond :: String -> HashMap String [Int]
-getDistancesAtEachSecond input = M.fromList [ (name, take totalTime distStages)
-                                            | (name, speed, flyTime, restTime) <-
-                                                map (fromJust . parseMaybe parser) $ lines input
-                                            , let distStages = scanl1 (+) . cycle
-                                                               $ replicate flyTime speed
-                                                               ++ replicate restTime 0
-                                            ]
-    where int = fromInteger <$> decimal
-          parser :: Parsec () String (String, Int, Int, Int)
-          parser = do
-            name <- some alphaNumChar <* string " can fly "
-            speed <- int <* string " km/s for "
-            flyTime <- int <* string " seconds, but then must rest for "
-            restTime <- int <* string " seconds."
-            return (name, speed, flyTime, restTime)
-
-maxesBy :: Ord b => (a -> b) -> [a] -> [a]
-maxesBy cmp xs = let ms = sortBy (flip $ comparing cmp) xs
-                 in takeWhile ((== cmp (head ms)) . cmp) ms
+getDistancesAtEachSecond :: String -> [[Int]]
+getDistancesAtEachSecond input = 
+    [ take 2503 . scanl1 (+) . cycle $ replicate flyTime speed ++ replicate restTime 0 
+    | Right [speed, flyTime, restTime] <- map findAllInts $ lines input
+    ]
 
 part1 :: String -> Int
-part1 = maximum . map last . M.elems . getDistancesAtEachSecond
+part1 = maximum . map last . getDistancesAtEachSecond
 
 part2 :: String -> Int
-part2 input = let dists = getDistancesAtEachSecond input
-                  counts = MS.fromList . concatMap (map fst . maxesBy snd . zip [1..])
-                           . transpose $ M.elems dists
-              in snd . last $ MS.toAscOccurList counts
+part2 = maximum . map sum . transpose . map (\xs -> let m = maximum xs in map (bool 0 1 . (==m)) xs)
+        . transpose . getDistancesAtEachSecond
