@@ -44,9 +44,8 @@ runCommands f1 f2 f3 grid commands =
                 On     -> f2
                 Toggle -> f3
       forM_ [x1..x2] $ \x ->
-        forM_ [y1..y2] $ \y -> do
-          v <- readArray arr (x,y)
-          writeArray arr (x,y) $ f v
+        forM_ [y1..y2] $ \y -> 
+            readArray arr (x,y) >>= writeArray arr (x,y) . f
     return arr
 
 emptyGrid :: UArray (Int, Int) Int

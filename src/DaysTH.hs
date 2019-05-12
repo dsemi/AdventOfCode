@@ -1,4 +1,7 @@
-{-# LANGUAGE FlexibleInstances, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module DaysTH
     ( buildProbs
@@ -11,12 +14,10 @@ import Control.Monad.IO.Class
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
-import Data.Int
 import Data.Maybe
 import Data.String.Interpolate
 import Data.String.Utils
 import Data.Text (Text)
-import Data.Word
 import qualified Data.Text as T
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
@@ -42,73 +43,33 @@ class PType a where
     un :: Text -> a
     to :: (MonadIO m) => a -> m Text
 
-instance (PType a) => PType (IO a) where
-    un = pure . un
-    to = liftIO . (>>= to)
+instance (Read a, Show a) => PType a where
+    un = read . T.unpack
+    to = pure . T.pack . show
 
-instance (PType a) => PType (Maybe a) where
-    un = Just . un
-    to = to . fromJust
-
-instance PType String where
-    un = T.unpack . un
-    to = pure . T.pack
-
-instance PType ByteString where
-    un = B.pack . T.unpack . un
-    to = pure . T.pack . B.unpack
-
-instance PType Text where
+instance {-# OVERLAPPING #-} PType Text where
     un = T.strip
     to = pure
 
-instance PType UnalteredString where
+instance {-# OVERLAPPING #-} PType String where
+    un = T.unpack . un
+    to = pure . T.pack
+
+instance {-# OVERLAPPING #-} PType ByteString where
+    un = B.pack . T.unpack . un
+    to = pure . T.pack . B.unpack
+
+instance {-# OVERLAPPING #-} PType UnalteredString where
     un = UnalteredString . T.unpack
     to = pure . T.pack . unwrap
 
-instance PType Integer where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
+instance {-# OVERLAPPING #-} (PType a) => PType (IO a) where
+    un = pure . un
+    to = liftIO . (>>= to)
 
-instance PType Int where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Int8 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Int16 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Int32 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Int64 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Word where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Word8 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Word16 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Word32 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
-
-instance PType Word64 where
-    un = read . T.unpack . un
-    to = pure . T.pack . show
+instance {-# OVERLAPPING #-} (PType a) => PType (Maybe a) where
+    un = Just . un
+    to = to . fromJust
 
 apply :: (MonadIO m, PType a, PType b) => (a -> b) -> Text -> m Text
 apply f = to . f . un
