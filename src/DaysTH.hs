@@ -44,8 +44,8 @@ class PType a where
     to :: (MonadIO m) => a -> m Text
 
 instance (Read a, Show a) => PType a where
-    un = read . T.unpack
-    to = pure . T.pack . show
+    un = read . un
+    to = to . show
 
 instance {-# OVERLAPPING #-} PType Text where
     un = T.strip

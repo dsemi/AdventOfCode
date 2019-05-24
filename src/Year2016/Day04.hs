@@ -1,49 +1,42 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
 module Year2016.Day04
     ( part1
     , part2
     ) where
 
 import Control.Arrow ((&&&))
+import Control.Monad
+import Data.Char
 import Data.List (group, intercalate, isInfixOf, sort)
-import Data.List.Split (splitOn)
 import Data.Maybe (mapMaybe)
 import Text.Megaparsec
-import Text.Megaparsec.Char (char, noneOf)
+import Text.Megaparsec.Char (char, lowerChar)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
-data Room = Room { encryptedName :: String
-                 , sectorId :: Int
-                 , checksum :: String
+data Room = Room { name :: String
+                 , sid :: Int
                  }
 
 getRooms :: String -> [Room]
 getRooms = mapMaybe (parseMaybe parseRoom) . lines
     where parseRoom :: Parsec () String Room
           parseRoom = do
-            encryptedPlusSector <- some (noneOf "[") <* char '['
-            checksum' <- some (noneOf "]") <* char ']'
-            let ss = splitOn "-" encryptedPlusSector
-            return $ Room (intercalate "-" $ init ss) (read $ last ss) checksum'
-
-roomIsValid :: Room -> Bool
-roomIsValid (Room {encryptedName, checksum}) =
-    nCommonChars 5 (filter (/= '-') encryptedName) == checksum
-    where nCommonChars n = take n . map snd . sort . map (negate . length &&& head) . group . sort
+            room <- Room <$> (intercalate "-" <$> some lowerChar `endBy` char '-') <*> decimal
+            checksum <- between (char '[') (char ']') (some lowerChar)
+            guard $ (== checksum) $ take 5 $ map snd $ sort
+                      $ map (negate . length &&& head) $ group
+                      $ sort $ filter (/= '-') $ name room
+            pure room
 
 part1 :: String -> Int
-part1 = sum . map sectorId . filter roomIsValid . getRooms
+part1 = sum . map sid . getRooms
 
 rotate :: Int -> Char -> Char
-rotate 0 c = c
-rotate n c
-    | c == '-' = ' '
-    | c == 'z' = rotate (n-1) 'a'
-    | otherwise= rotate (n-1) (succ c)
+rotate _ '-' = ' '
+rotate n c = chr $ (ord c - n - 97) `mod` 26 + 97
 
 isNorthPole :: Room -> Bool
-isNorthPole (Room en si _) = "northpole" `isInfixOf` map (rotate si) en
+isNorthPole (Room en si) = map (rotate si) "northpole" `isInfixOf` en
 
 part2 :: String -> Int
-part2 = sectorId . head . filter isNorthPole . filter roomIsValid . getRooms
+part2 = sid . head . filter isNorthPole . getRooms
