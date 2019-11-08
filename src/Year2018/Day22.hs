@@ -22,17 +22,12 @@ import Text.Megaparsec.Char.Lexer
 
 type Coord = (Int, Int)
 
-input' :: (Int, Coord)
-input' = fromJust $ parseMaybe @() (do
-           d <- string "depth: " *> decimal <* newline
-           [x, y] <- string "target: " *> (decimal `sepBy` char ',')
-           pure (d, (x, y))) ($(input) :: String)
-
 depth :: Int
-depth = fst input'
-
 target :: Coord
-target = snd input'
+(depth, target) = fromJust $ parseMaybe @() (do
+                    d <- string "depth: " *> decimal <* newline
+                    [x, y] <- string "target: " *> (decimal `sepBy` char ',')
+                    pure (d, (x, y))) ($(input) :: String)
 
 geologicIndex :: Coord -> Int
 geologicIndex = memoize go
@@ -44,7 +39,7 @@ geologicIndex = memoize go
 
 erosionLevel :: Coord -> Int
 erosionLevel = memoize go
-    where go (x, y) = (geologicIndex (x, y) + depth) `mod` 20183
+    where go xy = (geologicIndex xy + depth) `mod` 20183
 
 part1 :: String -> Int
 part1 _ = sum $ map ((`mod` 3) . erosionLevel) $ range ((0, 0), target)

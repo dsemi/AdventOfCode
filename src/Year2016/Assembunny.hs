@@ -29,7 +29,8 @@ data Instruction = Cpy Value Value
                  | Jnz Value Value
                  | Add Char Char
                  | Mul Value Char Char Char
-                 | Nop deriving (Eq, Show)
+                 | Nop
+                   deriving (Eq, Show)
 
 data Simulator = Sim { _a :: Int
                      , _b :: Int

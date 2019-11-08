@@ -24,8 +24,8 @@ parseLine = fromJust . parseMaybe parser
                         <*> some alphaNumChar <* string " = "
                         <*> (fromInteger <$> decimal)
 
-allPathDistances :: [String] -> [Int]
-allPathDistances input = let m = constructMap $ map parseLine input
+allPathDistances :: String -> [Int]
+allPathDistances input = let m = constructMap $ map parseLine $ lines input
                              paths = permutations $ M.keys m
                          in map (\p -> sum . zipWith (\a b -> m ! a ! b) p $ tail p) paths
     where constructMap = foldr (\e -> addEdgeToMap (opposite e) . addEdgeToMap e) M.empty
@@ -33,7 +33,7 @@ allPathDistances input = let m = constructMap $ map parseLine input
                                           in M.insert p1 (M.insert p2 d m') m
 
 part1 :: String -> Int
-part1 = minimum . allPathDistances . lines
+part1 = minimum . allPathDistances
 
 part2 :: String -> Int
-part2 = maximum . allPathDistances . lines
+part2 = maximum . allPathDistances

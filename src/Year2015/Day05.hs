@@ -5,8 +5,11 @@ module Year2015.Day05
     , part2
     ) where
 
+import Control.Lens (has)
+import Control.Lens.Regex.Text (regex)
 import Data.List (group, isInfixOf)
-import Text.Regex.PCRE.Heavy
+import Data.Text (Text)
+import qualified Data.Text as T
 
 
 part1 :: String -> Int
@@ -16,7 +19,7 @@ part1 = length . filter isNice . lines
                      && length (filter (`elem` "aeiou") s) > 2
                      && any ((>=2) . length) (group s)
 
-part2 :: String -> Int
-part2 = length . filter isNice2 . lines
-    where isNice2 :: String -> Bool
-          isNice2 s = s =~ [re|(.)(.).*\1\2|] && s =~ [re|(.).\1|]
+part2 :: Text -> Int
+part2 = length . filter isNice2 . T.lines
+    where isNice2 :: Text -> Bool
+          isNice2 s = has [regex|(.)(.).*\1\2|] s && has [regex|(.).\1|] s

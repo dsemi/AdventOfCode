@@ -6,7 +6,7 @@ module Year2015.Day03
 import Control.Arrow
 import Control.Lens
 import Data.HashSet (HashSet)
-import qualified Data.HashSet as HS
+import qualified Data.HashSet as S
 
 
 dirFun :: Char -> (Int, Int) -> (Int, Int)
@@ -17,14 +17,15 @@ dirFun '<' = _1 %~ subtract 1
 dirFun  _  = error "Invalid character"
 
 visitedSquares :: String -> HashSet (Int, Int)
-visitedSquares = HS.fromList . scanl (flip ($)) (0,0) . map dirFun
+visitedSquares = S.fromList . scanl (flip ($)) (0,0) . map dirFun
 
-part1 :: String -> String
-part1 = show . HS.size . visitedSquares
+part1 :: String -> Int
+part1 = S.size . visitedSquares
 
-part2 :: String -> String
-part2 = show . HS.size . uncurry HS.union . (both %~ visitedSquares) . everyOther
-    where everyOther :: [a] -> ([a], [a])
-          everyOther (x:y:xs) = (x:) *** (y:) $ everyOther xs
-          everyOther (x:xs) = first (x:) $ everyOther xs
-          everyOther [] = ([], [])
+everyOther :: [a] -> ([a], [a])
+everyOther (x:y:xs) = (x:) *** (y:) $ everyOther xs
+everyOther (x:xs) = first (x:) $ everyOther xs
+everyOther [] = ([], [])
+
+part2 :: String -> Int
+part2 = S.size . uncurry S.union . (both %~ visitedSquares) . everyOther

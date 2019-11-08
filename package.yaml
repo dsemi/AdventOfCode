@@ -23,21 +23,26 @@ dependencies:
   - base16-bytestring
   - bytestring
   - clock
+  - comonad
   - containers >=0.5.8.1
   - cryptohash-md5
+  - data-ordlist
   - deepseq
   - either
   - extra
+  - foldl
   - hashable
   - interpolate
   - lens
   - lens-aeson
+  - lens-regex-pcre
   - linear
   - megaparsec
   - memoize
   - MissingH
   - monad-loops
   - mtl
+  - parallel
   - pcre-heavy
   - pointedlist
   - psqueues

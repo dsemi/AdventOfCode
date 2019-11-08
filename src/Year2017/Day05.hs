@@ -12,7 +12,7 @@ calcNumSteps :: (Int -> Int) -> String -> Int
 calcNumSteps f input = runST $ V.thaw nums >>= goNext 0 0
     where nums = V.fromList $ map read $ lines input
           goNext c i v
-            | i < 0 || i >= M.length v = return c
+            | i < 0 || i >= M.length v = pure c
             | otherwise = do
                 val <- M.read v i
                 M.write v i $ f val

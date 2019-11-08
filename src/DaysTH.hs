@@ -33,6 +33,9 @@ class PType' a where
 instance PType' String where
     un' = strip
 
+instance PType' Text where
+    un' = T.pack . un'
+
 instance PType' Int where
     un' = read . un'
 
