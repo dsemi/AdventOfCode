@@ -10,9 +10,9 @@ import Data.List (transpose)
 
 
 getDistancesAtEachSecond :: String -> [[Int]]
-getDistancesAtEachSecond input = 
-    [ take 2503 . scanl1 (+) . cycle $ replicate flyTime speed ++ replicate restTime 0 
-    | Right [speed, flyTime, restTime] <- map findAllInts $ lines input
+getDistancesAtEachSecond input =
+    [ take 2503 . scanl1 (+) . cycle $ replicate flyTime speed ++ replicate restTime 0
+    | [speed, flyTime, restTime] <- map findAllInts $ lines input
     ]
 
 part1 :: String -> Int

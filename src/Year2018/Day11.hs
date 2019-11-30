@@ -35,11 +35,10 @@ maxPartialSums grid = map (maximumBy (comparing snd) . assocs) $ grid : go 1 (co
                     f (x, y) = xyLookup' (x, y) + xyLookup' (x+1, y+1)
                                + grid ! (x, y+n) + grid ! (x+n, y) - xyLookup'' (x+1,y+1)
 
-part1 :: Int -> String
-part1 = show . fst . (!! 2) . maxPartialSums . powerLevels
+part1 :: Int -> (Int, Int)
+part1 = fst . (!! 2) . maxPartialSums . powerLevels
 
-part2 :: Int -> String
-part2 = show . f . maximumBy (comparing (snd . fst)) . (`zip` [1..300])
+part2 :: Int -> (Int, Int, Int)
+part2 = f . maximumBy (comparing (snd . fst)) . (`zip` [1..300])
         . maxPartialSums . powerLevels
-    where f :: (((Int, Int), Int), Int) -> (Int, Int, Int)
-          f (((x, y), _), n) = (x, y, n)
+    where f (((x, y), _), n) = (x, y, n)

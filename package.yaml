@@ -12,61 +12,79 @@ default-extensions:
   - TupleSections
 other-extensions:
   - TemplateHaskell
+ghc-options:
+  - -O2
+  - -Wall
+  - -Wcompat
+  - -Wincomplete-record-updates
+  - -Wincomplete-uni-patterns
+  - -Wredundant-constraints
+  - -Wnoncanonical-monad-instances
 dependencies:
-  - aeson
   - ansi-terminal
-  - arithmoi
-  - array
-  - astar
-  - attoparsec
   - base >=4.9 && <5
-  - base16-bytestring
-  - bytestring
   - clock
-  - comonad
-  - containers >=0.5.8.1
-  - cryptohash-md5
-  - data-ordlist
+  - containers
   - deepseq
-  - either
-  - extra
-  - foldl
-  - hashable
+  - hspec
   - interpolate
-  - lens
-  - lens-aeson
-  - lens-regex-pcre
-  - linear
-  - megaparsec
-  - memoize
-  - MissingH
-  - monad-loops
   - mtl
-  - parallel
-  - pcre-heavy
-  - pointedlist
-  - psqueues
-  - recursion-schemes
-  - ref-fd
-  - split
-  - template-haskell
   - text
-  - transformers
-  - unordered-containers
-  - vector
+  - split
+library:
+  source-dirs: src
+  exposed-modules: Days
+  dependencies:
+    - aeson
+    - arithmoi
+    - array
+    - astar
+    - attoparsec
+    - base16-bytestring
+    - bytestring
+    - comonad
+    - containers >=0.5.8.1
+    - cryptohash-md5
+    - data-ordlist
+    - deepseq
+    - either
+    - extra
+    - foldl
+    - hashable
+    - lens
+    - lens-aeson
+    - linear
+    - megaparsec
+    - memoize
+    - MissingH
+    - monad-loops
+    - mtl
+    - parallel
+    - pointedlist
+    - psqueues
+    - recursion-schemes
+    - ref-fd
+    - template-haskell
+    - split
+    - transformers
+    - unordered-containers
+    - vector
 executables:
   Advent:
     main: Main.hs
-    source-dirs: src
+    source-dirs: exes
     ghc-options:
-      - -O2
       - -threaded
-      - -Wall
-      - -Wcompat
-      - -Wincomplete-record-updates
-      - -Wincomplete-uni-patterns
-      - -Wredundant-constraints
-      - -Wnoncanonical-monad-instances
+    dependencies:
+      - Advent
+tests:
+  AdventTests:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+    dependencies:
+      - Advent
 build-type: Custom
 custom-setup:
   dependencies:
@@ -74,5 +92,5 @@ custom-setup:
     - interpolate
     - text
     - Cabal
+    - megaparsec
     - MissingH
-    - pcre-heavy

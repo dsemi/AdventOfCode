@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Year2018.Day04
@@ -5,22 +6,26 @@ module Year2018.Day04
     , part2
     ) where
 
+import Data.Either
 import Data.List (maximumBy, sort)
 import Data.IntMap.Strict (IntMap, (!))
 import qualified Data.IntMap.Strict as M
 import Data.Ord
-import Text.Regex.PCRE.Heavy
+import Text.Megaparsec (Parsec, optional, parse)
+import Text.Megaparsec.Char (char, space, string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
 data Record = GuardChange { guardNum :: Int }
             | SleepToggle { minute :: Int }
 
 parseRecords :: String -> [Record]
-parseRecords = map (toRecord . snd) . sort . scan regex
-    where regex = [re|\[\d+-\d+-\d+ \d+:(\d+)\] (?:falls asleep|wakes up|Guard #(\d+))|]
-          toRecord [m] = SleepToggle (read m)
-          toRecord [_, n] = GuardChange $ read n
-          toRecord _ = error "Error parsing record"
+parseRecords = rights . map (parse parser "") . sort . lines
+    where parser :: Parsec () String Record
+          parser = do
+            m <- char '[' *> decimal *> char '-' *> decimal *> char '-' *> decimal *>
+                 space *> decimal *> char ':' *> decimal <* char ']'
+            maybe (SleepToggle m) GuardChange <$> (space >> optional (string "Guard #" *> decimal))
 
 guardSleepFreqs :: [Record] -> IntMap [Int]
 guardSleepFreqs = M.fromListWith (zipWith (+)) . projectShifts

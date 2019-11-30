@@ -1,19 +1,23 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module Year2018.Day09
     ( part1
     , part2
     ) where
 
-import Control.Lens hiding (re)
+import Control.Lens
 import Data.List.PointedList.Circular
 import qualified Data.IntMap.Strict as M
-import Text.Regex.PCRE.Heavy
+import Text.Megaparsec (Parsec, parseMaybe)
+import Text.Megaparsec.Char (string)
+import Text.Megaparsec.Char.Lexer (decimal)
 
 
-parse :: String -> (Int, Int)
-parse = (\[a, b] -> (a, b)) . map read . snd . head . scan regex
-    where regex = [re|(\d+) players; last marble is worth (\d+) points|]
+parse :: String -> Maybe (Int, Int)
+parse = parseMaybe parser
+    where parser :: Parsec () String (Int, Int)
+          parser = do
+            a <- decimal <* string " players; last marble is worth "
+            b <- decimal <* string " points"
+            pure (a, b)
 
 play :: (Int, Int) -> Maybe Int
 play (n, s) = go 1 M.empty (singleton 0)
@@ -25,7 +29,7 @@ play (n, s) = go 1 M.empty (singleton 0)
                             in delete c' >>= go (p+1) m'
 
 part1 :: String -> Maybe Int
-part1 = play . parse
+part1 x = parse x >>= play
 
 part2 :: String -> Maybe Int
-part2 = play . (_2 *~ 100) . parse
+part2 x = parse x >>= play . (_2 *~ 100)

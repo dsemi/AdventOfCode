@@ -81,8 +81,8 @@ findFirstCrash grid = go
                      in if null crashes then go carts'
                         else swap $ head crashes
 
-part1 :: UnalteredString -> String
-part1 = show . uncurry findFirstCrash . parseTracks . unwrap
+part1 :: UnalteredString -> Coord
+part1 = uncurry findFirstCrash . parseTracks . unwrap
 
 findLastCrash :: Array Coord Char -> Map Coord Cart -> Coord
 findLastCrash grid = go
@@ -90,5 +90,5 @@ findLastCrash grid = go
               | M.size carts == 1 = swap $ fst $ M.findMin carts
               | otherwise = go $ snd (tick grid M.empty carts)
 
-part2 :: UnalteredString -> String
-part2 = show . uncurry findLastCrash . parseTracks . unwrap
+part2 :: UnalteredString -> Coord
+part2 = uncurry findLastCrash . parseTracks . unwrap

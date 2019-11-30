@@ -1,15 +1,14 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module Year2015.Day05
     ( part1
     , part2
     ) where
 
-import Control.Lens (has)
-import Control.Lens.Regex.Text (regex)
+import Utils
+
+import Data.Either (isRight)
 import Data.List (group, isInfixOf)
-import Data.Text (Text)
-import qualified Data.Text as T
+import Text.Megaparsec (Parsec, parse)
+import Text.Megaparsec.Char (anyChar, char)
 
 
 part1 :: String -> Int
@@ -19,7 +18,13 @@ part1 = length . filter isNice . lines
                      && length (filter (`elem` "aeiou") s) > 2
                      && any ((>=2) . length) (group s)
 
-part2 :: Text -> Int
-part2 = length . filter isNice2 . T.lines
-    where isNice2 :: Text -> Bool
-          isNice2 s = has [regex|(.)(.).*\1\2|] s && has [regex|(.).\1|] s
+part2 :: String -> Int
+part2 = length . filter isNice2 . lines
+    where f :: Parsec () String Char
+          f = searchAll $ do
+            (a, b) <- (,) <$> anyChar <*> anyChar
+            searchAll (char a >> char b)
+          g :: Parsec () String Char
+          g = searchAll $ anyChar <* anyChar >>= char
+          isNice2 :: String -> Bool
+          isNice2 s = isRight (parse f "" s) && isRight (parse g "" s)

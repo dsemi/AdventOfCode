@@ -1,13 +1,12 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module Year2018.Day07
     ( part1
     , part2
     ) where
 
 import Control.Arrow ((***))
-import Control.Lens hiding (re)
+import Control.Lens
 import Data.Char (ord)
+import Data.Either (rights)
 import qualified Data.HashMap.Strict as M
 import Data.HashPSQ (HashPSQ)
 import qualified Data.HashPSQ as Q
@@ -16,18 +15,22 @@ import qualified Data.HashSet as S
 import Data.List (partition, sortBy)
 import Data.Maybe (listToMaybe)
 import Data.Ord (comparing)
-import Text.Regex.PCRE.Heavy (re, scan)
+import Text.Megaparsec (Parsec, parse, some)
+import Text.Megaparsec.Char (string, upperChar)
 
 
 type Queue = HashPSQ Char (Int, Char) (HashSet Char)
 
 parseSteps :: String -> Queue
-parseSteps input = foldr (\(k, (p, v)) -> Q.insert k (p, k) v) Q.empty $ M.toList
-                   $ M.fromListWith (\(a, b) -> ((a+) *** S.union b))
-                   $ concatMap (f . snd) $ scan regex input
-    where f [a:_, b:_] = [(a, (0, S.singleton b)), (b, (1, S.empty))]
-          f _ = error "Error parsing step"
-          regex = [re|Step ([A-Z]) must be finished before step ([A-Z]) can begin|]
+parseSteps  = foldr (\(k, (p, v)) -> Q.insert k (p, k) v) Q.empty . M.toList
+              . M.fromListWith (\(a, b) -> ((a+) *** S.union b))
+              . concatMap f . rights . map (parse parser "") . lines
+    where f (a, b) = [(a, (0, S.singleton b)), (b, (1, S.empty))]
+          parser :: Parsec () String (Char, Char)
+          parser = do
+            a <- string "Step " *> some upperChar <* string " must be finished before step "
+            b <- some upperChar <* string " can begin."
+            pure (head a, head b)
 
 solve :: Int -> Queue -> (Int, [Char])
 solve n = go 0 []

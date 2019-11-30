@@ -16,7 +16,7 @@ data Ingredient = Ingredient { capacity :: Int
                              }
 
 parseIngredient :: String -> Ingredient
-parseIngredient s = let (Right [c, d, f, t, ca]) = findAllInts s
+parseIngredient s = let [c, d, f, t, ca] = findAllInts s
                     in Ingredient c d f t ca
 
 partitions :: Int -> Int -> [[Int]]

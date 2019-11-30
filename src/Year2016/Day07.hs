@@ -3,9 +3,8 @@ module Year2016.Day07
     , part2
     ) where
 
-import Utils
-
-import Data.List (isInfixOf)
+import Data.Either (rights)
+import Data.List (isInfixOf, tails)
 import Text.Megaparsec
 import Text.Megaparsec.Char (anyChar, char, noneOf)
 
@@ -23,6 +22,9 @@ parseAbba = do
   a <- anyChar
   b <- noneOf [a]
   char b >> char a >> return [a, b, b, a]
+
+findAll :: Parsec () String a -> String -> [a]
+findAll parser = rights . map (parse parser "") . init . tails
 
 part1 :: String -> Int
 part1 = length . filter (valid . splitSupernetsAndHypernets) . lines

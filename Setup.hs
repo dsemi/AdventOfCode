@@ -11,7 +11,8 @@ import Distribution.PackageDescription (emptyHookedBuildInfo)
 import Distribution.Simple
 import Distribution.Simple.Command (noExtraFlags)
 import System.Path.Glob
-import Text.Regex.PCRE.Heavy
+import Text.Megaparsec
+import Text.Megaparsec.Char
 import Text.Printf
 
 buildImportFile = do
@@ -34,9 +35,11 @@ buildImportFile = do
   when (contents /= output) $
        T.writeFile "src/Days.hs" output
     where fn f imp = ("import " ++ module') : imp
-              where module' = let [year, day] = snd $ head $ scan regex f
+              where module' = let Just (year, day) = parseMaybe parser f
                               in "Year" ++ year ++ ".Day" ++ day
-                    regex = [re|src/Year(\d+)/Day(\d+).hs|]
+                    parser :: Parsec () String (String, String)
+                    parser = (,) <$> (string "src/Year" *> some digitChar)
+                             <*> (string "/Day" *> some digitChar <* string ".hs")
 
 myUserHooks = simpleUserHooks {
                 preBuild = fn

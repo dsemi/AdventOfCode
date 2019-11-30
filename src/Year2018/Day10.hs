@@ -1,5 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module Year2018.Day10
     ( part1
     , part2
@@ -8,7 +6,9 @@ module Year2018.Day10
 import Control.Lens (view)
 import Data.Maybe
 import Linear.V2
-import Text.Regex.PCRE.Heavy
+import Text.Megaparsec (Parsec, between, optional, parseMaybe)
+import Text.Megaparsec.Char (char, space, string)
+import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
 data Obj = Obj { pos :: V2 Int
@@ -16,9 +16,12 @@ data Obj = Obj { pos :: V2 Int
                } deriving (Show)
 
 parse :: String -> [Obj]
-parse = map (f . map read . snd) . scan regex
-    where regex = [re|position=<((?:-| )\d+), ((?:-| )\d+)> velocity=<((?:-| )\d+), ((?:-| )\d+)>|]
-          f [xPos, yPos, xVel, yVel] = Obj (V2 xPos yPos) (V2 xVel yVel)
+parse = mapMaybe (parseMaybe parser) . lines
+    where parser :: Parsec () String Obj
+          parser = Obj <$> (string "position=" *> point <* space)
+                   <*> (string "velocity=" *> point)
+          point = between (char '<') (char '>') (V2 <$> int <* string ", " <*> int)
+          int = optional space >> signed (pure ()) decimal
 
 showObjs :: [Obj] -> String
 showObjs objs = '\n' : unlines (map (\y -> map (f . (\x -> V2 x y)) [x0..x1]) [y0..y1])

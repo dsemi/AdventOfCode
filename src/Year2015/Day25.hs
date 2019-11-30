@@ -11,7 +11,7 @@ import Math.NumberTheory.Moduli.Class (Mod, getVal, (^%))
 
 
 parseCoord :: String -> (Int, Int)
-parseCoord input = let (Right [r, c]) = findAllInts input
+parseCoord input = let [r, c] = findAllInts input
                    in (r, c)
 
 makeCode :: Int -> Int

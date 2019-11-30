@@ -4,28 +4,34 @@ module Utils where
 
 import Control.DeepSeq
 import Control.Monad.ST
-import Data.Either (rights)
+import Data.Either (fromRight)
 import Data.Hashable (Hashable)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.List (tails)
 import Data.STRef
+import Data.Text (Text)
+import qualified Data.Text as T
 import GHC.Conc
-import Text.Megaparsec (ParseError, Parsec, Token, many, parse, try, (<|>))
+import Text.Megaparsec (Parsec, Stream, many, parse, try, (<|>))
 import Text.Megaparsec.Char (anyChar)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
-findAllInts :: (Integral a) => String -> Either (ParseError (Token String) ()) [a]
-findAllInts = ((map fromInteger) <$>) . parse parser ""
-    where parser :: Parsec () String [Integer]
-          parser = many $ try $ searchAll $ signed (return ()) decimal
+findAllInts :: (Integral a) => String -> [a]
+findAllInts = findAll (signed (pure ()) decimal)
 
-searchAll :: Parsec () String a -> Parsec () String a
+searchAll :: (Stream s) => Parsec () s a -> Parsec () s a
 searchAll p = let parser = try p <|> (anyChar *> parser) in parser
 
-findAll :: Parsec () String a -> String -> [a]
-findAll parser = rights . map (parse parser "") . init . tails
+findAll :: (Stream s) => Parsec () s a -> s -> [a]
+findAll p = fromRight [] . parse parser ""
+    where parser = many $ try $ searchAll p
+
+replace1 :: Text -> Text -> Text -> Text
+replace1 needle rep haystack =
+    let (a, b) = T.breakOn needle haystack
+    in if T.null b then a
+       else a `T.append` rep `T.append` T.drop (T.length needle) b
 
 swapSTRef :: STRef s a -> a -> ST s a
 swapSTRef ref x = do
