@@ -21,6 +21,7 @@ ghc-options:
   - -Wredundant-constraints
   - -Wnoncanonical-monad-instances
 dependencies:
+  - aeson
   - ansi-terminal
   - base >=4.9 && <5
   - clock
@@ -28,6 +29,8 @@ dependencies:
   - deepseq
   - hspec
   - interpolate
+  - lens
+  - lens-aeson
   - mtl
   - text
   - split
@@ -35,7 +38,6 @@ library:
   source-dirs: src
   exposed-modules: Days
   dependencies:
-    - aeson
     - arithmoi
     - array
     - astar
@@ -51,8 +53,6 @@ library:
     - extra
     - foldl
     - hashable
-    - lens
-    - lens-aeson
     - linear
     - megaparsec
     - memoize
