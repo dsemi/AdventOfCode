@@ -12,6 +12,7 @@ import Data.String.Interpolate
 import Days (problems)
 import Data.Text (Text)
 import qualified Data.Text.IO as T
+import System.Environment
 import Test.Hspec
 
 
@@ -19,17 +20,17 @@ type Part m = Text -> m Text
 type Problem m = (Part m , Part m)
 
 validate :: Integer -> Integer -> Problem IO -> Spec
-validate year day (part1, part2) = do
-  input <- runIO $ T.readFile [i|inputs/#{year}/input#{day}.txt|]
-  case expected year day of
-    Just (expected1, expected2) -> do
-      describe [i|#{year} Day #{day} part 1|] $
-          it "returns the correct answer for the problem input" $
-              part1 input >>= (`shouldBe` expected1)
-      describe [i|#{year} Day #{day} part 2|] $
-          it "returns the correct answer for the problem input" $
-              part2 input >>= (`shouldBe` expected2)
-    Nothing -> pure ()
+validate year day (part1, part2) =
+    case expected year day of
+      Just (expected1, expected2) -> do
+        input <- runIO $ T.readFile [i|inputs/#{year}/input#{day}.txt|]
+        describe [i|#{year} Day #{day} part 1|] $
+            it "returns the correct answer for the problem input" $
+                part1 input >>= (`shouldBe` expected1)
+        describe [i|#{year} Day #{day} part 2|] $
+            it "returns the correct answer for the problem input" $
+                part2 input >>= (`shouldBe` expected2)
+      Nothing -> pure ()
 
 key :: (Show a, Show b) => a -> b -> String
 key y d = show y ++ "/" ++ show d
@@ -154,7 +155,9 @@ expects = do
 
 
 main :: IO ()
-main = hspec $ do
-         forM_ problems $ \(year, days) ->
-             forM_ days $ \(day, parts) ->
-                 validate year day parts
+main = do
+  getArgs >>= print
+  hspec $ do
+    forM_ problems $ \(year, days) ->
+        forM_ days $ \(day, parts) ->
+            validate year day parts
