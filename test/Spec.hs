@@ -150,6 +150,8 @@ expects = do
   expect 2018 24 "16086" "3957"
   expect 2018 25 "318" ""
 
+  expect 2019  1 "3235550" "4850462"
+
 
 main :: IO ()
 main = hspec $ do
