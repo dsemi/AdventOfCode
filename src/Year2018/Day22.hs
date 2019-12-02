@@ -5,7 +5,7 @@ module Year2018.Day22
     , part2
     ) where
 
-import DaysTH
+import DaysTH (input)
 
 import Data.Function.Memoize
 import Data.Graph.AStar

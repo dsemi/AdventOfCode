@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Days
-    ( problems
+    ( problem
+    , problems
     ) where
 
 import DaysTH

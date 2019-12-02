@@ -8,17 +8,17 @@ module DaysTH
     ( apply
     , buildProbs
     , input
+    , buildProb
     , PType
     , PType'(..)
     , UnalteredString(..)
     ) where
 
-import Control.Monad.IO.Class
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.Maybe
-import Data.List (sort)
+import Data.List (intercalate, sort)
 import Data.String.Interpolate
 import Data.String.Utils
 import Data.Text (Text)
@@ -49,32 +49,32 @@ instance PType' UnalteredString where
     un' = UnalteredString
 
 class PType a where
-    un :: Text -> a
-    to :: (MonadIO m) => a -> m Text
+    un :: String -> a
+    to :: a -> IO String
 
 instance (Read a, Show a) => PType a where
     un = read . un
     to = to . show
 
 instance {-# OVERLAPPING #-} PType Text where
-    un = T.strip
-    to = pure
+    un = T.pack . un
+    to = to . T.unpack
 
 instance {-# OVERLAPPING #-} PType String where
-    un = T.unpack . un
-    to = pure . T.pack
+    un = strip
+    to = pure
 
 instance {-# OVERLAPPING #-} PType ByteString where
-    un = B.pack . T.unpack . un
-    to = pure . T.pack . B.unpack
+    un = B.pack . un
+    to = pure . B.unpack
 
 instance {-# OVERLAPPING #-} PType UnalteredString where
-    un = UnalteredString . T.unpack
-    to = pure . T.pack . unwrap
+    un = UnalteredString
+    to = to . unwrap
 
 instance {-# OVERLAPPING #-} (PType a) => PType (IO a) where
     un = pure . un
-    to = liftIO . (>>= to)
+    to = (>>= to)
 
 instance {-# OVERLAPPING #-} (PType a) => PType (Maybe a) where
     un = Just . un
@@ -82,14 +82,14 @@ instance {-# OVERLAPPING #-} (PType a) => PType (Maybe a) where
 
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a) where
     un = undefined
-    to (a, b) = T.intercalate "," <$> mapM to [a, b]
+    to (a, b) = intercalate "," <$> mapM to [a, b]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a, a) where
     un = undefined
-    to (a, b, c) = T.intercalate "," <$> mapM to [a, b, c]
+    to (a, b, c) = intercalate "," <$> mapM to [a, b, c]
 
 
-apply :: (MonadIO m, PType a, PType b) => (a -> b) -> Text -> m Text
+apply :: (PType a, PType b) => (a -> b) -> String -> IO String
 apply f = to . f . un
 
 buildProbs :: Q [Dec]
@@ -101,15 +101,18 @@ buildProbs = do
             moduleName  = "Year" ++ year ++ ".Day" ++ day
             part1       = moduleName ++ ".part1"
             part2       = moduleName ++ ".part2"
-        entry <- [e|(read day :: Integer , ( apply $(nm part1)
-                                           , apply $(nm part2)))|]
+        entry <- [e|(read day , ( apply $(nm part1)
+                                , apply $(nm part2)))|]
         pure (read year, entry)
           where parser :: Parsec () String (String, String)
                 parser = (,) <$> (string "src/Year" *> some digitChar)
                          <*> (string "/Day" *> some digitChar <* string ".hs")
                 nm = varE . mkName
-  [d|problems :: [(Integer, [(Integer, (Text -> IO Text, Text -> IO Text))])]
-     problems = $(ListE . map toLit . M.toAscList . foldr accProbs M.empty <$> mapM parseP pFiles)|]
+  [d|problems :: [(Int, [(Int, (String -> IO String, String -> IO String))])]
+     problems = $(ListE . map toLit . M.toAscList . foldr accProbs M.empty <$> mapM parseP pFiles)
+
+     problem :: Int -> Int -> Maybe (String -> IO String, String -> IO String)
+     problem year day = lookup year problems >>= lookup day|]
     where accProbs (year, prob) acc = M.insertWith (++) year [prob] acc
           toLit (a, b) = TupE [ LitE (IntegerL a)
                               , ListE b
@@ -124,3 +127,21 @@ input = do
   pure $ AppE (VarE 'un') (LitE (StringL inp))
     where parser :: Parsec () String (Int, Int)
           parser = (,) <$> (string "Year" *> decimal) <*> (string ".Day" *> decimal)
+
+parseModule :: String -> (Int, Int)
+parseModule = fromJust . parseMaybe parser
+    where parser :: Parsec () String (Int, Int)
+          parser = (,) <$> (string "Year" *> decimal) <*> (string ".Day" *> decimal)
+
+findInput :: (Int, Int) -> IO String
+findInput (year, day) = readFile [i|inputs/#{year}/input#{day}.txt|]
+
+buildProb :: Q [Dec]
+buildProb = do
+  moduleName <- loc_module <$> qLocation
+  [d|part1 :: String -> IO String
+     part1 = const $ findInput (parseModule moduleName) >>= apply $(nm $ moduleName ++ ".part1'")
+
+     part2 :: String -> IO String
+     part2 = const $ findInput (parseModule moduleName) >>= apply $(nm $ moduleName ++ ".part2'") |]
+    where nm = varE . mkName

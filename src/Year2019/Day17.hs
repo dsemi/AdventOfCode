@@ -3,9 +3,13 @@ module Year2019.Day17
     , part2
     ) where
 
+import DaysTH
 
-part1 :: String -> String
-part1 = const ""
 
-part2 :: String -> String
-part2 = const""
+$(buildProb)
+
+part1' :: String -> String
+part1' = const ""
+
+part2' :: String -> String
+part2' = const""
