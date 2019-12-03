@@ -21,7 +21,8 @@ buildImportFile = do
       output = pack $ unindent [i|
         {-# LANGUAGE TemplateHaskell #-}
         module Days
-            ( problems
+            ( problem
+            , problems
             ) where
 
         import DaysTH

@@ -1,25 +1,22 @@
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Main where
 
-import Days (problems)
+import Days (problem)
 
 import Control.DeepSeq
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.List.Split
 import Data.String.Interpolate
-import Data.Text (Text)
-import qualified Data.Text.IO as T
 import System.Console.ANSI
 import System.Clock
 import System.Environment
 import Text.Printf
 
 
-data Args = Args { year :: Integer
-                 , probNums :: [Integer]
+data Args = Args { year :: Int
+                 , probNums :: [Int]
                  }
 
 parseArgs :: [String] -> Args
@@ -33,8 +30,8 @@ parseArgs (y:args) = let probs = foldr pa [] args
                                                   _     -> undefined -- lazy
               | otherwise                     = undefined -- again
 
-findInput :: Integer -> Integer -> IO Text
-findInput yr pday = T.readFile [i|inputs/#{yr}/input#{pday}.txt|]
+findInput :: Int -> Int -> IO String
+findInput yr pday = readFile [i|inputs/#{yr}/input#{pday}.txt|]
 
 colorizeTime :: Double -> String
 colorizeTime n = printf "%s%.3f%s" startCode n endCode
@@ -53,17 +50,17 @@ timeFunc f = do
   let elapsedTime = fromIntegral (end - start) / 10^9
   return (result, elapsedTime)
 
-maybeRun :: Integer -> Integer -> IO Double
-maybeRun y n = maybe notfound run $ lookup y problems >>= lookup n
+maybeRun :: Int -> Int -> IO Double
+maybeRun y n = maybe notfound run $ problem y n
     where notfound = return 0
-          str = "Part %d: %32s  Elapsed time %s seconds\n"
+          str = "Part %s: %32s  Elapsed time %s seconds\n"
           run (p1, p2) = do
             input <- findInput y n
             putStrLn $ "Day " ++ show n
             (ans1, elapsedTime1) <- timeFunc $ p1 input
-            printf str (1 :: Int) ans1 $ colorizeTime elapsedTime1
+            printf str "1" ans1 $ colorizeTime elapsedTime1
             (ans2, elapsedTime2) <- timeFunc $ p2 input
-            printf str (2 :: Int) ans2 $ colorizeTime elapsedTime2
+            printf str "2" ans2 $ colorizeTime elapsedTime2
             return $ elapsedTime1 + elapsedTime2
 
 main :: IO ()

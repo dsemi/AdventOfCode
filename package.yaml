@@ -9,6 +9,7 @@ default-extensions:
   - DeriveTraversable
   - LambdaCase
   - MultiWayIf
+  - TemplateHaskell
   - TupleSections
 other-extensions:
   - TemplateHaskell

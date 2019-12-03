@@ -5,6 +5,7 @@ import Data.List.Split (splitOn)
 import Data.Vector.Unboxed (Vector)
 import qualified Data.Vector.Unboxed as V
 
+
 data Program = Program { _pointer :: Int
                        , _instrs :: Vector Int
                        }
