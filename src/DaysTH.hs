@@ -7,10 +7,8 @@
 module DaysTH
     ( apply
     , buildProbs
-    , input
     , buildProb
     , PType
-    , PType'(..)
     , UnalteredString(..)
     ) where
 
@@ -32,21 +30,6 @@ import Text.Megaparsec.Char.Lexer
 
 
 newtype UnalteredString = UnalteredString { unwrap :: String }
-
-class PType' a where
-    un' :: String -> a
-
-instance PType' String where
-    un' = strip
-
-instance PType' Text where
-    un' = T.pack . un'
-
-instance PType' Int where
-    un' = read . un'
-
-instance PType' UnalteredString where
-    un' = UnalteredString
 
 class PType a where
     un :: String -> a
@@ -117,16 +100,6 @@ buildProbs = do
           toLit (a, b) = TupE [ LitE (IntegerL a)
                               , ListE b
                               ]
-
-input :: Q Exp
-input = do
-  moduleName <- loc_module <$> qLocation
-  let (year, day) = fromJust $ parseMaybe parser moduleName
-      inputFile = [i|inputs/#{year}/input#{day}.txt|]
-  inp <- runIO (readFile inputFile)
-  pure $ AppE (VarE 'un') (LitE (StringL inp))
-    where parser :: Parsec () String (Int, Int)
-          parser = (,) <$> (string "Year" *> decimal) <*> (string ".Day" *> decimal)
 
 parseModule :: String -> (Int, Int)
 parseModule = fromJust . parseMaybe parser

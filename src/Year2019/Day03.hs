@@ -6,26 +6,27 @@ module Year2019.Day03
 import Data.List.Split (splitOn)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
+import Linear.V2
 
 import DaysTH
 
 
 $(buildProb)
 
-parseWire :: String -> Map (Int, Int) Int
-parseWire = M.fromListWith min . flip zip [1..] . tail
-            . scanl move (0, 0) . concatMap expandSteps . splitOn ","
-    where expandSteps (d:ds) = replicate (read ds) d
+parseWire :: String -> Map (V2 Int) Int
+parseWire = M.fromListWith min . flip zip [1..]
+            . scanl1 (+) . concatMap expandSteps . splitOn ","
+    where expandSteps (d:ds) = replicate (read ds) $ move d
           expandSteps [] = error "Unable to parse instr"
-          move (x, y) 'U' = (x, y+1)
-          move (x, y) 'D' = (x, y-1)
-          move (x, y) 'L' = (x-1, y)
-          move (x, y) 'R' = (x+1, y)
-          move _      _   = error "Unknown direction"
+          move 'U' = V2 0 1
+          move 'D' = V2 0 (-1)
+          move 'L' = V2 (-1) 0
+          move 'R' = V2 1 0
+          move _   = error "Unknown direction"
 
 part1' :: String -> Int
-part1' = minimum . map (\(x, y) -> abs x + abs y) . M.keys
+part1' = minimum . map (sum . abs) . M.keys
          . foldr1 M.intersection . map parseWire . lines
 
 part2' :: String -> Int
-part2' = minimum . M.elems . foldr1 (M.intersectionWith (+)) . map parseWire . lines
+part2' = minimum . foldr1 (M.intersectionWith (+)) . map parseWire . lines
