@@ -4,12 +4,13 @@ module Year2019.Day05
     ) where
 
 import DaysTH
+import Year2019.IntCode
 
 
 $(buildProb)
 
-part1' :: String -> String
-part1' = const ""
+part1' :: String -> Int
+part1' = runV2 1 . parse
 
-part2' :: String -> String
-part2' = const""
+part2' :: String -> Int
+part2' = runV2 5 . parse
