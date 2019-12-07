@@ -7,7 +7,6 @@
 module DaysTH
     ( apply
     , buildProbs
-    , buildProb
     , PType
     , UnalteredString(..)
     ) where
@@ -17,16 +16,13 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.List (intercalate, sort)
-import Data.String.Interpolate
 import Data.String.Utils
 import Data.Text (Text)
 import qualified Data.Text as T
 import Language.Haskell.TH
-import Language.Haskell.TH.Syntax
 import System.Path.Glob
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
 
 
 newtype UnalteredString = UnalteredString { unwrap :: String }
@@ -100,21 +96,3 @@ buildProbs = do
           toLit (a, b) = TupE [ LitE (IntegerL a)
                               , ListE b
                               ]
-
-parseModule :: String -> (Int, Int)
-parseModule = fromJust . parseMaybe parser
-    where parser :: Parsec () String (Int, Int)
-          parser = (,) <$> (string "Year" *> decimal) <*> (string ".Day" *> decimal)
-
-findInput :: (Int, Int) -> IO String
-findInput (year, day) = readFile [i|inputs/#{year}/input#{day}.txt|]
-
-buildProb :: Q [Dec]
-buildProb = do
-  moduleName <- loc_module <$> qLocation
-  [d|part1 :: String -> IO String
-     part1 = const $ findInput (parseModule moduleName) >>= apply $(nm $ moduleName ++ ".part1'")
-
-     part2 :: String -> IO String
-     part2 = const $ findInput (parseModule moduleName) >>= apply $(nm $ moduleName ++ ".part2'") |]
-    where nm = varE . mkName

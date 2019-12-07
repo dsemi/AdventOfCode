@@ -8,21 +8,17 @@ import qualified Data.Map.Strict as M
 import Data.List (unfoldr)
 import Data.Tuple
 
-import DaysTH
-import Utils
-
-
-$(buildProb)
 
 parseOrbits :: String -> [(String, String)]
 parseOrbits = map ((id *** tail) . break (==')')) . lines
 
-part1' :: String -> Int
-part1' = sum . map fst . bfs' . M.fromListWith (++) . map (id *** (:[])) . parseOrbits
-    where bfs' orbitMap = bfs "COM" (\x -> M.findWithDefault [] x orbitMap)
+part1 :: String -> Int
+part1 = dfs . M.fromListWith (++) . map (id *** (:[])) . parseOrbits
+    where dfs orbitMap = go 0 "COM"
+              where go c k = c + sum (map (go (c+1)) $ M.findWithDefault [] k orbitMap)
 
-part2' :: String -> Int
-part2' input = transfers "YOU" "SAN"
+part2 :: String -> Int
+part2 input = transfers "YOU" "SAN"
     where invTree = map swap $ parseOrbits input
           pathFromCom obj = reverse $ unfoldr (fmap (id &&& id) . (`lookup` invTree)) obj
           transfers a b = go (pathFromCom a) (pathFromCom b)
