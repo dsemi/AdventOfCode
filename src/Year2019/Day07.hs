@@ -11,11 +11,9 @@ import Year2019.IntCode
 
 
 chain :: Bool -> Memory -> [Int] -> Int
-chain feedback prog phases = last $ last outputs
-    where outputs = zipWith f [0..] phases
-              where f 0 phase = let inp = if feedback then last outputs else []
-                                in runV2 (phase : 0 : inp) prog
-                    f i phase = runV2 (phase : outputs !! (i - 1)) prog
+chain feedback prog phases = last ans
+    where ans = foldr id firstInput $ map (\phase -> \input -> runV2 (phase : input) prog) phases
+          firstInput = if feedback then (0 : ans) else [0]
 
 part1 :: String -> Int
 part1 (parse -> prog) = maximum $ map (chain False prog) $ permutations [0..4]
