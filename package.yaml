@@ -53,6 +53,7 @@ library:
     - either
     - extra
     - foldl
+    - free
     - hashable
     - linear
     - megaparsec

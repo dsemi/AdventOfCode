@@ -3,9 +3,11 @@ module Year2019.Day09
     , part2
     ) where
 
+import Year2019.IntCode
 
-part1 :: String -> String
-part1 = const ""
 
-part2 :: String -> String
-part2 = const ""
+part1 :: String -> Int
+part1 = head . runV2 [1] . parse
+
+part2 :: String -> Int
+part2 = head . runV2 [2] . parse
