@@ -12,14 +12,22 @@ import Control.Monad.Free.TH
 import Data.Bool
 import Data.Char
 import Data.List.Split (splitOn)
-import Data.IntMap.Strict (IntMap, (!))
+import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as M
 
 
 type Memory = IntMap Int
 
+data Program = Program { idx :: !Int
+                       , relBase :: !Int
+                       , memory :: !Memory
+                       }
+
 parse :: String -> Memory
 parse = M.fromList . zip [0..] . map read . splitOn ","
+
+build :: Memory -> Program
+build = Program 0 0
 
 data Mode = Pos | Imm | Rel deriving (Enum)
 
@@ -30,51 +38,53 @@ data Effect a = Input (Int -> a)
               | Output Int a deriving (Functor)
 makeFree ''Effect
 
-getMem :: Free Effect Memory -> Memory
-getMem (Pure m) = m
-getMem _ = error "Unable to read memory"
+(!) :: Program -> Int -> Int
+(!) prog k = M.findWithDefault 0 k $ memory prog
 
-run :: Int -> Int -> Memory -> Free Effect Memory
-run i rb mem =
+run :: Program -> Free Effect Program
+run prog =
     case instr of
       -- Addition
-      1  -> run (i+4) rb $ (set 3 $ val 1 + val 2) mem
+      1  -> run $ inc 4 $ set 3 (val 1 + val 2) prog
       -- Multiplication
-      2  -> run (i+4) rb $ (set 3 $ val 1 * val 2) mem
+      2  -> run $ inc 4 $ set 3 (val 1 * val 2) prog
       -- Store
-      3  -> input >>= \v -> run (i+2) rb $ set 1 v mem
+      3  -> input >>= \v -> run $ inc 2 $ set 1 v prog
       -- Print
-      4  -> output (val 1) >> (run (i+2) rb mem)
+      4  -> output (val 1) >> run (inc 2 prog)
       -- Jump if true
-      5  -> run (bool (i+3) (val 2) $ val 1 /= 0) rb mem
+      5  -> run $ bool (inc 3) (jmp $ val 2) (val 1 /= 0) prog
       -- Jump if false
-      6  -> run (bool (i+3) (val 2) $ val 1 == 0) rb mem
+      6  -> run $ bool (inc 3) (jmp $ val 2) (val 1 == 0) prog
       -- Less than
-      7  -> run (i+4) rb $ (set 3 $ bool 0 1 $ val 1 < val 2) mem
+      7  -> run $ inc 4 $ set 3 (bool 0 1 $ val 1 < val 2) prog
       -- Equal
-      8  -> run (i+4) rb $ (set 3 $ bool 0 1 $ val 1 == val 2) mem
+      8  -> run $ inc 4 $ set 3 (bool 0 1 $ val 1 == val 2) prog
       -- Adjust relative base
-      9  -> run (i+2) (rb + val 1) mem
+      9  -> run $ inc 2 $ incRb (val 1) prog
       -- Stop execution
-      99 -> pure mem
+      99 -> pure prog
       x  -> error $ "Unknown instruction: " ++ show x
-    where arg n = mem ! (i + n)
-          set a v = case modes !! (a - 1) of
-                      Pos -> M.insert (arg a) v
-                      Imm -> error "set on immediate"
-                      Rel -> M.insert (arg a + rb) v
+    where arg n = prog ! (idx prog + n)
+          inc n p = p {idx=idx p + n}
+          jmp n p = p {idx=n}
+          incRb n p = p {relBase=relBase p + n}
+          set a v p = case modes !! (a - 1) of
+                        Pos -> p {memory=M.insert (arg a) v (memory p)}
+                        Imm -> error "set on immediate"
+                        Rel -> p {memory=M.insert (arg a + relBase p) v (memory p)}
           val a = case modes !! (a - 1) of
-                    Pos -> M.findWithDefault 0 (arg a) mem
+                    Pos -> prog ! arg a
                     Imm -> arg a
-                    Rel -> M.findWithDefault 0 (arg a + rb) mem
-          instr = mem ! i `mod` 100
-          modes = getModes $ mem ! i `div` 100
+                    Rel -> prog ! (arg a + relBase prog)
+          instr = (prog ! idx prog) `mod` 100
+          modes = getModes $ (prog ! idx prog) `div` 100
 
 runV1 :: Int -> Int -> Memory -> Int
-runV1 a b = (! 0) . getMem . run 0 0 . M.insert 1 a . M.insert 2 b
+runV1 a b = (! 0) . iter (error "Not pure") . run . build . M.insert 1 a . M.insert 2 b
 
 runV2 :: [Int] -> Memory -> [Int]
-runV2 inp = runEffects inp . run 0 0
+runV2 inp = runEffects inp . run . build
     where runEffects xss (Free rest) =
               case rest of
                 Input f | x:xs <- xss -> runEffects xs $ f x
