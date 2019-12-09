@@ -7,7 +7,7 @@ import Year2019.IntCode
 
 
 part1 :: String -> Int
-part1 = head . runV2 [1] . parse
+part1 = head . runWithInput [1] . parse
 
 part2 :: String -> Int
-part2 = head . runV2 [2] . parse
+part2 = head . runWithInput [2] . parse

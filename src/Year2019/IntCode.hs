@@ -1,19 +1,18 @@
-{-# LANGUAGE FlexibleContexts, TemplateHaskell #-}
-
 module Year2019.IntCode
     ( Memory
     , parse
-    , runV1
-    , runV2
+    , runNoIO
+    , runWithInput
     ) where
 
-import Control.Monad.Free
-import Control.Monad.Free.TH
 import Data.Bool
 import Data.Char
+import Data.Functor.Identity
 import Data.List.Split (splitOn)
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as M
+import Pipes
+import qualified Pipes.Prelude as P
 
 
 type Memory = IntMap Int
@@ -34,14 +33,10 @@ data Mode = Pos | Imm | Rel deriving (Enum)
 getModes :: Int -> [Mode]
 getModes = (++ repeat Pos) . map (toEnum . digitToInt) . reverse . show
 
-data Effect a = Input (Int -> a)
-              | Output Int a deriving (Functor)
-makeFree ''Effect
-
 (!) :: Program -> Int -> Int
 (!) prog k = M.findWithDefault 0 k $ memory prog
 
-run :: Program -> Free Effect Program
+run :: (Monad m) => Program -> Pipe Int Int m Program
 run prog =
     case instr of
       -- Addition
@@ -49,9 +44,9 @@ run prog =
       -- Multiplication
       2  -> run $ inc 4 $ set 3 (val 1 * val 2) prog
       -- Store
-      3  -> input >>= \v -> run $ inc 2 $ set 1 v prog
+      3  -> await >>= \v -> run $ inc 2 $ set 1 v prog
       -- Print
-      4  -> output (val 1) >> run (inc 2 prog)
+      4  -> yield (val 1) >> run (inc 2 prog)
       -- Jump if true
       5  -> run $ bool (inc 3) (jmp $ val 2) (val 1 /= 0) prog
       -- Jump if false
@@ -80,14 +75,10 @@ run prog =
           instr = (prog ! idx prog) `mod` 100
           modes = getModes $ (prog ! idx prog) `div` 100
 
-runV1 :: Int -> Int -> Memory -> Int
-runV1 a b = (! 0) . iter (error "Not pure") . run . build . M.insert 1 a . M.insert 2 b
+runNoIO :: Int -> Int -> Memory -> Int
+runNoIO a b mem = (! 0) $ runIdentity $ runEffect
+                $ (error "No input") >-> run prog >-> P.drain
+    where prog = build $ M.insert 1 a $ M.insert 2 b mem
 
-runV2 :: [Int] -> Memory -> [Int]
-runV2 inp = runEffects inp . run . build
-    where runEffects xss (Free rest) =
-              case rest of
-                Input f | x:xs <- xss -> runEffects xs $ f x
-                        | otherwise -> error "Not enough inputs"
-                Output v eff -> v : runEffects xss eff
-          runEffects _ (Pure _) = []
+runWithInput :: [Int] -> Memory -> [Int]
+runWithInput input mem = P.toList $ each input >-> void (run (build mem))
