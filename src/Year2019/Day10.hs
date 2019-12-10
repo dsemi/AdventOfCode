@@ -19,20 +19,15 @@ parse input = [ (x, y) | (y, line) <- zip [0..] $ lines input
               ]
 
 data Point = Point { cartesian :: (Int, Int)
-                   , len :: Double
                    , theta :: Double
+                   , len :: Double
                    }
 
 -- Polar coord starting at (0, -1) (where -y is up) and rotating clockwise
 relPoint :: (Int, Int) -> (Int, Int) -> Point
-relPoint (x1, y1) (x2, y2)
-    | x' >= 0 && y' >= 0 = pt $ pi - atan (x' / y')
-    | x' >= 0 && y' < 0 = pt $ abs (atan (x' / y'))
-    | x' < 0 && y' >= 0 = pt $ pi + abs (atan (x' / y'))
-    | otherwise = pt $ 2 * pi - atan (x' / y')
+relPoint (x1, y1) (x2, y2) = Point (x2, y2) (atan2 (-x') y') $ sqrt (x'^2 + y'^2)
     where y' = fromIntegral $ y2 - y1
           x' = fromIntegral $ x2 - x1
-          pt = Point (x2, y2) (sqrt (x'^2 + y'^2))
 
 visibilityMap :: (Int, Int) -> [(Int, Int)] -> Map Double [Point]
 visibilityMap pt = M.map (sortBy (comparing len)) . M.fromListWith (++)
@@ -46,11 +41,9 @@ part1 = M.size . maxDetected . parse
 
 part2 :: String -> Int
 part2 = (\(a, b) -> 100 * a + b). cartesian . go 200 . maxDetected . parse
-    where zap v m
-              | length (m ! v) == 1 = M.delete v m
-              | otherwise = M.adjust tail v m
-          go c m
+    where go c m
               | M.null m = error "empty"
               | length keys >= c = head $ m ! (keys !! (c-1))
-              | otherwise = go (c - length keys) $ foldr zap m keys
+              | otherwise = go (c - length keys)
+                            $ M.filter (not . null) $ foldr (M.adjust tail) m keys
               where keys = M.keys m
