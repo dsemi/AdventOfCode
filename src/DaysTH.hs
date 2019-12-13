@@ -13,6 +13,7 @@ module DaysTH
 
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
+import Data.Functor.Identity
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.List (intercalate, sort)
@@ -54,6 +55,10 @@ instance {-# OVERLAPPING #-} PType UnalteredString where
 instance {-# OVERLAPPING #-} (PType a) => PType (IO a) where
     un = pure . un
     to = (>>= to)
+
+instance {-# OVERLAPPING #-} (PType a) => PType (Identity a) where
+    un = pure . un
+    to = to . runIdentity
 
 instance {-# OVERLAPPING #-} (PType a) => PType (Maybe a) where
     un = Just . un
