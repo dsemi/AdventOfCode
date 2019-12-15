@@ -1,13 +1,18 @@
+{-# LANGUAGE FlexibleContexts, TemplateHaskell #-}
+
 module Year2019.IntCode
-    ( Memory
+    ( Action(..)
+    , Memory
     , parse
     , runNoIO
     , runPipe
+    , runPure
     , runWithInput
     ) where
 
+import Control.Monad.Free
+import Control.Monad.Free.TH
 import Data.Bool
-import Data.Functor.Identity
 import Data.List.Split (splitOn)
 import Data.Maybe
 import Data.IntMap.Strict (IntMap, (!))
@@ -38,41 +43,49 @@ toInstr i = fromMaybe (error $ "Unknown op code: " ++ show i)
 
 data Mode = Pos | Imm | Rel deriving (Enum)
 
-run :: (Monad m) => (m Int) -> (Int -> m ()) -> Program -> m Program
-run input output = go
-    where go prog = case toInstr op of
-                      Add -> go $ inc 4 $ set 3 (val 1 + val 2) prog
-                      Mul -> go $ inc 4 $ set 3 (val 1 * val 2) prog
-                      Sav -> input >>= \v -> go $ inc 2 $ set 1 v prog
-                      Out -> output (val 1) >> go (inc 2 prog)
-                      Jit -> go $ bool (inc 3) (jmp $ val 2) (val 1 /= 0) prog
-                      Jif -> go $ bool (inc 3) (jmp $ val 2) (val 1 == 0) prog
-                      Lt  -> go $ inc 4 $ set 3 (bool 0 1 $ val 1 < val 2) prog
-                      Eql -> go $ inc 4 $ set 3 (bool 0 1 $ val 1 == val 2) prog
-                      Arb -> go $ inc 2 $ incRb (val 1) prog
-                      Hlt -> pure prog
-              where arg n = get $ idx prog + n
-                    inc n p = p {idx=idx p + n}
-                    jmp n p = p {idx=n}
-                    incRb n p = p {relBase=relBase p + n}
-                    get i = M.findWithDefault 0 i $ memory prog
-                    set a v p = case mode a of
-                                  Pos -> p {memory=M.insert (arg a) v (memory p)}
-                                  Imm -> error "set on immediate"
-                                  Rel -> p {memory=M.insert (arg a + relBase p) v (memory p)}
-                    val a = case mode a of
-                              Pos -> get $ arg a
-                              Imm -> arg a
-                              Rel -> get $ arg a + relBase prog
-                    op = get (idx prog) `mod` 100
-                    mode i = toEnum $ get (idx prog) `div` 10^(i+1) `mod` 10
+data Action a = Input (Int -> a)
+              | Output Int a
+                deriving (Functor)
+makeFree ''Action
+
+run :: Program -> Free Action Program
+run prog = case toInstr op of
+             Add -> run $ inc 4 $ set 3 (val 1 + val 2) prog
+             Mul -> run $ inc 4 $ set 3 (val 1 * val 2) prog
+             Sav -> input >>= \v -> run $ inc 2 $ set 1 v prog
+             Out -> output (val 1) >> run (inc 2 prog)
+             Jit -> run $ bool (inc 3) (jmp $ val 2) (val 1 /= 0) prog
+             Jif -> run $ bool (inc 3) (jmp $ val 2) (val 1 == 0) prog
+             Lt  -> run $ inc 4 $ set 3 (bool 0 1 $ val 1 < val 2) prog
+             Eql -> run $ inc 4 $ set 3 (bool 0 1 $ val 1 == val 2) prog
+             Arb -> run $ inc 2 $ incRb (val 1) prog
+             Hlt -> pure prog
+    where arg n = get $ idx prog + n
+          inc n p = p {idx=idx p + n}
+          jmp n p = p {idx=n}
+          incRb n p = p {relBase=relBase p + n}
+          get i = M.findWithDefault 0 i $ memory prog
+          set a v p = case mode a of
+                        Pos -> p {memory=M.insert (arg a) v (memory p)}
+                        Imm -> error "set on immediate"
+                        Rel -> p {memory=M.insert (arg a + relBase p) v (memory p)}
+          val a = case mode a of
+                    Pos -> get $ arg a
+                    Imm -> arg a
+                    Rel -> get $ arg a + relBase prog
+          op = get (idx prog) `mod` 100
+          mode i = toEnum $ get (idx prog) `div` 10^(i+1) `mod` 10
+
+runPure :: Memory -> Free Action ()
+runPure = void . run . build
 
 runNoIO :: Int -> Int -> Memory -> Int
-runNoIO a b = (! 0) . memory . runIdentity . run (error "Unsupported") (error "Unsupported")
-              . build . M.insert 1 a . M.insert 2 b
-
-runWithInput :: [Int] -> Memory -> [Int]
-runWithInput input mem = P.toList $ each input >-> void (run await yield $ build mem)
+runNoIO a b = (! 0) . memory . iter undefined . run . build . M.insert 1 a . M.insert 2 b
 
 runPipe :: (Monad m) => Memory -> Pipe Int Int m ()
-runPipe = void . run await yield . build
+runPipe = void . foldFree eval . runPure
+    where eval (Input k) = k <$> await
+          eval (Output i k) = yield i >> pure k
+
+runWithInput :: [Int] -> Memory -> [Int]
+runWithInput inp mem = P.toList $ each inp >-> runPipe mem

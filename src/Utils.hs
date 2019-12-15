@@ -5,9 +5,8 @@ module Utils where
 import Control.DeepSeq
 import Control.Monad.ST
 import Data.Either (fromRight)
-import Data.Hashable (Hashable)
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as S
+import Data.Set (Set)
+import qualified Data.Set as S
 import Data.STRef
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -46,11 +45,15 @@ parallel x = do
   x `deepseq` setNumCapabilities prev
   pure x
 
-bfs :: forall a. (Eq a, Hashable a) => a -> (a -> [a]) -> [(Int, a)]
-bfs start neighbors = go S.empty [(0, start)]
-    where go :: HashSet a -> [(Int, a)] -> [(Int, a)]
+bfsOn :: forall a k. (Ord k) => (a -> k) -> a -> (a -> [a]) -> [(Int, a)]
+bfsOn f start neighbors = go S.empty [(0, start)]
+    where go :: Set k -> [(Int, a)] -> [(Int, a)]
           go _       [] = []
           go visited ((depth, node) : nodes)
-              | S.member node visited = go visited nodes
-              | otherwise = (depth, node) : go (S.insert node visited)
+              | S.member key visited = go visited nodes
+              | otherwise = (depth, node) : go (S.insert key visited)
                             (nodes ++ map (depth+1,) (neighbors node))
+              where key = f node
+
+bfs :: (Ord a) => a -> (a -> [a]) -> [(Int, a)]
+bfs = bfsOn id

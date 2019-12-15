@@ -1,5 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts, TemplateHaskell #-}
 
 module Year2019.Day13
     ( part1
