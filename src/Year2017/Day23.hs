@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, TemplateHaskell, ViewPatterns #-}
+{-# LANGUAGE NamedFieldPuns, TemplateHaskell #-}
 
 module Year2017.Day23
     ( part1

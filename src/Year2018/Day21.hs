@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TypeApplications, ViewPatterns #-}
+{-# LANGUAGE FlexibleContexts, TypeApplications #-}
 
 module Year2018.Day21
     ( part1

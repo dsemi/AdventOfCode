@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeApplications, ViewPatterns #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Year2018.Day20
     ( part1

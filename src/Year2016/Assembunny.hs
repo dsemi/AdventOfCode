@@ -1,4 +1,4 @@
-{-# LANGUAGE StrictData, TemplateHaskell, ViewPatterns #-}
+{-# LANGUAGE StrictData, TemplateHaskell #-}
 
 module Year2016.Assembunny
     ( Simulator(..)

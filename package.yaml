@@ -11,6 +11,7 @@ default-extensions:
   - MultiWayIf
   - TemplateHaskell
   - TupleSections
+  - ViewPatterns
 other-extensions:
   - TemplateHaskell
 ghc-options:

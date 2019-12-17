@@ -4,20 +4,15 @@ module Year2015.Day03
     ) where
 
 import Control.Arrow
-import Control.Lens
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
+import Linear.V2
+
+import Utils
 
 
-dirFun :: Char -> (Int, Int) -> (Int, Int)
-dirFun '^' = _2 %~ (+1)
-dirFun 'v' = _2 %~ subtract 1
-dirFun '>' = _1 %~ (+1)
-dirFun '<' = _1 %~ subtract 1
-dirFun  _  = error "Invalid character"
-
-visitedSquares :: String -> HashSet (Int, Int)
-visitedSquares = S.fromList . scanl (flip ($)) (0,0) . map dirFun
+visitedSquares :: String -> HashSet (V2 Int)
+visitedSquares = S.fromList . scanl (+) (V2 0 0) . map move
 
 part1 :: String -> Int
 part1 = S.size . visitedSquares
@@ -28,4 +23,4 @@ everyOther (x:xs) = first (x:) $ everyOther xs
 everyOther [] = ([], [])
 
 part2 :: String -> Int
-part2 = S.size . uncurry S.union . (both %~ visitedSquares) . everyOther
+part2 = S.size . uncurry S.union . (visitedSquares *** visitedSquares) . everyOther

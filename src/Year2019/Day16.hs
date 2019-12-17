@@ -1,5 +1,3 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module Year2019.Day16
     ( part1
     , part2

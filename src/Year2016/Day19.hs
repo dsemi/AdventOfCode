@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
-{-# LANGUAGE ViewPatterns #-}
 
 module Year2016.Day19
     ( part1

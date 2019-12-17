@@ -11,6 +11,7 @@ import Data.STRef
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Conc
+import Linear.V2
 import Text.Megaparsec (Parsec, Stream, many, parse, try, (<|>))
 import Text.Megaparsec.Char (anyChar)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
@@ -57,3 +58,10 @@ bfsOn f start neighbors = go S.empty [(0, start)]
 
 bfs :: (Ord a) => a -> (a -> [a]) -> [(Int, a)]
 bfs = bfsOn id
+
+move :: Char -> V2 Int
+move '^' = V2 0 (-1)
+move 'v' = V2 0 1
+move '<' = V2 (-1) 0
+move '>' = V2 1 0
+move  _  = error "Invalid direction"
