@@ -6,7 +6,7 @@ module Year2016.Day07
 import Data.Either (rights)
 import Data.List (isInfixOf, tails)
 import Text.Megaparsec
-import Text.Megaparsec.Char (anyChar, char, noneOf)
+import Text.Megaparsec.Char (char)
 
 
 splitSupernetsAndHypernets :: String -> ([String], [String])
@@ -19,7 +19,7 @@ splitSupernetsAndHypernets = go ([], [])
 
 parseAbba :: Parsec () String String
 parseAbba = do
-  a <- anyChar
+  a <- anySingle
   b <- noneOf [a]
   char b >> char a >> return [a, b, b, a]
 
@@ -33,7 +33,7 @@ part1 = length . filter (valid . splitSupernetsAndHypernets) . lines
 
 expectedBab :: Parsec () String String
 expectedBab = do
-  a <- anyChar
+  a <- anySingle
   b <- noneOf [a]
   char a >> return [b, a, b]
 

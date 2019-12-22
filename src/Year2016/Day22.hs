@@ -11,7 +11,7 @@ import Data.Maybe (mapMaybe)
 import Data.List (tails)
 import Data.List.Split (splitOn)
 import Text.Megaparsec
-import Text.Megaparsec.Char (char, noneOf, space)
+import Text.Megaparsec.Char (char, space)
 import Text.Megaparsec.Char.Lexer (decimal)
 
 

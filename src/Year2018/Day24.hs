@@ -42,7 +42,7 @@ parseGroups :: String -> Battle
 parseGroups = M.fromList . zip [0..]
               . concatMap (fromJust . parseMaybe army) . splitOn "\n\n"
     where army = do
-            n <- someTill anyChar (char ':') <* newline
+            n <- someTill anySingle (char ':') <* newline
             group n `sepBy` newline
           group :: String -> Parsec () String Group
           group n = do

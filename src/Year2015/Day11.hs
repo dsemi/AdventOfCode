@@ -8,7 +8,7 @@ import Utils
 import Data.Either.Utils
 import Data.List (tails)
 import Text.Megaparsec
-import Text.Megaparsec.Char (anyChar, char)
+import Text.Megaparsec.Char (char)
 
 
 incrStr :: String -> String
@@ -22,7 +22,7 @@ isValid :: String -> Bool
 isValid s = not (any (`elem` s) "iol") && isSuccessive s
             && length (fromRight $ parse parser "" s) > 1
     where dupChars = do
-            a <- anyChar >>= char
+            a <- anySingle >>= char
             return $ a : a : ""
           parser :: Parsec () String [String]
           parser = try (many (searchAll dupChars)) <|> return []

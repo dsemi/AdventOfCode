@@ -10,7 +10,7 @@ import Data.Maybe (mapMaybe)
 import Data.Sequence (Seq, (><))
 import qualified Data.Sequence as S
 import Text.Megaparsec
-import Text.Megaparsec.Char (anyChar, char, string)
+import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
 
@@ -28,10 +28,10 @@ parser = parseSwap <|> parseSwapC <|> parseRotateR <|> parseRotateL
          <|> parseRotateC <|> parseReverse <|> parseMove
     where int = fromInteger <$> decimal
           parseSwap = SwapPosition <$> (string "swap position " *> int <* string " with position ") <*> int
-          parseSwapC = SwapChar <$> (string "swap letter " *> anyChar) <*> (string " with letter " *> anyChar)
+          parseSwapC = SwapChar <$> (string "swap letter " *> anySingle) <*> (string " with letter " *> anySingle)
           parseRotateR = Rotate R <$> (string "rotate right " *> int <* string " step" <* optional (char 's'))
           parseRotateL = Rotate L <$> (string "rotate left " *> int <* string " step" <* optional (char 's'))
-          parseRotateC = RotateByChar <$> (string "rotate based on position of letter " *> anyChar)
+          parseRotateC = RotateByChar <$> (string "rotate based on position of letter " *> anySingle)
           parseReverse = Reverse <$> (string "reverse positions " *> int) <*> (string " through " *> int)
           parseMove = Move <$> (string "move position " *> int) <*> (string " to position " *> int)
 

@@ -12,8 +12,7 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.Conc
 import Linear.V2
-import Text.Megaparsec (Parsec, Stream, many, parse, try, (<|>))
-import Text.Megaparsec.Char (anyChar)
+import Text.Megaparsec (Parsec, Stream, anySingle, many, parse, try, (<|>))
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
@@ -21,7 +20,7 @@ findAllInts :: (Integral a) => String -> [a]
 findAllInts = findAll (signed (pure ()) decimal)
 
 searchAll :: (Stream s) => Parsec () s a -> Parsec () s a
-searchAll p = let parser = try p <|> (anyChar *> parser) in parser
+searchAll p = let parser = try p <|> (anySingle *> parser) in parser
 
 findAll :: (Stream s) => Parsec () s a -> s -> [a]
 findAll p = fromRight [] . parse parser ""

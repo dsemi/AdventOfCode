@@ -7,8 +7,8 @@ import Utils
 
 import Data.Either (isRight)
 import Data.List (group, isInfixOf)
-import Text.Megaparsec (Parsec, parse)
-import Text.Megaparsec.Char (anyChar, char)
+import Text.Megaparsec (Parsec, anySingle, parse)
+import Text.Megaparsec.Char (char)
 
 
 part1 :: String -> Int
@@ -22,9 +22,9 @@ part2 :: String -> Int
 part2 = length . filter isNice2 . lines
     where f :: Parsec () String Char
           f = searchAll $ do
-            (a, b) <- (,) <$> anyChar <*> anyChar
+            (a, b) <- (,) <$> anySingle <*> anySingle
             searchAll (char a >> char b)
           g :: Parsec () String Char
-          g = searchAll $ anyChar <* anyChar >>= char
+          g = searchAll $ anySingle <* anySingle >>= char
           isNice2 :: String -> Bool
           isNice2 s = isRight (parse f "" s) && isRight (parse g "" s)

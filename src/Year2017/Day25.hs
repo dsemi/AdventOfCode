@@ -12,7 +12,7 @@ import qualified Data.HashMap.Strict as M
 import Data.List.PointedList
 import Data.Maybe
 import Text.Megaparsec
-import Text.Megaparsec.Char (anyChar, char, string)
+import Text.Megaparsec.Char (char, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
@@ -34,13 +34,13 @@ parseMachine input =
     let Just (steps, start, rules) = parseMaybe parse input
     in (steps, Machine (PointedList [] 0 []) start rules)
     where parse = do
-            start <- string "Begin in state " *> anyChar <* string ".\n"
+            start <- string "Begin in state " *> anySingle <* string ".\n"
             steps <- string "Perform a diagnostic checksum after " *> int <* string " steps.\n\n"
             rules <- M.fromList . concat <$> parseState `sepBy` string "\n\n"
             return $ (steps, start, rules)
           parseState :: Parsec () String [((Char, Int), Rule)]
           parseState = do
-            c <- string "In state " *> anyChar <* string ":\n"
+            c <- string "In state " *> anySingle <* string ":\n"
             sequence [parseRule c <* char '\n', parseRule c]
           parseRule :: Char -> Parsec () String ((Char, Int), Rule)
           parseRule c = do
@@ -48,7 +48,7 @@ parseMachine input =
             v <- string "    - Write the value " *> int <* string ".\n"
             dir <- string "    - Move one slot to the " *> eitherP (string "left." *> pure left)
                                                                    (string "right." *> pure right)
-            ns <- string "\n    - Continue with state " *> anyChar <* char '.'
+            ns <- string "\n    - Continue with state " *> anySingle <* char '.'
             return $ ((c, i), Rule v (fromEither dir) ns)
           int = signed (return ()) decimal
 

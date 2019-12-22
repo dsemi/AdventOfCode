@@ -27,7 +27,7 @@ parseScans s = let clay = concatMap (fromJust . parseMaybe @() parseScan) $ line
                in accumArray (flip const) '.' (minCoord, maxCoord) $ map (,'#') clay
     where parseRange = try (range <$> ((,) <$> decimal <*> (string ".." *> decimal)))
                        <|> ((:[]) <$> decimal)
-          parseCoord = (,) <$> anyChar <*> (char '=' *> parseRange)
+          parseCoord = (,) <$> anySingle <*> (char '=' *> parseRange)
           parseScan = do
             ranges <- parseCoord `sepBy` string ", "
             pure [ (x, y) | x <- fromJust $ lookup 'x' ranges

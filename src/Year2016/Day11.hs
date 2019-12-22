@@ -12,8 +12,8 @@ import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.List (delete, lookup, sort)
 import Data.List.Split (splitOn)
-import Text.Megaparsec (choice, some)
-import Text.Megaparsec.Char (noneOf, spaceChar, string)
+import Text.Megaparsec (choice, noneOf, some)
+import Text.Megaparsec.Char (spaceChar, string)
 
 
 type Pair = (Int, Int) -- First number is floor of Microchip, second is floor of Generator

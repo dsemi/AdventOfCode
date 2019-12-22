@@ -14,7 +14,7 @@ import Data.Maybe
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Text.Megaparsec
-import Text.Megaparsec.Char (oneOf, space, spaceChar, string)
+import Text.Megaparsec.Char (space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
