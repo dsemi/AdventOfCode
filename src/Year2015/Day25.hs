@@ -5,21 +5,18 @@ module Year2015.Day25
     , part2
     ) where
 
+import Data.Finite
+
 import Utils
 
-import Math.NumberTheory.Moduli.Class (Mod, getVal, (^%))
 
+parseCoord :: [Int] -> (Int, Int)
+parseCoord [r, c] = (r, c)
+parseCoord _ = error "Too many ints found"
 
-parseCoord :: String -> (Int, Int)
-parseCoord input = let [r, c] = findAllInts input
-                   in (r, c)
-
-makeCode :: Int -> Int
-makeCode n = fromInteger . getVal $ (252533 :: Mod 33554393) ^% n * 20151125
-
-part1 :: String -> Int
-part1 input = makeCode index
-    where (r, c) = parseCoord input
+part1 :: String -> Finite 33554393
+part1 input = 252533 ^ index * 20151125
+    where (r, c) = parseCoord $ findAllInts input
           n = r + c - 1
           index = n * (n - 1) `div` 2 + c - 1
 
