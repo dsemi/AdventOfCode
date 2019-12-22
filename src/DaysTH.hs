@@ -13,6 +13,7 @@ module DaysTH
 
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
+import Data.Finite
 import Data.Functor.Identity
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -20,6 +21,7 @@ import Data.List (intercalate, sort)
 import Data.String.Utils
 import Data.Text (Text)
 import qualified Data.Text as T
+import GHC.TypeLits (KnownNat)
 import Language.Haskell.TH
 import System.Path.Glob
 import Text.Megaparsec
@@ -35,6 +37,10 @@ class PType a where
 instance (Read a, Show a) => PType a where
     un = read . un
     to = to . show
+
+instance {-# OVERLAPPING #-} (KnownNat n) => PType (Finite n) where
+    un = modulo . un
+    to = to . getFinite
 
 instance {-# OVERLAPPING #-} PType Text where
     un = T.pack . un
