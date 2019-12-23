@@ -70,8 +70,8 @@ library:
     - psqueues
     - recursion-schemes
     - ref-fd
-    - template-haskell
     - split
+    - template-haskell
     - transformers
     - unordered-containers
     - vector

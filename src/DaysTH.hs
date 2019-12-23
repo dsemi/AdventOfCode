@@ -38,6 +38,12 @@ instance (Read a, Show a) => PType a where
     un = read . un
     to = to . show
 
+instance {-# OVERLAPPING #-} (PType a, PType b) => PType (Either a b) where
+    un = Right . un
+    to = \case
+         Right v -> to v
+         Left  v -> to v
+
 instance {-# OVERLAPPING #-} (KnownNat n) => PType (Finite n) where
     un = modulo . un
     to = to . getFinite
