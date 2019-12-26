@@ -5,14 +5,17 @@ module Year2019.IntCode
     , Memory
     , parse
     , runNoIO
+    , runIO
     , runPipe
     , runPure
     , runWithInput
     ) where
 
+import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Free.TH
 import Data.Bool
+import Data.Char
 import Data.List.Split (splitOn)
 import Data.Maybe
 import Data.IntMap.Strict (IntMap, (!))
@@ -89,3 +92,18 @@ runPipe = void . foldFree eval . runPure
 
 runWithInput :: [Int] -> Memory -> [Int]
 runWithInput inp mem = P.toList $ each inp >-> runPipe mem
+
+outStr :: (Monad m) => Pipe Int String m ()
+outStr = forever $ getStr >>= yield
+    where getStr = do
+            c <- chr <$> await
+            if c /= '\n'
+            then fmap (c:) getStr
+            else pure [c]
+
+runIO :: Memory -> IO ()
+runIO mem = runEffect $ P.stdinLn
+            >-> P.mapFoldable (map ord . (++"\n"))
+            >-> runPipe mem
+            >-> outStr
+            >-> P.stdoutLn
