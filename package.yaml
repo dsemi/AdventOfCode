@@ -58,6 +58,7 @@ library:
     - free
     - groups
     - hashable
+    - hip
     - linear
     - megaparsec
     - memoize

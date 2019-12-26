@@ -25,6 +25,13 @@ packages:
       sha256: cb9d8c81535600e136f59b43216948512ab69a8aecaa99528574523a999fac92
   original:
     hackage: ref-fd-0.4.0.2
+- completed:
+    hackage: hip-1.5.4.0@sha256:f1a79c096dd5ddf4debbf0b351e20a93232d550c04816f71ae1069df72edc12d,6988
+    pantry-tree:
+      size: 7456
+      sha256: 4d97960499bd1bdac9892a8ed53c9511f957d54021bfb26551b98db886092fa8
+  original:
+    hackage: hip-1.5.4.0
 snapshots:
 - completed:
     size: 524789
