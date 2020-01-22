@@ -5,7 +5,6 @@ module Year2019.Day11
 
 import Control.Monad
 import Control.Lens
-import Data.List.Extra
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Linear.V2
@@ -35,8 +34,8 @@ part1 = M.size . runRobot M.empty . parse
 
 draw :: Map (V2 Int) Int -> String
 draw points = ('\n' :) . unlines
-              $ for [minY .. maxY] $ \y ->
-                  for [minX .. maxX] $ \x ->
+              $ flip map [minY .. maxY] $ \y ->
+                  flip map [minX .. maxX] $ \x ->
                       case M.findWithDefault 0 (V2 x y) points of
                         0 -> ' '
                         _ -> '#'

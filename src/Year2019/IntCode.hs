@@ -51,7 +51,7 @@ data Action a = Input (Int -> a)
                 deriving (Functor)
 makeFree ''Action
 
-run :: Program -> Free Action Program
+run :: Program -> Free Action Memory
 run prog = case toInstr op of
              Add -> run $ inc 4 $ set 3 (val 1 + val 2) prog
              Mul -> run $ inc 4 $ set 3 (val 1 * val 2) prog
@@ -62,7 +62,7 @@ run prog = case toInstr op of
              Lt  -> run $ inc 4 $ set 3 (bool 0 1 $ val 1 < val 2) prog
              Eql -> run $ inc 4 $ set 3 (bool 0 1 $ val 1 == val 2) prog
              Arb -> run $ inc 2 $ incRb (val 1) prog
-             Hlt -> pure prog
+             Hlt -> pure $ memory prog
     where arg n = get $ idx prog + n
           inc n p = p {idx=idx p + n}
           jmp n p = p {idx=n}
@@ -83,7 +83,7 @@ runPure :: Memory -> Free Action ()
 runPure = void . run . build
 
 runNoIO :: Int -> Int -> Memory -> Int
-runNoIO a b = (! 0) . memory . iter undefined . run . build . M.insert 1 a . M.insert 2 b
+runNoIO a b = (! 0) . iter undefined . run . build . M.insert 1 a . M.insert 2 b
 
 runPipe :: (Monad m) => Memory -> Pipe Int Int m ()
 runPipe = void . foldFree eval . runPure

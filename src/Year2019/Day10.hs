@@ -7,7 +7,6 @@ module Year2019.Day10
 
 import Control.Arrow
 import Data.List (delete, maximumBy, sortBy)
-import Data.Map.Strict (Map, (!))
 import qualified Data.Map.Strict as M
 import Data.Ord (comparing)
 import Linear.V2
@@ -26,21 +25,20 @@ theta v1 v2 = atan2 (-x) y
 dist :: V2 Int -> V2 Int -> Int
 dist v1 v2 = sum $ abs $ v2 - v1
 
-visibilityMap :: V2 Int -> [V2 Int] -> Map Double [V2 Int]
-visibilityMap pt = M.map (sortBy $ comparing $ dist pt) . M.fromListWith (++)
-                   . map (theta pt &&& (:[])) . delete pt
+visibilities :: V2 Int -> [V2 Int] -> [[V2 Int]]
+visibilities pt = map (sortBy $ comparing $ dist pt) . M.elems .
+                  M.fromListWith (++) . map (theta pt &&& (:[])) . delete pt
 
-maxDetected :: [V2 Int] -> Map Double [V2 Int]
-maxDetected asts = maximumBy (comparing M.size) $ map (`visibilityMap` asts) asts
+maxDetected :: [V2 Int] -> [[V2 Int]]
+maxDetected asts = maximumBy (comparing $ length) $ map (`visibilities` asts) asts
 
 part1 :: String -> Int
-part1 = M.size . maxDetected . parse
+part1 = length . maxDetected . parse
 
 part2 :: String -> Int
 part2 = (\(V2 a b) -> 100 * a + b) . go 200 . maxDetected . parse
     where go c m
-              | M.null m = error "empty"
-              | length keys >= c = head $ m ! (keys !! (c-1))
-              | otherwise = go (c - length keys)
-                            $ M.filter (not . null) $ foldr (M.adjust tail) m keys
-              where keys = M.keys m
+              | null m = error "empty"
+              | length m >= c = head $ m !! (c-1)
+              | otherwise = go (c - length m)
+                            $ filter (not . null) $ map tail $ m

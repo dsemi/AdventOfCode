@@ -30,25 +30,23 @@ part1 input = P.length $ pure () >-> runPipe (parse input) >-> parseInstrs >-> P
     where isBlock (Draw _ Block) = True
           isBlock _ = False
 
-data Game = Game { _ball :: V2 Int
-                 , _paddle :: V2 Int
+data Game = Game { _ballX :: Int
+                 , _paddleX :: Int
                  , _score :: Int
                  }
 makeLenses ''Game
 
 play :: (MonadState Game m) => Consumer Instr m ()
 play = forever $ await >>= \case
-       (Draw coord Ball) -> ball .= coord
-       (Draw coord Paddle) -> paddle .= coord
+       (Draw (V2 x _) Ball) -> ballX .= x
+       (Draw (V2 x _) Paddle) -> paddleX .= x
        (Score num) -> score .= num
        _ -> pure ()
 
 -- Move paddle to always follow the ball
 controller :: (MonadState Game m) => Producer Int m ()
-controller = do
-  yield 0
-  forever $ liftM2 compare (use ball) (use paddle) >>= yield . pred . fromEnum
+controller = forever $ liftM2 compare (use ballX) (use paddleX) >>= yield . pred . fromEnum
 
 part2 :: String -> Int
-part2 input = view score $ flip execState (Game (V2 0 0) (V2 0 0) 0) $ runEffect
+part2 input = view score $ flip execState (Game 0 0 0) $ runEffect
               $ controller >-> runPipe (M.insert 0 2 $ parse input) >-> parseInstrs >-> play
