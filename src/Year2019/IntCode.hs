@@ -6,22 +6,24 @@ module Year2019.IntCode
     , parse
     , runNoIO
     , runIO
-    , runPipe
+    , runProg
     , runPure
     , runWithInput
     ) where
 
+import Control.Lens (view)
 import Control.Monad
 import Control.Monad.Free
 import Control.Monad.Free.TH
 import Data.Bool
-import Data.Char
+import qualified Data.ByteString as B
 import Data.List.Split (splitOn)
 import Data.Maybe
 import Data.IntMap.Strict (IntMap, (!))
 import qualified Data.IntMap.Strict as M
 import Pipes
 import qualified Pipes.Prelude as P
+import qualified Pipes.ByteString as PB
 
 
 type Memory = IntMap Int
@@ -85,25 +87,18 @@ runPure = void . run . build
 runNoIO :: Int -> Int -> Memory -> Int
 runNoIO a b = (! 0) . iter undefined . run . build . M.insert 1 a . M.insert 2 b
 
-runPipe :: (Monad m) => Memory -> Pipe Int Int m ()
-runPipe = void . foldFree eval . runPure
+runProg :: (Monad m) => Memory -> Pipe Int Int m ()
+runProg = foldFree eval . runPure
     where eval (Input k) = k <$> await
           eval (Output i k) = yield i >> pure k
 
 runWithInput :: [Int] -> Memory -> [Int]
-runWithInput inp mem = P.toList $ each inp >-> runPipe mem
-
-outStr :: (Monad m) => Pipe Int String m ()
-outStr = forever $ getStr >>= yield
-    where getStr = do
-            c <- chr <$> await
-            if c /= '\n'
-            then fmap (c:) getStr
-            else pure [c]
+runWithInput inp mem = P.toList $ each inp >-> runProg mem
 
 runIO :: Memory -> IO ()
-runIO mem = runEffect $ P.stdinLn
-            >-> P.mapFoldable (map ord . (++"\n"))
-            >-> runPipe mem
-            >-> outStr
-            >-> P.stdoutLn
+runIO mem = runEffect $
+            view PB.unpack PB.stdin
+            >-> P.map fromEnum
+            >-> runProg mem
+            >-> P.map (B.singleton . toEnum)
+            >-> PB.stdout

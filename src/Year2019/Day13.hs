@@ -26,7 +26,7 @@ parseInstrs = forever $ liftM3 parseInstr await await await >>= yield
           parseInstr x y tile = Draw (V2 x y) $ toEnum tile
 
 part1 :: String -> Identity Int
-part1 input = P.length $ pure () >-> runPipe (parse input) >-> parseInstrs >-> P.filter isBlock
+part1 input = P.length $ pure () >-> runProg (parse input) >-> parseInstrs >-> P.filter isBlock
     where isBlock (Draw _ Block) = True
           isBlock _ = False
 
@@ -49,4 +49,4 @@ controller = forever $ liftM2 compare (use ballX) (use paddleX) >>= yield . pred
 
 part2 :: String -> Int
 part2 input = view score $ flip execState (Game 0 0 0) $ runEffect
-              $ controller >-> runPipe (M.insert 0 2 $ parse input) >-> parseInstrs >-> play
+              $ controller >-> runProg (M.insert 0 2 $ parse input) >-> parseInstrs >-> play

@@ -51,8 +51,8 @@ bfsOn f start neighbors = go S.empty [(0, start)]
           go _       [] = []
           go visited ((depth, node) : nodes)
               | S.member key visited = go visited nodes
-              | otherwise = (depth, node) : go (S.insert key visited)
-                            (nodes ++ map (depth+1,) (neighbors node))
+              | otherwise = (depth, node) :
+                            go (S.insert key visited) (nodes ++ map (depth+1,) (neighbors node))
               where key = f node
 
 bfs :: (Ord a) => a -> (a -> [a]) -> [(Int, a)]
