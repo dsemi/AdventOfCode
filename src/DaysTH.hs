@@ -13,10 +13,10 @@ module DaysTH
 
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
-import Data.Finite
 import Data.Functor.Identity
 import qualified Data.Map.Strict as M
 import Data.Maybe
+import Data.Mod
 import Data.List (intercalate, sort)
 import Data.String.Utils
 import Data.Text (Text)
@@ -44,9 +44,9 @@ instance {-# OVERLAPPING #-} (PType a, PType b) => PType (Either a b) where
          Right v -> to v
          Left  v -> to v
 
-instance {-# OVERLAPPING #-} (KnownNat n) => PType (Finite n) where
-    un = modulo . un
-    to = to . getFinite
+instance {-# OVERLAPPING #-} (KnownNat n) => PType (Mod n) where
+    un = fromInteger . un
+    to = to . unMod
 
 instance {-# OVERLAPPING #-} PType Text where
     un = T.pack . un

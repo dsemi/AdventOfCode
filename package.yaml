@@ -53,7 +53,6 @@ library:
     - deepseq
     - either
     - extra
-    - finite-typelits
     - foldl
     - free
     - groups
@@ -63,6 +62,7 @@ library:
     - megaparsec
     - memoize
     - MissingH
+    - mod
     - monad-loops
     - mtl
     - parallel

@@ -79,30 +79,26 @@ minCostToWin = minimum . go 0
                   ]
               | otherwise = go mana $ pTurn %~ not $ bossAttack state
 
-
-parseBoss :: Bool -> String -> GameState
+parseBoss :: Bool -> String -> Maybe GameState
 parseBoss hardMode input =
-    let Just (h, d) = parseMaybe parser input
-    in Game { _pHealth = 50
-            , _pMana = 500
-            , _pArmor = 0
-            , _bHealth = h
-            , _bDamage = d
-            , _pTurn = True
-            , _hard = hardMode
-            , _effects = []
-            }
+    parseMaybe parser input <&> \(h, d) ->
+        Game { _pHealth = 50
+             , _pMana = 500
+             , _pArmor = 0
+             , _bHealth = h
+             , _bDamage = d
+             , _pTurn = True
+             , _hard = hardMode
+             , _effects = []
+             }
     where int = fromInteger <$> decimal
           parser :: Parsec () String (Int, Int)
-          parser = do
-            h <- string "Hit Points: " *> int
-            space
-            d <- string "Damage: " *> int
-            return (h, d)
+          parser = (,) <$>
+                   (string "Hit Points: " *> int) <*>
+                   (space *> string "Damage: " *> int)
 
+part1 :: String -> Maybe Int
+part1 = fmap minCostToWin . parseBoss False
 
-part1 :: String -> Int
-part1 = minCostToWin . parseBoss False
-
-part2 :: String -> Int
-part2 = minCostToWin . parseBoss True
+part2 :: String -> Maybe Int
+part2 = fmap minCostToWin . parseBoss True

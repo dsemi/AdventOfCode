@@ -45,7 +45,9 @@ extra-deps:
 - astar-0.3.0.0
 - hip-1.5.4.0
 - memoize-0.8.1
+- mod-0.1.1.0
 - ref-fd-0.4.0.2
+- semirings-0.5.2
 
 # Override default flag values for local packages and extra-deps
 flags: {}

@@ -26,12 +26,26 @@ packages:
   original:
     hackage: memoize-0.8.1
 - completed:
+    hackage: mod-0.1.1.0@sha256:57f230d5664b1c311d1044c259ef880875e4b3bcbfc7c57eab3bf03fce87f445,1838
+    pantry-tree:
+      size: 464
+      sha256: ca61450dd1d84e6beefba010a7032dfb5a8bc2e8344a369430992c56ec083ad7
+  original:
+    hackage: mod-0.1.1.0
+- completed:
     hackage: ref-fd-0.4.0.2@sha256:f9769107da8ad6866f096ee7c4fb74a411f48433cb6a43395033750fa11d6864,1160
     pantry-tree:
       size: 211
       sha256: cb9d8c81535600e136f59b43216948512ab69a8aecaa99528574523a999fac92
   original:
     hackage: ref-fd-0.4.0.2
+- completed:
+    hackage: semirings-0.5.2@sha256:6e0fddb382d323e3024e232e09c69685eac4e11c741c2e882017d155d8f7a6c5,3791
+    pantry-tree:
+      size: 610
+      sha256: b26169fc6d14dac566f6bf161f64af8a351ed953898b65370a6cd78f45eb1f2a
+  original:
+    hackage: semirings-0.5.2
 snapshots:
 - completed:
     size: 524162
