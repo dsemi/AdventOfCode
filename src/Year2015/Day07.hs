@@ -4,10 +4,10 @@ module Year2015.Day07
     ) where
 
 import Data.Bits (complement, shiftL, shiftR, (.&.), (.|.))
-import Data.Either.Utils (maybeToEither)
 import Data.Maybe (fromJust)
-import Data.String.Utils (maybeRead)
 import Data.Word (Word16)
+
+import Utils
 
 
 parseNode :: (Either String Word16 -> Word16) -> String -> (String, Word16)
@@ -21,7 +21,7 @@ parseNode f line =
       [(parse -> a), "RSHIFT", (parse -> b), "->", v] -> (v, f a .>>. f b)
       _ -> error "Invalid line"
     where parse :: String -> Either String Word16
-          parse x = maybeToEither x $ maybeRead x
+          parse x = maybe (Left x) Right $ maybeRead x
           (.<<.) a b = shiftL a $ fromIntegral b
           (.>>.) a b = shiftR a $ fromIntegral b
 

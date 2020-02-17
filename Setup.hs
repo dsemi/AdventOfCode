@@ -1,16 +1,15 @@
 {-# LANGUAGE QuasiQuotes #-}
 
 import Control.Monad (when)
-import Data.List (sort)
+import Data.List (intercalate, sort)
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
-import Data.String.Utils (join)
 import Data.Text (pack)
 import qualified Data.Text.IO as T
 import Distribution.PackageDescription (emptyHookedBuildInfo)
 import Distribution.Simple
 import Distribution.Simple.Command (noExtraFlags)
-import System.Path.Glob
+import System.FilePath.Glob
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Printf
@@ -27,7 +26,7 @@ buildImportFile = do
 
         import DaysTH
 
-        #{join "\n        " importedModules}
+        #{intercalate "\n        " importedModules}
 
         $(buildProbs)
       |]

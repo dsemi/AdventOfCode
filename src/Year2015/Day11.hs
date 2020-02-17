@@ -5,7 +5,7 @@ module Year2015.Day11
 
 import Utils
 
-import Data.Either.Utils
+import Data.Either
 import Data.List (tails)
 import Text.Megaparsec
 import Text.Megaparsec.Char (char)
@@ -20,7 +20,7 @@ incrStr = reverse . step . reverse
 
 isValid :: String -> Bool
 isValid s = not (any (`elem` s) "iol") && isSuccessive s
-            && length (fromRight $ parse parser "" s) > 1
+            && length (fromRight undefined $ parse parser "" s) > 1
     where dupChars = do
             a <- anySingle >>= char
             return $ a : a : ""

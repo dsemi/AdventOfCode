@@ -55,13 +55,13 @@ library:
     - extra
     - foldl
     - free
+    - Glob
     - groups
     - hashable
     - hip
     - linear
     - megaparsec
     - memoize
-    - MissingH
     - mod
     - monad-loops
     - mtl
@@ -97,8 +97,8 @@ build-type: Custom
 custom-setup:
   dependencies:
     - base >=4.9 && <5
+    - Glob
     - interpolate
     - text
     - Cabal
     - megaparsec
-    - MissingH

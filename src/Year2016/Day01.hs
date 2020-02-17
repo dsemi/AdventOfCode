@@ -4,8 +4,8 @@ module Year2016.Day01
     ) where
 
 import Control.Lens (_1, _2, over)
-import Data.String.Utils (split)
 import Data.HashSet (empty, insert, member)
+import Data.List.Split
 
 
 type Coord = (Int, Int)
@@ -25,7 +25,7 @@ move South = over _2 pred
 move West  = over _1 pred
 
 path :: String -> [Coord]
-path = go North (0, 0) . split ", "
+path = go North (0, 0) . splitOn ", "
     where go _   _   []         = []
           go dir pos ((d:n):xs) = pathPart ++ go dir' (last pathPart) xs
               where dir' = turn d dir

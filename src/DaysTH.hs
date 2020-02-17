@@ -18,12 +18,11 @@ import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Mod
 import Data.List (intercalate, sort)
-import Data.String.Utils
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.TypeLits (KnownNat)
 import Language.Haskell.TH
-import System.Path.Glob
+import System.FilePath.Glob
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
@@ -53,7 +52,7 @@ instance {-# OVERLAPPING #-} PType Text where
     to = to . T.unpack
 
 instance {-# OVERLAPPING #-} PType String where
-    un = strip
+    un = T.unpack . T.strip . T.pack
     to = pure
 
 instance {-# OVERLAPPING #-} PType ByteString where

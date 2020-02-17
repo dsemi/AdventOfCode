@@ -8,12 +8,11 @@ module Year2017.Day23
 import Data.Array
 import Control.Lens
 import Control.Monad.State
-import Data.Either.Utils
-import Data.String.Utils
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Math.NumberTheory.Primes.Testing
 
+import Utils
 
 type Register = Char
 type Value = Either Register Int
@@ -41,7 +40,7 @@ parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLi
                 ["jnz", parse -> a, parse -> b] -> Jnz a b
                 _ -> error "Invalid instruction"
           parse :: String -> Value
-          parse x = maybeToEither (head x) $ maybeRead x
+          parse x = maybe (Left $ head x) Right $ maybeRead x
 
 step :: (Monad m) => Tracker m -> Sim -> m (Maybe Sim)
 step tracker sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))

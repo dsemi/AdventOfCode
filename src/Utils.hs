@@ -5,6 +5,7 @@ module Utils where
 import Control.DeepSeq
 import Control.Monad.ST
 import Data.Either (fromRight)
+import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.STRef
@@ -64,3 +65,6 @@ move 'v' = V2 0 1
 move '<' = V2 (-1) 0
 move '>' = V2 1 0
 move  _  = error "Invalid direction"
+
+maybeRead :: (Read a) => String -> Maybe a
+maybeRead = fmap fst . listToMaybe . reads

@@ -10,7 +10,6 @@ import Crypto.Hash.MD5 (hash)
 import Data.ByteString (ByteString, isPrefixOf, pack)
 import qualified Data.ByteString.Char8 as B
 import Data.List (findIndex)
-import Data.Monoid ((<>))
 
 
 part1 :: ByteString -> Int

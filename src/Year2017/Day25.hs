@@ -6,7 +6,6 @@ module Year2017.Day25
     ) where
 
 import Control.Lens
-import Data.Either.Utils (fromEither)
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List.PointedList
@@ -46,10 +45,10 @@ parseMachine input =
           parseRule c = do
             i <- string "  If the current value is " *> int <* string ":\n"
             v <- string "    - Write the value " *> int <* string ".\n"
-            dir <- string "    - Move one slot to the " *> eitherP (string "left." *> pure left)
-                                                                   (string "right." *> pure right)
+            dir <- string "    - Move one slot to the " *> ((string "left." *> pure left) <|>
+                                                            (string "right." *> pure right))
             ns <- string "\n    - Continue with state " *> anySingle <* char '.'
-            return $ ((c, i), Rule v (fromEither dir) ns)
+            return $ ((c, i), Rule v dir ns)
           int = signed (return ()) decimal
 
 step :: Int -> Machine -> Machine

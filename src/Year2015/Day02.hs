@@ -3,11 +3,11 @@ module Year2015.Day02
     , part2
     ) where
 
-import Data.String.Utils
+import Data.List.Split
 
 
 getLWHs :: [String] -> [[Int]]
-getLWHs = map (map read . split "x")
+getLWHs = map (map read . splitOn "x")
 
 part1 :: String -> Int
 part1 input = sum [ 2*l*w + 2*l*h + 2*w*h + minimum [l*w, l*h, w*h]
