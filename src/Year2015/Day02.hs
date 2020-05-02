@@ -6,13 +6,11 @@ module Year2015.Day02
 import Data.List.Split
 
 
-getLWHs :: [String] -> [[Int]]
-getLWHs = map (map read . splitOn "x")
+process :: (Num a, Read a) => (a -> a -> a -> a) -> String -> a
+process f xs = sum [ f l w h | [l, w, h] <- map (map read . splitOn "x") $ lines xs ]
 
 part1 :: String -> Int
-part1 input = sum [ 2*l*w + 2*l*h + 2*w*h + minimum [l*w, l*h, w*h]
-                  | [l, w, h] <- getLWHs $ lines input]
+part1 = process (\l w h -> 2*l*w + 2*l*h + 2*w*h + minimum [l*w, l*h, w*h])
 
 part2 :: String -> Int
-part2 input = sum [ l*w*h + 2 * minimum [l+w, l+h, w+h]
-                  | [l, w, h] <- getLWHs $ lines input]
+part2 = process (\l w h -> l*w*h + 2 * minimum [l+w, l+h, w+h])

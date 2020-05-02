@@ -5,7 +5,7 @@ module Year2015.Day15
 
 import Utils
 
-import Data.List (transpose)
+import Linear.Vector
 
 
 data Ingredient = Ingredient { capacity :: Int
@@ -25,7 +25,7 @@ partitions n t = [ x : xs | x <- [0..t], xs <- partitions (n-1) $ t-x ]
 
 scores :: Int -> ([Int] -> Bool) -> [Ingredient] -> [Int]
 scores total calFilter ings =
-    [ product . map (max 0 . sum) $ transpose totes
+    [ product . map (max 0) $ sumV totes
     | ms <- partitions (length ings) total
     , let totes = zipWith (\n i -> map (n*) (scorings <*> pure i)) ms ings
     , calFilter $ zipWith (\n i -> n * calories i) ms ings

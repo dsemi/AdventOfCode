@@ -44,18 +44,17 @@ runCommands f1 f2 f3 grid commands =
                 On     -> f2
                 Toggle -> f3
       forM_ [x1..x2] $ \x ->
-        forM_ [y1..y2] $ \y -> 
+        forM_ [y1..y2] $ \y ->
             readArray arr (x,y) >>= writeArray arr (x,y) . f
     return arr
 
 emptyGrid :: UArray (Int, Int) Int
-emptyGrid = array ((0,0), (999,999)) [((x,y), 0) | x <- [0..999], y <- [0..999]]
+emptyGrid = listArray ((0,0), (999,999)) $ repeat 0
 
 part1 :: String -> Int
 part1 = sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
         . map command . lines
 
 part2 :: String -> Int
-part2 = sum . elems . runCommands f (+1) (+2) emptyGrid
+part2 = sum . elems . runCommands (max 0 . subtract 1) (+1) (+2) emptyGrid
         . map command . lines
-    where f n = max 0 $ n-1
