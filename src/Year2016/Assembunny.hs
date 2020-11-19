@@ -1,4 +1,4 @@
-{-# LANGUAGE StrictData, TemplateHaskell #-}
+{-# LANGUAGE RankNTypes, StrictData, TemplateHaskell #-}
 
 module Year2016.Assembunny
     ( Simulator(..)
@@ -18,8 +18,7 @@ import Text.Megaparsec.Char (space, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
-type Register = Char
-type Value = Either Register Int
+type Value = Either Char Int
 
 data Instruction = Cpy Value Value
                  | Inc Char
@@ -41,7 +40,7 @@ data Simulator = Sim { _a :: Int
                      }
 makeLenses ''Simulator
 
-reg :: Applicative f => Register -> (Int -> f Int) -> Simulator -> f Simulator
+reg :: Char -> Lens' Simulator Int
 reg 'a' = a
 reg 'b' = b
 reg 'c' = c
@@ -85,24 +84,19 @@ parseInstructions = Sim 0 0 0 0 0
                     . V.fromList . optimize [multiplication, plusEquals]
                     . map (fromJust . parseMaybe parseInstruction) . lines
     where parseInstruction :: Parsec () String Instruction
-          parseInstruction = choice [ parseCpy
-                                    , parseInc
-                                    , parseDec
-                                    , parseTgl
-                                    , parseOut
-                                    , parseJnz ]
+          parseInstruction =
+              choice [ string "cpy " >> Cpy <$> value <* spaceChar <*> value
+                     , string "inc " >> Inc <$> register
+                     , string "dec " >> Dec <$> register
+                     , string "tgl " >> Tgl <$> register
+                     , string "out " >> Out <$> value
+                     , string "jnz " >> Jnz <$> value <* spaceChar <*> value ]
           int = signed space decimal
           register = oneOf "abcd"
           value = eitherP register int
-          parseCpy = string "cpy " >> Cpy <$> value <* spaceChar <*> value
-          parseInc = string "inc " >> Inc <$> register
-          parseDec = string "dec " >> Dec <$> register
-          parseTgl = string "tgl " >> Tgl <$> register
-          parseOut = string "out " >> Out <$> value
-          parseJnz = string "jnz " >> Jnz <$> value <* spaceChar <*> value
 
 val :: Simulator -> Value -> Int
-val sim = either ((sim ^?!) . reg) id
+val sim = either ((sim ^.) . reg) id
 
 evalInstr :: Simulator -> Instruction -> Either Int Simulator
 evalInstr sim instr = eval sim

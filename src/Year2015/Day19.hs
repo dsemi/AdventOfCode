@@ -10,25 +10,21 @@ import Utils
 import Control.Lens
 import qualified Data.HashSet as S
 import Data.Maybe
+import Data.Char
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Tuple
 import Text.Megaparsec
-import Text.Megaparsec.Char (alphaNumChar, string)
 
 
 parseMapping :: Text -> (Text, Text)
-parseMapping = over both T.pack . fromJust . parseMaybe parser
-    where parser :: Parsec () Text (String, String)
-          parser = (,) <$> some alphaNumChar <* string " => " <*> some alphaNumChar
+parseMapping = fromJust . parseMaybe parser
+    where parser :: Parsec () Text (Text, Text)
+          parser = (,) <$> someP isAlphaNum <* chunk " => " <*> someP isAlphaNum
 
--- E.g. singleReplacements "abskaalkjdsaajlkdaa" "aa" "xx" ->
---   ["abskxxlkjdsaajlkdaa", "abskaalkjdsxxjlkdaa", "abskaalkjdsaajlkdxx"]
 singleReplacements :: Text -> Text -> Text -> [Text]
-singleReplacements src k v = [ T.concat $ p : zipWith T.append reps ps
-                             | i <- [0 .. length pieces - 2]
-                             , let reps = ix i .~ v $ replicate (length pieces - 1) k]
-    where pieces@(p:ps) = T.splitOn k src
+singleReplacements src k v =
+    [ T.concat [a, v, T.drop (T.length k) b] | (a, b) <- T.breakOnAll k src ]
 
 part1 :: Text -> Int
 part1 input = let (s:_:mappings) = reverse $ T.lines input
@@ -37,7 +33,7 @@ part1 input = let (s:_:mappings) = reverse $ T.lines input
 
 findPathToElectron :: [(Text, Text)] -> Text -> Int
 findPathToElectron reps = go 0
-    where findMatch = parse (searchAll $ choice $ map (string . fst) reps) ""
+    where findMatch = parse (searchAll $ choice $ map (chunk . fst) reps) ""
           rep w = fromJust $ lookup w reps
           go c "e" = c
           go c s = let (Right m) = findMatch s

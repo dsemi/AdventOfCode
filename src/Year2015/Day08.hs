@@ -18,7 +18,4 @@ part1 = sum . map (uncurry (-) . (length &&& length . go)) . lines
 
 
 part2 :: String -> Int
-part2 = sum . map ((+2) . sum . map getLen) . lines
-    where getLen '\\' = 1
-          getLen '"'  = 1
-          getLen  _   = 0
+part2 = sum . map ((+2) . length . filter (`elem` ['\\', '"'])) . lines

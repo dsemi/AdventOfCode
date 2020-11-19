@@ -6,7 +6,6 @@ module Year2015.Day23
     ) where
 
 import Control.Lens
-import Control.Lens.TH (makeLenses)
 import Control.Monad.Cont
 import Control.Monad.Extra
 import Control.Monad.Ref

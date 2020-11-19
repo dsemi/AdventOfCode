@@ -55,7 +55,7 @@ packages:
     hackage: semirings-0.5.2
 snapshots:
 - completed:
-    size: 488576
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/15/0.yaml
-    sha256: e4b6a87b47ec1cf63a7f1a0884a3b276fce2b0d174a10e8753c4f618e7983568
-  original: lts-15.0
+    size: 532414
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/22.yaml
+    sha256: e483fb88549fc0f454c190979bf35ac91c7aceff2c0e71e7d8edd11842d772d8
+  original: lts-16.22

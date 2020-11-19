@@ -3,12 +3,12 @@
 module Main where
 
 import Days (problem)
+import Utils (getProblemInput)
 
 import Control.DeepSeq
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.List.Split
-import Data.String.Interpolate
 import System.Console.ANSI
 import System.Clock
 import System.Environment
@@ -29,9 +29,6 @@ parseArgs (y:args) = let probs = foldr pa [] args
                                                   [n]   -> n : m
                                                   _     -> undefined -- lazy
               | otherwise                     = undefined -- again
-
-findInput :: Int -> Int -> IO String
-findInput yr pday = readFile [i|inputs/#{yr}/input#{pday}.txt|]
 
 colorizeTime :: Double -> String
 colorizeTime n = printf "%s%.3f%s" startCode n endCode
@@ -55,7 +52,7 @@ maybeRun y n = maybe notfound run $ problem y n
     where notfound = return 0
           str = "Part %s: %32s  Elapsed time %s seconds\n"
           run (p1, p2) = do
-            input <- findInput y n
+            input <- getProblemInput y n
             putStrLn $ "Day " ++ show n
             (ans1, elapsedTime1) <- timeFunc $ p1 input
             printf str "1" ans1 $ colorizeTime elapsedTime1

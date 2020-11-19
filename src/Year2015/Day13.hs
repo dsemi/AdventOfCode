@@ -35,7 +35,7 @@ parseLine = fromJust . parseMaybe parser
 
 constructMap :: [Edge] -> HashMap Char (HashMap Char Int)
 constructMap = foldr addEdgeToMap M.empty
-    where addEdgeToMap (Edge p1 p2 n) m = let m' = fromMaybe M.empty $ M.lookup p1 m
+    where addEdgeToMap (Edge p1 p2 n) m = let m' = M.lookupDefault M.empty p1 m
                                           in M.insert p1 (M.insert p2 n m') m
 
 maxHappinessOrdering :: HashMap Char (HashMap Char Int) -> Int

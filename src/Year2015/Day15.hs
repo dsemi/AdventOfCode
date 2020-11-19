@@ -23,17 +23,18 @@ partitions :: Int -> Int -> [[Int]]
 partitions 1 t = [[t]]
 partitions n t = [ x : xs | x <- [0..t], xs <- partitions (n-1) $ t-x ]
 
-scores :: Int -> ([Int] -> Bool) -> [Ingredient] -> [Int]
-scores total calFilter ings =
+scores :: Int -> (Int -> Bool) -> String -> [Int]
+scores total calFilter input =
     [ product . map (max 0) $ sumV totes
     | ms <- partitions (length ings) total
     , let totes = zipWith (\n i -> map (n*) (scorings <*> pure i)) ms ings
-    , calFilter $ zipWith (\n i -> n * calories i) ms ings
+    , calFilter $ sum $ zipWith (\n i -> n * calories i) ms ings
     ]
-    where scorings = [capacity, durability, flavor, texture]
+    where ings = map parseIngredient $ lines input
+          scorings = [capacity, durability, flavor, texture]
 
 part1 :: String -> Int
-part1 = maximum . scores 100 (const True) . map parseIngredient . lines
+part1 = maximum . scores 100 (const True)
 
 part2 :: String -> Int
-part2 = maximum . scores 100 ((==500) . sum) . map parseIngredient . lines
+part2 = maximum . scores 100 (==500)

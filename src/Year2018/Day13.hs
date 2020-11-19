@@ -5,90 +5,67 @@ module Year2018.Day13
 
 import DaysTH (UnalteredString(..))
 
-import Control.Arrow
 import Control.Lens
 import Data.Array
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
-import Data.Tuple
+import Data.Set (Set)
+import qualified Data.Set as S
+import Linear.V2
 
 
-type Coord = (Int, Int)
-data Dir = North | East | South | West deriving (Eq, Show)
-data Turn = L | S | R deriving (Show)
+type Coord = V2 Int
+data Turn = L | S | R
 data Cart = Cart { pos :: Coord
-                 , dir :: [Dir]
-                 , ts :: [Turn]
-                 } deriving (Show)
-
-move :: Dir -> Coord -> Coord
-move North = over _1 pred
-move East  = over _2 succ
-move South = over _1 succ
-move West  = over _2 pred
-
-dirs :: [Dir]
-dirs = cycle [North, East, South, West]
-
-turns :: [Turn]
-turns = cycle [L, S, R]
-
-turn :: Turn -> [Dir] -> [Dir]
-turn L = drop 3
-turn S = id
-turn R = drop 1
+                 , _dir :: Coord
+                 , _ts :: [Turn]
+                 }
+instance Eq Cart where
+    c1 == c2 = pos c1 == pos c2
+instance Ord Cart where
+    c1 <= c2 = pos c1 <= pos c2
 
 findCarts :: Array Coord Char -> [Cart]
-findCarts = map (\(k, v) -> Cart k (f v) turns) . filter ((`elem` "<>v^") . snd) . assocs
-    where f '^' = dirs
-          f '>' = drop 1 dirs
-          f 'v' = drop 2 dirs
-          f '<' = drop 3 dirs
+findCarts = map (\(k, v) -> Cart k (f v) $ cycle [L, S, R])
+            . filter ((`elem` "<>v^") . snd) . assocs
+    where f '^' = V2 (-1) 0
+          f '>' = V2 0 1
+          f 'v' = V2 1 0
+          f '<' = V2 0 (-1)
 
-parseTracks :: String -> (Array Coord Char, Map Coord Cart)
+parseTracks :: String -> (Array Coord Char, Set Cart)
 parseTracks input =
-    let inputLines = lines input
-        rows = length inputLines
-        cols = length $ head inputLines
-        grid = listArray ((0, 0), (cols-1, rows-1)) $ concat inputLines
-        carts = findCarts grid
-    in ( grid // map (\c -> (pos c, if head (dir c) `elem` [North, South] then '|' else '-')) carts
-       , M.fromList $ map (pos &&& id) carts )
+    let arr = [ (V2 r c, v) | (r, line) <- zip [0..] $ lines input
+              , (c, v) <- zip [0..] line ]
+        grid = array (V2 0 0, fst (last arr)) arr
+    in (grid , S.fromList $ findCarts grid)
 
-tick :: Array Coord Char -> Map Coord Cart -> Map Coord Cart -> ([Coord], Map Coord Cart)
+tick :: Array Coord Char -> Set Cart -> Set Cart -> ([Coord], Set Cart)
 tick grid movedCarts carts
-    | M.null carts = ([], movedCarts)
-    | M.member (pos minCart) movedCarts = over _1 (pos minCart :)
-                                          $ tick grid (M.delete (pos minCart) movedCarts) cartsNoMin
-    | M.member (pos minCart) carts = over _1 (pos minCart :)
-                                     $ tick grid movedCarts (M.delete (pos minCart) cartsNoMin)
-    | otherwise = tick grid (M.insert (pos minCart) minCart movedCarts) cartsNoMin
-    where minCart = moveCart $ snd $ M.findMin carts
-          cartsNoMin = M.deleteMin carts
+    | S.null carts = ([], movedCarts)
+    | S.member cart movedCarts || S.member cart carts =
+        over _1 (pos cart :) $ tick grid (S.delete cart movedCarts) (S.delete cart cartsNoMin)
+    | otherwise = tick grid (S.insert cart movedCarts) cartsNoMin
+    where (cart, cartsNoMin) = over _1 moveCart $ S.deleteFindMin carts
+          turn L (V2 y x) = V2 (-x) y
+          turn S (V2 y x) = V2 y x
+          turn R (V2 y x) = V2 x (-y)
           moveCart (Cart p d t)
-              | v `elem` "-|" = Cart p' d t
-              | v `elem` "/\\" = Cart p' d' t
+              | v `elem` "-|<>v^" = Cart p' d t
+              | v == '\\' = Cart p' (d ^. _yx) t
+              | v == '/' = Cart p' (-d ^. _yx) t
               | v == '+' = Cart p' (turn (head t) d) (tail t)
-              where p' = move (head d) p
+              | otherwise = error "Invalid position"
+              where p' = d + p
                     v = grid ! p'
-                    d' = turn (if (head d) `elem` [North, South] && v == '\\'
-                                      || (head d) `elem` [East, West] && v == '/'
-                               then L else R) d
 
-findFirstCrash :: Array Coord Char -> Map Coord Cart -> Coord
-findFirstCrash grid = go
-    where go carts = let (crashes, carts') = tick grid M.empty carts
-                     in if null crashes then go carts'
-                        else swap $ head crashes
+allFinalCartPos :: Array Coord Char -> Set Cart -> [Coord]
+allFinalCartPos grid = map (^. _yx) . go
+    where go carts
+              | S.size carts == 1 = [pos $ S.findMin carts]
+              | otherwise = let (crashes, carts') = tick grid S.empty carts
+                            in crashes ++ go carts'
 
 part1 :: UnalteredString -> Coord
-part1 = uncurry findFirstCrash . parseTracks . unwrap
-
-findLastCrash :: Array Coord Char -> Map Coord Cart -> Coord
-findLastCrash grid = go
-    where go carts
-              | M.size carts == 1 = swap $ fst $ M.findMin carts
-              | otherwise = go $ snd (tick grid M.empty carts)
+part1 = head . uncurry allFinalCartPos . parseTracks . unwrap
 
 part2 :: UnalteredString -> Coord
-part2 = uncurry findLastCrash . parseTracks . unwrap
+part2 = last . uncurry allFinalCartPos . parseTracks . unwrap

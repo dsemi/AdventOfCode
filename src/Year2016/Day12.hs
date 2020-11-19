@@ -8,7 +8,7 @@ import Year2016.Assembunny
 import Control.Lens
 
 part1 :: String -> Int
-part1 = (^?! a) . evaluate . parseInstructions
+part1 = (^. a) . evaluate . parseInstructions
 
 part2 :: String -> Int
-part2 = (^?! a) . evaluate . (c .~ 1) . parseInstructions
+part2 = (^. a) . evaluate . (c .~ 1) . parseInstructions

@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, TemplateHaskell #-}
+{-# LANGUAGE DeriveGeneric, NamedFieldPuns, TemplateHaskell #-}
 
 module Year2015.Day22
     ( part1
@@ -6,8 +6,13 @@ module Year2015.Day22
     ) where
 
 import Control.Lens
-import Text.Megaparsec
-import Text.Megaparsec.Char (space, string)
+import Data.Graph.AStar
+import Data.Maybe
+import Data.Hashable
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as S
+import GHC.Generics (Generic)
+import Text.Megaparsec (Parsec, chunk, parseMaybe)
 import Text.Megaparsec.Char.Lexer (decimal)
 
 
@@ -18,47 +23,55 @@ data GameState = Game { _pHealth :: Int
                       , _bDamage :: Int
                       , _pTurn :: Bool
                       , _hard :: Bool
-                      , _effects :: [Effect]
-                      }
+                      , _effects :: [(ID, [Effect])]
+                      , _spentMana :: Int
+                      } deriving (Eq, Ord, Generic)
+instance Hashable GameState
 
-data ID = M | D | S | P | R deriving (Eq, Show)
+data ID = MagicMissile
+        | Drain
+        | Shield
+        | Poison
+        | Recharge
+          deriving (Eq, Ord, Generic)
+instance Hashable ID
 
-type Effect = (ID, [GameState -> GameState])
+data Effect = AddArmor
+            | RemoveArmor
+            | Poison'
+            | Recharge'
+            | Nop
+              deriving (Eq, Ord, Generic)
+instance Hashable Effect
 
-data Spell = Spell { ident :: ID
-                   , cost :: Int
-                   , func :: GameState -> GameState
-                   }
 makeLenses ''GameState
 
-magicMissile :: Spell
-magicMissile = Spell M 53 $ bHealth -~ 4
-
-drain :: Spell
-drain = Spell D 73 f
-    where f = (pHealth +~ 2) . (bHealth -~ 2)
-
-shield :: Spell
-shield = Spell S 113 $ effects %~ (es:)
-    where es = (S, [pArmor +~ 7, id, id, id, id, pArmor -~ 7])
-
-poison :: Spell
-poison = Spell P 173 $ effects %~ (es:)
-    where es = (P, replicate 6 $ bHealth -~ 3)
-
-recharge :: Spell
-recharge = Spell R 229 $ effects %~ (es:)
-    where es = (R, replicate 5 $ pMana +~ 101)
-
+data Spell = Spell ID Int
 spells :: [Spell]
-spells = [ magicMissile, drain, shield, poison, recharge ]
+spells = [ Spell MagicMissile 53, Spell Drain 73
+         , Spell Shield 113, Spell Poison 173, Spell Recharge 229 ]
+
+cast :: Spell -> GameState -> GameState
+cast (Spell id' cost) = (spentMana +~ cost) . (pMana -~ cost) . f id'
+    where f MagicMissile = bHealth -~ 4
+          f Drain = (pHealth +~ 2) . (bHealth -~ 2)
+          f Shield = effects %~ ((Shield, [AddArmor, Nop, Nop, Nop, Nop, RemoveArmor]) :)
+          f Poison = effects %~ ((Poison, (replicate 6 Poison')) :)
+          f Recharge = effects %~ ((Recharge, (replicate 5 Recharge')) :)
+
+applyEffect :: Effect -> GameState -> GameState
+applyEffect AddArmor = pArmor +~ 7
+applyEffect RemoveArmor = pArmor -~ 7
+applyEffect Poison' = bHealth -~ 3
+applyEffect Recharge' = pMana +~ 101
+applyEffect Nop = id
 
 gameOver :: GameState -> Bool
-gameOver state = state ^. bHealth <= 0 || state ^. pHealth <= 0
+gameOver game = game ^. bHealth <= 0 || game ^. pHealth <= 0
 
 applyEffects :: GameState -> GameState
-applyEffects state = foldr ($) (effects %~ filter (not . null . snd) . map (_2 %~ tail) $ state) es
-    where es = map (head . snd) $ _effects state
+applyEffects game = foldr ($) (effects %~ (filter (not . null . snd) . map (over _2 tail)) $ game)
+                    $ map (applyEffect . head . snd) $ game ^. effects
 
 beginTurn :: GameState -> GameState
 beginTurn st = (if st ^. hard && st ^. pTurn then pHealth -~ 1 else id) $ applyEffects st
@@ -66,18 +79,21 @@ beginTurn st = (if st ^. hard && st ^. pTurn then pHealth -~ 1 else id) $ applyE
 bossAttack :: GameState -> GameState
 bossAttack st = pHealth -~ max 1 (st ^. bDamage - st ^. pArmor) $ st
 
-minCostToWin :: GameState -> Int
-minCostToWin = minimum . go 0
-    where go mana (beginTurn -> state)
-              | gameOver state = [ mana | state ^. bHealth <= 0 ]
-              | state ^. pTurn =
-                  [ v | (Spell {cost, func}) <- [ s | s <- spells
-                                                , state ^. pMana >= cost s
-                                                , notElem (ident s) . map fst $ state ^. effects
-                                                ]
-                  , v <- go (mana + cost) $ pTurn %~ not $ pMana -~ cost $ func state
-                  ]
-              | otherwise = go mana $ pTurn %~ not $ bossAttack state
+neighbors :: GameState -> HashSet GameState
+neighbors game
+    | gameOver game = S.empty
+    | game ^. pTurn =
+        S.fromList [ beginTurn $ pTurn %~ not $ cast spell game
+                   | spell@(Spell id' cost) <- spells
+                   , game ^. pMana >= cost
+                   , isNothing $ lookup id' (game ^. effects)
+                   ]
+    | otherwise = S.singleton $ beginTurn $ pTurn %~ not $ bossAttack game
+
+minCostToWin :: GameState -> Maybe Int
+minCostToWin game = _spentMana . last <$> aStar neighbors dist (const 0) won (beginTurn game)
+    where won g = g ^. bHealth <= 0
+          dist g1 g2 = abs (g1 ^. spentMana - g2 ^. spentMana)
 
 parseBoss :: Bool -> String -> Maybe GameState
 parseBoss hardMode input =
@@ -90,15 +106,14 @@ parseBoss hardMode input =
              , _pTurn = True
              , _hard = hardMode
              , _effects = []
+             , _spentMana = 0
              }
     where int = fromInteger <$> decimal
           parser :: Parsec () String (Int, Int)
-          parser = (,) <$>
-                   (string "Hit Points: " *> int) <*>
-                   (space *> string "Damage: " *> int)
+          parser = (,) <$> (chunk "Hit Points: " *> int) <*> (chunk "\n" *> chunk "Damage: " *> int)
 
 part1 :: String -> Maybe Int
-part1 = fmap minCostToWin . parseBoss False
+part1 = (>>= minCostToWin) . parseBoss False
 
 part2 :: String -> Maybe Int
-part2 = fmap minCostToWin . parseBoss True
+part2 = (>>= minCostToWin) . parseBoss True

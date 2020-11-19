@@ -22,6 +22,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.TypeLits (KnownNat)
 import Language.Haskell.TH
+import Linear.V2
+import Linear.V3
 import System.FilePath.Glob
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -79,9 +81,17 @@ instance {-# OVERLAPPING #-} (PType a) => PType (a, a) where
     un = undefined
     to (a, b) = intercalate "," <$> mapM to [a, b]
 
+instance {-# OVERLAPPING #-} (PType a) => PType (V2 a) where
+    un = undefined
+    to (V2 a b) = intercalate "," <$> mapM to [a, b]
+
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a, a) where
     un = undefined
     to (a, b, c) = intercalate "," <$> mapM to [a, b, c]
+
+instance {-# OVERLAPPING #-} (PType a) => PType (V3 a) where
+    un = undefined
+    to (V3 a b c) = intercalate "," <$> mapM to [a, b, c]
 
 
 apply :: (PType a, PType b) => (a -> b) -> String -> IO String

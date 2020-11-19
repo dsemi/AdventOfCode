@@ -26,15 +26,15 @@ action _ = error "Invalid string"
 command :: String -> Command
 command = fromJust . parseMaybe parser
     where parseAction = action <$> choice (map string ["toggle", "turn off", "turn on"])
-          parseIntTuple :: Parsec () String (Int, Int)
-          parseIntTuple = (,) <$> (fromInteger <$> decimal <* char ',')
-                              <*> (fromInteger <$> decimal)
+          int = fromInteger <$> decimal
+          pair :: Parsec () String (Int, Int)
+          pair = (,) <$> (int <* char ',') <*> int
           parser :: Parsec () String Command
-          parser = Command <$> parseAction <* spaceChar <*> parseIntTuple
-                           <* string " through " <*> parseIntTuple
+          parser = Command <$> parseAction <* spaceChar <*> pair
+                           <* string " through " <*> pair
 
 runCommands :: (Int -> Int) -> (Int -> Int) -> (Int -> Int)
-               -> UArray (Int, Int) Int -> [Command] -> UArray (Int, Int) Int
+               -> UArray Int Int -> [Command] -> UArray Int Int
 runCommands f1 f2 f3 grid commands =
   runSTUArray $ do
     arr <- thaw grid
@@ -44,12 +44,12 @@ runCommands f1 f2 f3 grid commands =
                 On     -> f2
                 Toggle -> f3
       forM_ [x1..x2] $ \x ->
-        forM_ [y1..y2] $ \y ->
-            readArray arr (x,y) >>= writeArray arr (x,y) . f
-    return arr
+        forM_ [y1+1000*x..y2+1000*x] $ \k ->
+            readArray arr k >>= writeArray arr k . f
+    pure arr
 
-emptyGrid :: UArray (Int, Int) Int
-emptyGrid = listArray ((0,0), (999,999)) $ repeat 0
+emptyGrid :: UArray Int Int
+emptyGrid = listArray (0, 999999) $ repeat 0
 
 part1 :: String -> Int
 part1 = sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid

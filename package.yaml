@@ -7,6 +7,7 @@ default-extensions:
   - DeriveFoldable
   - DeriveFunctor
   - DeriveTraversable
+  # - ImportQualifiedPost
   - LambdaCase
   - MultiWayIf
   - TemplateHaskell
@@ -22,6 +23,8 @@ ghc-options:
   - -Wincomplete-uni-patterns
   - -Wredundant-constraints
   - -Wnoncanonical-monad-instances
+  # - -Wprepositive-qualified-syntax
+  # - -Wunused-packages
 dependencies:
   - aeson
   - ansi-terminal
@@ -38,7 +41,9 @@ dependencies:
   - split
 library:
   source-dirs: src
-  exposed-modules: Days
+  exposed-modules:
+    - Days
+    - Utils
   dependencies:
     - arithmoi
     - array
@@ -51,6 +56,7 @@ library:
     - cryptohash-md5
     - data-ordlist
     - deepseq
+    - directory
     - either
     - extra
     - foldl
@@ -68,6 +74,7 @@ library:
     - parallel
     - pipes
     - pipes-bytestring
+    - pipes-http
     - pointedlist
     - psqueues
     - recursion-schemes

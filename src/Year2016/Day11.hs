@@ -10,7 +10,7 @@ import Control.Lens (both, filtered, holesOf)
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.List (delete, lookup, sort)
+import Data.List (delete, sort)
 import Data.List.Split (splitOn)
 import Text.Megaparsec (choice, noneOf, some)
 import Text.Megaparsec.Char (spaceChar, string)
