@@ -3,6 +3,7 @@ module Year2016.Day22
     , part2
     ) where
 
+import Control.Lens (view)
 import Data.Array
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
@@ -10,12 +11,13 @@ import qualified Data.HashSet as S
 import Data.Maybe (mapMaybe)
 import Data.List (tails)
 import Data.List.Split (splitOn)
+import Linear.V2
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, space)
 import Text.Megaparsec.Char.Lexer (decimal)
 
 
-type Coord = (Int, Int)
+type Coord = V2 Int
 data Node = Node { coords :: Coord
                  , used :: Int
                  , avail :: Int
@@ -29,7 +31,7 @@ parseNode = do
   u <- space *> int <* char 'T'
   a <- space *> int <* char 'T'
   _ <- space *> int <* char '%'
-  return $ Node (read x, read y) u a
+  return $ Node (V2 (read x) (read y)) u a
     where int = fromInteger <$> decimal
 
 viablePairs :: [Node] -> [(Node, Node)]
@@ -51,20 +53,19 @@ buildGrid ns = array (lb, ub) $ map (\n -> (coords n, n)) ns
 type GridState = (Coord,  Coord)
 
 heuristic :: GridState -> Int
-heuristic (o, t) = manhattanDist o t + manhattanDist t (0, 0)
-    where manhattanDist (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
+heuristic (o, t) = manhattanDist o t + manhattanDist t (V2 0 0)
+    where manhattanDist a b = sum $ abs (b - a)
 
 neighbors :: Grid -> GridState -> HashSet GridState
-neighbors g (o@(ox, oy), t) = S.fromList [ (o', if o' == t then o else t)
-                                         | o' <- [(ox, oy+1), (ox, oy-1), (ox+1, oy), (ox-1, oy)]
-                                         , inRange (bounds g) o'
-                                         , not (isBlocked o')
-                                         ]
+neighbors g (o, t) = S.fromList [ (o', if o' == t then o else t)
+                                | o' <- map (o+) [V2 0 1, V2 0 (-1), V2 1 0, V2 (-1) 0]
+                                , inRange (bounds g) o'
+                                , not (isBlocked o')
+                                ]
     where isBlocked c = used (g ! c) > 100
 
-part2 :: String -> Int
+part2 :: String -> Maybe Int
 part2 s = let g =  buildGrid . mapMaybe (parseMaybe parseNode) . drop 2 $ lines s
               open = fst . head . filter ((==0) . used . snd) $ assocs g
-              target = (fst . snd $ bounds g, 0)
-              Just len = length <$> aStar (neighbors g) (\_ -> const 1) heuristic ((==(0,0)) . snd) (open, target)
-          in len
+              target = V2 (view _x . snd $ bounds g) 0
+          in length <$> aStar (neighbors g) (\_ -> const 1) heuristic ((==V2 0 0) . snd) (open, target)

@@ -1,5 +1,3 @@
-{-# LANGUAGE QuasiQuotes #-}
-
 module Main where
 
 import Days (problem)
@@ -44,7 +42,7 @@ timeFunc f = do
   result <- f
   rnf result `seq` return ()
   end <- toNanoSecs <$> liftIO (getTime Monotonic)
-  let elapsedTime = fromIntegral (end - start) / 10^(9 :: Int)
+  let elapsedTime = fromIntegral (end - start) / 10^9
   return (result, elapsedTime)
 
 maybeRun :: Int -> Int -> IO Double

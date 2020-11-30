@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, ScopedTypeVariables, TypeApplications #-}
+{-# LANGUAGE DataKinds, ScopedTypeVariables #-}
 
 module Year2019.Day22
     ( part1

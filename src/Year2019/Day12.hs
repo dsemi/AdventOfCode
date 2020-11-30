@@ -32,9 +32,9 @@ step moons = map (\(p, v) -> (p + v, v)) $ map (\x -> foldr applyGravity x moons
 part1 :: String -> Int
 part1 = sum . map (uncurry (*) . over both (sum . abs)) . (!! 1000) . iterate step . parseMoons
 
-findCycle :: (Monad m, Eq (m Int), Num (m Int)) => [(m Int, m Int)] -> Int
-findCycle moons = (+1) $ fromJust $ findIndex (== moons) $ tail $ iterate step moons
+findCycle :: (Monad m, Eq (m Int), Num (m Int)) => [(m Int, m Int)] -> Maybe Int
+findCycle moons = fmap (+1) $ findIndex (== moons) $ tail $ iterate step moons
 
-part2 :: String -> Int
+part2 :: String -> Maybe Int
 part2 (parseMoons -> moons) =
-    foldr1 lcm $ map (\x -> findCycle $ map (over both (V1 . (^. x))) moons) [_x, _y, _z]
+    foldr1 (liftM2 lcm) $ map (\x -> findCycle $ map (over both (V1 . (^. x))) moons) [_x, _y, _z]

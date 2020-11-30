@@ -3,64 +3,62 @@ module Year2016.Day24
     , part2
     ) where
 
-import Control.Lens
-import Data.Array
+import Utils
+
+import Control.Parallel.Strategies
+import Data.Array.Unboxed
 import Data.Char (digitToInt)
 import Data.Graph.AStar
-import Data.Hashable (Hashable, hashWithSalt)
 import qualified Data.HashSet as S
-import Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
+import Data.Map (Map)
+import qualified Data.Map as M
 import Data.List (sortBy, permutations)
 import Data.Ord (comparing)
+import Linear.V2
 
-data Node = Wall | Space | Target Int deriving (Eq, Ord, Show)
 
-unwrap :: Node -> Int
-unwrap Wall       = -2
-unwrap Space      = -1
-unwrap (Target n) = n
+data Node = Wall | Space | Target Int deriving (Eq, Ord)
 
-instance Hashable Node where
-    hashWithSalt s n = hashWithSalt s $ unwrap n
-
-type Grid = Array (Int, Int) Node
+type Grid = Array (V2 Int) Node
 
 parseGrid :: String -> Grid
-parseGrid s = array bds . concatMap (\(y, row) -> zipWith (\x c -> ((x, y), parseNode c))
-                                                  [0..] row) . zip [0..] $ lines s
+parseGrid s = array bds [ (V2 x y, parseNode c) | (y, row) <- zip [0..] $ lines s
+                        , (x, c) <- zip [0..] row]
     where ubX = length (head (lines s)) - 1
           ubY = length (lines s) - 1
-          bds = ((0, 0), (ubX, ubY))
+          bds = (V2 0 0, V2 ubX ubY)
           parseNode c
               | c == '#'            = Wall
               | c == '.'            = Space
               | c `elem` ['0'..'9'] = Target (digitToInt c)
               | otherwise = error "Invalid node"
 
-findDistances :: Grid -> [((Int, Int), Node)] -> HashMap (Node, Node) Int
+findDistances :: Grid -> [(V2 Int, Node)] -> Map (Node, Node) Int
 findDistances grid ns = M.fromList $ findDist <$> ns <*> ns
-    where manhattanDist (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
-          neighbors (x, y) = S.fromList [ c | c <- [(x+1, y), (x-1, y), (x, y+1), (x, y-1)]
-                                        , inRange (bounds grid) c
-                                        , grid ! c /= Wall
-                                        ]
+    where manhattanDist a b = sum $ abs a - b
+          neighbors xy = S.fromList [ c | c <- map (xy+) [V2 1 0, V2 (-1) 0, V2 0 1, V2 0 (-1)]
+                                    , inRange (bounds grid) c
+                                    , grid ! c /= Wall
+                                    ]
           findDist (p1, n1) (p2, n2)
               | p1 == p2  = ((n1, n2), 0)
               | otherwise = ((n1, n2), len)
               where Just len = length <$>
                                aStar neighbors (\_ -> const 1) (manhattanDist p2) (==p2) p1
 
-allPathsAndDistanceMap :: Grid -> ([[Node]], HashMap (Node, Node) Int)
+allPathsAndDistanceMap :: Grid -> ([[Node]], Map (Node, Node) Int)
 allPathsAndDistanceMap grid = (allPaths, findDistances grid pts)
-    where pts = sortBy (comparing snd) . filter ((>=0) . unwrap . snd) $ assocs grid
+    where pts = sortBy (comparing snd) . filter (not . (`elem` [Wall, Space]) . snd) $ assocs grid
           (start:targets) = map snd pts
           allPaths = map (start :) $ permutations targets
 
-part1 :: String -> Int
-part1 s = minimum $ map (\xs -> sum . map (distMap M.!) . zip xs $ tail xs) allPaths
+minPathLen :: Map (Node, Node) Int -> [[Node]] -> Int
+minPathLen distMap = minimum . parMap rseq (\xs -> sum . map (distMap M.!) . zip xs $ tail xs)
+
+part1 :: String -> IO Int
+part1 s = parallel $ minPathLen distMap allPaths
     where (allPaths, distMap) = allPathsAndDistanceMap $ parseGrid s
 
-part2 :: String -> Int
-part2 s = minimum $ map (\xs -> sum . map (distMap M.!) . zip xs $ tail xs) allPaths
-    where (allPaths, distMap) = over _1 (map (++[Target 0])) . allPathsAndDistanceMap $ parseGrid s
+part2 :: String -> IO Int
+part2 s = parallel $ minPathLen distMap $ map (++[Target 0]) allPaths
+    where (allPaths, distMap) = allPathsAndDistanceMap $ parseGrid s

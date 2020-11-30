@@ -12,6 +12,7 @@ default-extensions:
   - MultiWayIf
   - TemplateHaskell
   - TupleSections
+  - TypeApplications
   - ViewPatterns
 other-extensions:
   - TemplateHaskell
@@ -23,6 +24,7 @@ ghc-options:
   - -Wincomplete-uni-patterns
   - -Wredundant-constraints
   - -Wnoncanonical-monad-instances
+  - -fno-warn-type-defaults
   # - -Wprepositive-qualified-syntax
   # - -Wunused-packages
 dependencies:

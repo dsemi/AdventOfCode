@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, TypeApplications #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Year2018.Day16
     ( part1

@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeApplications #-}
-
 module Year2018.Day23
     ( part1
     , part2

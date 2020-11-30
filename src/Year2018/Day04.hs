@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE QuasiQuotes #-}
 
 module Year2018.Day04
