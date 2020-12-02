@@ -3,17 +3,14 @@ module Year2015.Day21
     , part2
     ) where
 
+import Utils
+
 import Data.Bool
 import Data.List (tails)
 import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal)
 
-
-combinations :: [a] -> Int -> [[a]]
-combinations  _ 0 = [[]]
-combinations xs n = [ y:ys | y:xs' <- tails xs
-                    , ys <- combinations xs' $ n-1 ]
 
 data Equip = Equip { cost :: Int, _damage :: Int, _armor :: Int}
 

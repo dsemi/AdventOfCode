@@ -6,6 +6,7 @@ import Control.DeepSeq
 import Control.Monad
 import qualified Data.ByteString.Char8 as B
 import Data.Either (fromRight)
+import Data.List (tails)
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -27,6 +28,7 @@ getProblemInput :: Int -> Int -> IO String
 getProblemInput year day = do
   exists <- doesFileExist inputFile
   unless exists $ do
+    putStrLn [i|Downloading input for Year #{year} Day #{day}|]
     req <- parseUrlThrow url >>= addCookie
     manager <- newManager tlsManagerSettings
     withHTTP req manager $ \resp ->
@@ -90,3 +92,8 @@ manyP = takeWhileP Nothing
 
 someP :: (MonadParsec e s m) => (Token s -> Bool) -> m (Tokens s)
 someP = takeWhile1P Nothing
+
+combinations :: [a] -> Int -> [[a]]
+combinations  _ 0 = [[]]
+combinations xs n = [ y:ys | y:xs' <- tails xs
+                    , ys <- combinations xs' $ n-1 ]

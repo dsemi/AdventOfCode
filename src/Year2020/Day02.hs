@@ -3,9 +3,23 @@ module Year2020.Day02
     , part2
     ) where
 
+replace :: Char -> Char -> String -> String
+replace a b = map (\x -> if x == a then b else x)
 
-part1 :: String -> String
-part1 = id
+countValid :: (Int -> Int -> Char -> String -> Bool) -> String -> Int
+countValid f input = length $ filter valid $ lines $ replace '-' ' ' input
+    where valid line = let [lo, hi, char, pass] = words line
+                       in f (read lo) (read hi) (head char) pass
 
-part2 :: String -> String
-part2 = const ""
+isValid :: Int -> Int -> Char -> String -> Bool
+isValid lo hi c s = lo <= numC && numC <= hi
+    where numC = length $ filter (==c) s
+
+part1 :: String -> Int
+part1 = countValid isValid
+
+isValid' :: Int -> Int -> Char -> String -> Bool
+isValid' lo hi c s = (s !! (lo - 1) == c) /= (s !! (hi - 1) == c)
+
+part2 :: String -> Int
+part2 = countValid isValid'
