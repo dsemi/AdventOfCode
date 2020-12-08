@@ -11,13 +11,12 @@ import Text.Megaparsec.Char.Lexer
 
 
 parseBags :: String -> Map String [(Int, String)]
-parseBags = M.fromList . map (fromJust . parseMaybe parser) . lines
+parseBags = M.fromList . map (fromJust . parseMaybe @() parser) . lines
     where bag = manyTill anySingle $
-                try (chunk " bag" >> optional (single 's') >> optional (single '.'))
-          parser :: Parsec () String (String, [(Int, String)])
+                chunk " bag" >> optional (single 's') >> optional (single '.')
           parser = do
-            key <- manyTill anySingle (try $ chunk " bags contain ")
-            vals <- try (chunk "no other bags." *> pure [])
+            key <- manyTill anySingle (chunk " bags contain ")
+            vals <- (chunk "no other bags." *> pure [])
                     <|> (((,) <$> decimal <* single ' ' <*> bag) `sepBy` chunk ", ")
             pure (key, vals)
 

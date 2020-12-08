@@ -19,6 +19,7 @@ import Pipes
 import Pipes.HTTP
 import qualified Pipes.ByteString as PB
 import System.Directory
+import System.Environment
 import System.IO
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
@@ -38,7 +39,7 @@ getProblemInput year day = do
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]
           addCookie req = do
-            cookie <- B.readFile "session-cookie"
+            cookie <- B.pack <$> getEnv "AOC_SESSION"
             pure $ req { requestHeaders = [("Cookie", cookie)] }
 
 findAllInts :: (Integral a) => String -> [a]
