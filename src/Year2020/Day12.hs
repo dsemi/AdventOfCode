@@ -22,11 +22,8 @@ mkAction ('R':rest) = R $ read rest `div` 90
 mkAction ('F':rest) = F $ read rest
 mkAction _ = error "bad input"
 
-parse :: String -> [Action]
-parse = map mkAction . lines
-
-travel :: V2 Int -> Bool -> [Action] -> V2 Int
-travel start moveShip = fst . foldl' (flip go) (V2 0 0, start)
+travel :: V2 Int -> Bool -> String -> Int
+travel start moveShip = sum . abs . fst . foldl' (flip go) (V2 0 0, start) . map mkAction . lines
     where go = \case
                N n -> over (if moveShip then _1 else _2) (+ V2 n n * V2 0 1)
                S n -> over (if moveShip then _1 else _2) (+ V2 n n * V2 0 (-1))
@@ -37,7 +34,7 @@ travel start moveShip = fst . foldl' (flip go) (V2 0 0, start)
                F n -> \(pos, dir) -> (pos + V2 n n * dir, dir)
 
 part1 :: String -> Int
-part1 = sum . abs . travel (V2 1 0) True . parse
+part1 = travel (V2 1 0) True
 
 part2 :: String -> Int
-part2 = sum . abs . travel (V2 10 1) False . parse
+part2 = travel (V2 10 1) False
