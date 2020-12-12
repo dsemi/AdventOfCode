@@ -16,8 +16,8 @@ parse inp = array (fst (head grid), fst (last grid)) grid
                  , (x, c) <- zip [0..] row ]
 
 dirs :: [Coord]
-dirs = [ V2 (-1) (-1), V2 0 (-1), V2 1 (-1)
-       , V2 (-1) 0, V2 1 0, V2 (-1) 1, V2 0 1, V2 1 1 ]
+dirs = [ V2 (-1) (-1), V2 0 (-1), V2 1 (-1), V2 (-1) 0
+       , V2 1 0, V2 (-1) 1, V2 0 1, V2 1 1 ]
 
 adjacents :: Grid -> Coord -> [Coord]
 adjacents grid xy = filter (inRange (bounds grid)) $ map (+xy) dirs
