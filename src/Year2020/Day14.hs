@@ -3,36 +3,29 @@ module Year2020.Day14
     , part2
     ) where
 
-import Utils
-
-import Control.Lens
 import Data.Bits
-import Data.List (isPrefixOf)
 import qualified Data.Map as M
 
 
 parse :: String -> [([(Int, Char)], Int, Int)]
-parse = concat . foldr go [[]] . lines
-    where go _ [] = error "bad parse"
-          go line (x:xs)
-              | "mask" `isPrefixOf` line = [] : map (_1 .~ zip [35,34..] (last (words line))) x : xs
-              | otherwise = let [r, v] = findAllInts line
-                            in ((undefined, r, v) : x) : xs
+parse = go [] . lines
+    where go _ [] = []
+          go mask ((words -> line):xs)
+              | head line == "mask" = go (zip [35,34..] (last line)) xs
+              | otherwise = let r = read $ init $ drop 4 $ head line
+                                v = read $ last line
+                            in (mask, r, v) : go mask xs
 
 part1 :: String -> Int
 part1 = sum . M.elems . M.fromList . map process . parse
     where process (mask, r, v) = (r, foldr go v mask)
-          go (i, m) v = case m of
-                          '1' -> setBit v i
-                          '0' -> clearBit v i
-                          _ -> v
+          go (i, '1') = (`setBit` i)
+          go (i, '0') = (`clearBit` i)
+          go (_, _)   = id
 
 part2 :: String -> Int
 part2 = sum . M.elems . M.fromList . concatMap process . parse
-    where process (mask, r, v) = map (,v) $ go mask [0] r
-          go [] ns _ = ns
-          go ((i, m):ms) ns r = go ms ((\b v -> v*2 + b) <$> bits <*> ns) r
-              where bits = case m of
-                             '1' -> [1]
-                             '0' -> [fromEnum (testBit r i)]
-                             _ -> [0, 1]
+    where process (mask, r, v) = map (,v) $ foldr go [r] mask
+          go (i, '1') ns = (`setBit` i) <$> ns
+          go (_, '0') ns = ns
+          go (i, _)   ns = [(`clearBit` i), (`setBit` i)] <*> ns
