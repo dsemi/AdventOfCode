@@ -14,10 +14,10 @@ run n input = runST $ do
   let inp = map read $ splitOn "," input
   arr <- newArray (0, n) (-1) :: ST s (STUArray s Int Int)
   forM_ (zip [1..] inp) $ \(i, v) -> writeArray arr v i
-  (\f -> foldM f 0 [length inp + 1 .. n-1]) $ \v turn -> do
+  (\f -> foldM f 0 [length inp + 1 .. n-1]) $ \v i -> do
     val <- readArray arr v
-    let newV = if val == -1 then 0 else turn - val
-    writeArray arr v turn
+    let newV = if val == -1 then 0 else i - val
+    writeArray arr v i
     pure newV
 
 part1 :: String -> Int
