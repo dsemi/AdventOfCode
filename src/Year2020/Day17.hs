@@ -3,41 +3,27 @@ module Year2020.Day17
     , part2
     ) where
 
-import Control.Lens
-import Data.Array.Unboxed
 import Linear.V3
 import Linear.V4
+import qualified Data.Map as M
+import Data.Set (Set)
+import qualified Data.Set as S
 
 
-type Grid f = UArray (f Int) Bool
+parse :: String -> Set (V3 Int)
+parse input = S.fromList [ V3 x y 0 | (y, row) <- zip [0..] $ lines input
+                         , (x, v) <- zip [0..] row, v == '#' ]
 
-parse :: String -> Grid V3
-parse input = array bds grid
-    where grid = [ (V3 x y 0, v == '#')
-                 | (y, row) <- zip [0..] $ lines input
-                 , (x, v) <- zip [0..] row]
-          bds = (minimum (map fst grid), maximum (map fst grid))
-
-neighbors :: (Ix (f Int), Traversable f) => Grid f -> f Int -> Int
-neighbors grid coord = sum [ 1 | coord' <- traverse (\x -> [x-1, x, x+1]) coord
-                           , coord' /= coord
-                           , inRange (bounds grid) coord'
-                           , grid ! coord' ]
-
-step :: (Ix (f Int), Traversable f) => Grid f -> Grid f
-step grid = listArray bounds' $ map f $ range bounds'
-    where (a, b) = bounds grid
-          bounds' = (subtract 1 <$> a, (+1) <$> b)
-          getVal coord = inRange (a, b) coord && grid ! coord
-          f coord = count == 3 || getVal coord && count == 2
-              where count = neighbors grid coord
-
-countAfterSix :: (Ix (f Int), Traversable f) => Grid f -> Int
-countAfterSix = length . filter id . elems . (!! 6) . iterate step
+countAfterSix :: (Ord (f Int), Traversable f) => Set (f Int) -> Int
+countAfterSix = length . (!! 6) . iterate go
+    where go ons = let m = M.fromListWith (+) [ (neighb, 1) | pos <- S.toList ons
+                                              , neighb <- traverse (\x -> [x-1, x, x+1]) pos
+                                              , pos /= neighb ]
+                   in S.union (S.filter (\x -> M.findWithDefault 0 x m `elem` [2, 3]) ons)
+                          $ S.filter (\x -> S.notMember x ons && m M.! x == 3) $ M.keysSet m
 
 part1 :: String -> Int
 part1 = countAfterSix . parse
 
 part2 :: String -> Int
-part2 (parse -> grid) = countAfterSix grid'
-    where grid' = ixmap (both %~ (\(V3 x y z) -> V4 x y z 0) $ bounds grid) (^._xyz) grid
+part2 = countAfterSix . S.map (\(V3 x y z) -> V4 x y z 0) . parse
