@@ -10,32 +10,23 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 
-data Expr = Const Int
-          | Add Expr Expr
-          | Mul Expr Expr
-
 sc :: Parsec () String ()
 sc = L.space space1 empty empty
 
-add :: Operator (Parsec () String) Expr
-add = InfixL (Add <$ L.symbol sc "+")
+add :: Operator (Parsec () String) Int
+add = InfixL ((+) <$ L.symbol sc "+")
 
-mul :: Operator (Parsec () String) Expr
-mul = InfixL (Mul <$ L.symbol sc "*")
+mul :: Operator (Parsec () String) Int
+mul = InfixL ((*) <$ L.symbol sc "*")
 
-parseExprs :: [[Operator (Parsec () String) Expr]] -> String -> [Expr]
+parseExprs :: [[Operator (Parsec () String) Int]] -> String -> [Int]
 parseExprs ops = map (fromJust . parseMaybe pExpr) . lines
     where pExpr = makeExprParser pTerm ops
           pTerm = choice [ between (L.symbol sc "(") (L.symbol sc ")") pExpr
-                         , Const <$> L.lexeme sc L.decimal ]
-
-eval :: Expr -> Int
-eval (Const n) = n
-eval (Add a b) = eval a + eval b
-eval (Mul a b) = eval a * eval b
+                         , L.lexeme sc L.decimal ]
 
 part1 :: String -> Int
-part1 = sum . map eval . parseExprs [[add, mul]]
+part1 = sum . parseExprs [[add, mul]]
 
 part2 :: String -> Int
-part2 = sum . map eval . parseExprs [[add], [mul]]
+part2 = sum . parseExprs [[add], [mul]]
