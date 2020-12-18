@@ -74,6 +74,7 @@ library:
     - monad-loops
     - mtl
     - parallel
+    - parser-combinators
     - pipes
     - pipes-bytestring
     - pipes-http

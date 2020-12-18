@@ -26,4 +26,4 @@ part1 :: String -> Int
 part1 = countAfterSix . parse
 
 part2 :: String -> Int
-part2 = countAfterSix . S.map (\(V3 x y z) -> V4 x y z 0) . parse
+part2 = countAfterSix . S.map vector . parse
