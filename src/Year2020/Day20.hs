@@ -8,7 +8,6 @@ import Data.Array.Unboxed
 import Data.List (delete)
 import Data.List.Split
 import qualified Data.Map as M
-import qualified Data.Set as S
 import Linear.V2
 
 
@@ -79,10 +78,10 @@ image m = array (V2 0 0, V2 ((mr+1)*mr' - 1) ((mc+1)*mc' - 1)) grid
                  , let c' = c `div` mc'
                  , let c'' = c `mod` mc' + 1 ]
 
-seaMonster :: S.Set (V2 Int)
-seaMonster = S.fromList [ V2 r c | (r, row) <- zip [0..] str
-                        , (c, v) <- zip [0..] row
-                        , v == '#']
+seaMonster :: [V2 Int]
+seaMonster = [ V2 r c | (r, row) <- zip [0..] str
+             , (c, v) <- zip [0..] row
+             , v == '#']
     where str = [ "                  # "
                 , "#    ##    ##    ###"
                 , " #  #  #  #  #  #   " ]
@@ -90,13 +89,14 @@ seaMonster = S.fromList [ V2 r c | (r, row) <- zip [0..] str
 -- Assumes that sea monsters do not overlap
 findSeaMonsters :: UArray (V2 Int) Char -> Int
 findSeaMonsters p = head [ sum' | arr <- orientations p
-                         , let sum' = sum [ S.size seaMonster | r <- [0..(mr - mrp)]
+                         , let sum' = sum [ seaMonsterSize | r <- [0..(mr - mrp)]
                                           , c <- [0..(mc - mcp)]
-                                          , all ((=='#') . (arr !)) $ S.map (+V2 r c) seaMonster ]
+                                          , all ((=='#') . (arr !)) $ map (+V2 r c) seaMonster ]
                          , sum' /= 0]
-    where (V2 mr mc) = snd $ bounds p
-          mrp = maximum $ S.map (^. _x) seaMonster
-          mcp = maximum $ S.map (^. _y) seaMonster
+    where seaMonsterSize = length seaMonster
+          (V2 mr mc) = snd $ bounds p
+          mrp = maximum $ map (^. _x) seaMonster
+          mcp = maximum $ map (^. _y) seaMonster
 
 part2 :: String -> Int
 part2 input = let m = placeTiles $ parse input
