@@ -5,8 +5,10 @@ module Year2020.Day20
 
 import Control.Lens
 import Data.Array.Unboxed
-import Data.List (delete)
+import Data.Function.Memoize
+import Data.List (delete, nub)
 import Data.List.Split
+import Data.Map (Map)
 import qualified Data.Map as M
 import Linear.V2
 
@@ -30,44 +32,47 @@ parse = map parseTile . splitOn "\n\n"
 
 orientations :: UArray (V2 Int) Char -> [UArray (V2 Int) Char]
 orientations arr = [ arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 r (m-c)) arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 (m-r) c) arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 (m-r) (m-c)) arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 c r) arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 c (m-r)) arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 (m-c) r) arr
-                   , ixmap (bounds arr) (\(V2 r c) -> V2 (m-c) (m-r)) arr
+                   , ixmap bds (\(V2 r c) -> V2 r (m-c)) arr
+                   , ixmap bds (\(V2 r c) -> V2 (m-r) c) arr
+                   , ixmap bds (\(V2 r c) -> V2 (m-r) (m-c)) arr
+                   , ixmap bds (\(V2 r c) -> V2 c r) arr
+                   , ixmap bds (\(V2 r c) -> V2 c (m-r)) arr
+                   , ixmap bds (\(V2 r c) -> V2 (m-c) r) arr
+                   , ixmap bds (\(V2 r c) -> V2 (m-c) (m-r)) arr
                    ]
-    where (V2 _ m) = snd $ bounds arr
+    where bds@(_, V2 _ m) = bounds arr
 
-placeTiles :: [Tile] -> M.Map (V2 Int) Tile
-placeTiles tiles = head $ go 0 M.empty tiles
-    where len = floor $ sqrt $ fromIntegral $ length tiles
+placeTiles :: String -> Map (V2 Int) Tile
+placeTiles input = head $ go 0 M.empty tiles
+    where tiles = parse input
+          len = floor $ sqrt $ fromIntegral $ length tiles
           (V2 mr mc) = snd $ bounds $ _shape $ head tiles
           go _ m [] = [m]
           go c m ts = [ m' | tile <- ts
                       , t <- traverseOf shape orientations tile
-                      , let coord = V2 (c `div` len) (c `mod` len)
+                      , let coord@(V2 row col) = V2 (c `div` len) (c `mod` len)
                       -- Either in first col or verify that the right col of the left tile matches
                       -- the left col of this tile
-                      , c `mod` len == 0 || (let (Tile _ lef) = m M.! (coord - V2 0 1)
-                                                 (Tile _ rig) = t
-                                             in all (\i -> lef ! V2 i mc == rig ! V2 i 0) [0..mr])
+                      , col == 0 || (let (Tile _ lef) = m M.! (coord - V2 0 1)
+                                         (Tile _ rig) = t
+                                     in all (\i -> lef ! V2 i mc == rig ! V2 i 0) [0..mr])
                       -- Either in first row or verify that the bottom row of the above tile matches
                       -- the top row of this tile
-                      , c < len || (let (Tile _ top) = m M.! (coord - V2 1 0)
-                                        (Tile _ bot) = t
-                                    in all (\i -> top ! V2 mr i == bot ! V2 0 i) [0..mc])
+                      , row == 0 || (let (Tile _ top) = m M.! (coord - V2 1 0)
+                                         (Tile _ bot) = t
+                                     in all (\i -> top ! V2 mr i == bot ! V2 0 i) [0..mc])
                       , m' <- go (c+1) (M.insert coord t m) $ delete t ts ]
 
+placeTiles' :: String -> Map (V2 Int) Tile
+placeTiles' = memoize placeTiles
+
 part1 :: String -> Int
-part1 input = let m = placeTiles $ parse input
+part1 input = let m = placeTiles' input
                   (V2 r c) = maximum $ M.keys m
               in product $ map (view num . (m M.!)) [V2 0 0, V2 0 c, V2 r 0, V2 r c]
 
-
 -- Consolidate map of tiles into one large tile, while skipping borders of inner tiles
-image :: M.Map (V2 Int) Tile -> UArray (V2 Int) Char
+image :: Map (V2 Int) Tile -> UArray (V2 Int) Char
 image m = array (V2 0 0, V2 ((mr+1)*mr' - 1) ((mc+1)*mc' - 1)) grid
     where (V2 mr mc) = maximum $ M.keys m
           (V2 mr' mc') = fmap pred $ snd $ bounds $ view shape $ head $ M.elems m
@@ -86,20 +91,20 @@ seaMonster = [ V2 r c | (r, row) <- zip [0..] str
                 , "#    ##    ##    ###"
                 , " #  #  #  #  #  #   " ]
 
--- Assumes that sea monsters do not overlap
 findSeaMonsters :: UArray (V2 Int) Char -> Int
-findSeaMonsters p = head [ sum' | arr <- orientations p
-                         , let sum' = sum [ seaMonsterSize | r <- [0..(mr - mrp)]
-                                          , c <- [0..(mc - mcp)]
-                                          , all ((=='#') . (arr !)) $ map (+V2 r c) seaMonster ]
-                         , sum' /= 0]
-    where seaMonsterSize = length seaMonster
-          (V2 mr mc) = snd $ bounds p
+findSeaMonsters p = head [ length pts | arr <- orientations p
+                         , let pts = nub [ pos | r <- [0..(mr - mrp)]
+                                         , c <- [0..(mc - mcp)]
+                                         , let newSeaMonster = map (+V2 r c) seaMonster
+                                         , all ((=='#') . (arr !)) newSeaMonster
+                                         , pos <- map (+V2 r c) seaMonster ]
+                         , not $ null pts ]
+    where (V2 mr mc) = snd $ bounds p
           mrp = maximum $ map (^. _x) seaMonster
           mcp = maximum $ map (^. _y) seaMonster
 
 part2 :: String -> Int
-part2 input = let m = placeTiles $ parse input
+part2 input = let m = placeTiles' input
                   p = image m
                   n = findSeaMonsters p
               in length (filter (=='#') $ elems p) - n
