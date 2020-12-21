@@ -42,11 +42,11 @@ orientations arr = [ arr
     where bds@(_, V2 _ m) = bounds arr
 
 findCorners :: [Tile] -> [Int]
-findCorners tiles = case map fst (filter ((==2) . snd) (M.toList m2)) of
+findCorners tiles = case map fst (filter ((==2) . snd) (M.toList uniques)) of
                       ns | length ns == 4 -> ns
                       ns -> error $ "Couldn't find all corners: " ++ show ns
     where m = M.fromListWith (++) $ concatMap hashSides tiles
-          m2 = M.fromListWith (+) $ map ((,1) . head) $ filter ((==1) . length) $ M.elems m
+          uniques = M.fromListWith (+) $ map ((,1) . head) $ filter ((==1) . length) $ M.elems m
           hashSides (Tile n tile) = map (,[n]) [ hashSide $ map ((tile !) . (V2 0)) [0..mc]
                                                , hashSide $ map ((tile !) . (V2 mr)) [0..mc]
                                                , hashSide $ map ((tile !) . (`V2` 0)) [0..mr]
