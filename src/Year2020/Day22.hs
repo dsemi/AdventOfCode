@@ -16,16 +16,17 @@ parse input = let [a, b] = splitOn "\n\n" input
     where f = map read . tail . lines
 
 play :: Bool -> [Int] -> [Int] -> Either Int Int
-play p2 = go S.empty
-    where go _ as [] = Left $ sum $ zipWith (*) [1..] $ reverse as
-          go _ [] bs = Right $ sum $ zipWith (*) [1..] $ reverse bs
-          go s (a:as) (b:bs)
-              | p2 && (S.member (a:as) s || S.member (b:bs) s) = Left undefined
-              | p1Wins = go s' (as ++ [a, b]) bs
-              | otherwise = go s' as (bs ++ [b, a])
-              where s' = S.insert (a:as) $ S.insert (b:bs) s
+play p2 = go False S.empty
+    where go _ _ as [] = Left $ sum $ zipWith (*) [1..] $ reverse as
+          go _ _ [] bs = Right $ sum $ zipWith (*) [1..] $ reverse bs
+          go sub s (a:as) (b:bs)
+              | sub && maximum (a:as) > maximum (b:bs) = Left undefined
+              | p2 && S.member (a:as, b:bs) s = Left undefined
+              | p1Wins = go sub s' (as ++ [a, b]) bs
+              | otherwise = go sub s' as (bs ++ [b, a])
+              where s' = S.insert (a:as, b:bs) s
                     p1Wins = if p2 && a <= length as && b <= length bs
-                             then isLeft $ go S.empty (take a as) (take b bs)
+                             then isLeft $ go True S.empty (take a as) (take b bs)
                              else a > b
 
 part1 :: String -> Either Int Int
