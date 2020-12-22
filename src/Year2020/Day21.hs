@@ -23,9 +23,8 @@ parseFoods = fromJust . parseMaybe @() (pFood `sepBy` "\n")
                   <*> ("(contains " *> (some letterChar `sepBy` ", ") <* ")")
 
 allergens :: [([String], [String])] -> Map String (Set String)
-allergens = foldr process M.empty
-    where process (ings, alls) m = foldr (\x -> M.insertWith S.intersection x ingSet) m alls
-              where ingSet = S.fromList ings
+allergens = M.fromListWith S.intersection . concatMap process
+    where process (ings, alls) = map (,S.fromList ings) alls
 
 countSafeIngredients :: [([String], [String])] -> Int
 countSafeIngredients foods = length $ filter (`S.member` safeIngredients) ingredients
