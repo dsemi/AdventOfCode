@@ -18,7 +18,7 @@ run :: Int -> Int -> UArray Int Int -> UArray Int Int
 run steps start arr = runSTUArray $ do
                         m <- unsafeThaw arr
                         step steps m start
-    where max' = maximum $ elems arr
+    where max' = snd $ bounds arr
           step cnt m x
               | cnt == 0 = pure m
               | otherwise = do
@@ -34,11 +34,9 @@ run steps start arr = runSTUArray $ do
                   readArray m x >>= step (cnt-1) m
 
 part1 :: String -> String
-part1 input = let (start, m) = parse $ map digitToInt input
-                  m' = run 100 start m
-              in map intToDigit $ takeWhile (/= 1) $ tail $ iterate (m' !) 1
+part1 input = let m = uncurry (run 100) $ parse $ map digitToInt input
+              in map intToDigit $ takeWhile (/= 1) $ tail $ iterate (m !) 1
 
 part2 :: String -> Int
-part2 input = let (start, m) = parse $ map digitToInt input ++ [10..10^6]
-                  m' = run (10^7) start m
-              in m' ! 1 * m' ! (m' ! 1)
+part2 input = let m = uncurry (run (10^7)) $ parse $ map digitToInt input ++ [10..10^6]
+              in m ! 1 * m ! (m ! 1)
