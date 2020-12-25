@@ -6,7 +6,6 @@ module Year2020.Day24
     ) where
 
 import Data.Bits
-import Data.Char
 import Data.Maybe
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
@@ -25,17 +24,16 @@ dirs = [ (+ V3  1 -1  0) -- East
 
 flipTiles :: String -> HashMap (V3 Int) Bool
 flipTiles = M.filter id . M.fromListWith xor . map ((,True) . foldr ($) (V3 0 0 0) . reverse)
-            . map (fromJust . parseMaybe @() pDirs) . lines . map toUpper
-    where pDirs = some $ choice $ zipWith (<$) dirs ["E", "SE", "SW", "W", "NW", "NE"]
+            . map (fromJust . parseMaybe @() pDirs) . lines
+    where pDirs = some $ choice $ zipWith (<$) dirs ["e", "se", "sw", "w", "nw", "ne"]
 
 part1 :: String -> Int
 part1 = M.size . flipTiles
 
 step :: HashMap (V3 Int) Bool -> HashMap (V3 Int) Bool
 step m = M.filter id $ M.mapWithKey black adj
-    where adj = M.fromListWith (+) $ map (,1) $ concatMap neighbors $ M.keys m
+    where adj = M.fromListWith (+) $ map (,1) $ dirs <*> M.keys m
           black k v = if M.lookupDefault False k m then v /= 0 && v <= 2 else v == 2
-          neighbors x = map ($ x) dirs
 
 part2 :: String -> Int
 part2 = M.size . (!! 100) . iterate step . flipTiles

@@ -42,7 +42,7 @@ getProblemInput year day = do
             cookie <- B.pack <$> getEnv "AOC_SESSION"
             pure $ req { requestHeaders = [("Cookie", cookie)] }
 
-findAllInts :: (Integral a) => String -> [a]
+findAllInts :: (Num a) => String -> [a]
 findAllInts = findAll (signed (pure ()) decimal)
 
 searchAll :: (Stream s) => Parsec () s a -> Parsec () s a
