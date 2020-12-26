@@ -23,6 +23,7 @@ import GHC.TypeLits (KnownNat)
 import Language.Haskell.TH
 import Linear.V2
 import Linear.V3
+import qualified Math.NumberTheory.Moduli.Class as MC
 import System.FilePath.Glob
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -47,6 +48,10 @@ instance {-# OVERLAPPING #-} (PType a, PType b) => PType (Either a b) where
 instance {-# OVERLAPPING #-} (KnownNat n) => PType (Mod n) where
     un = fromInteger . un
     to = to . unMod
+
+instance {-# OVERLAPPING #-} (KnownNat n) => PType (MC.Mod n) where
+    un = fromInteger . un
+    to = to . MC.getVal
 
 instance {-# OVERLAPPING #-} PType Text where
     un = T.pack . un
