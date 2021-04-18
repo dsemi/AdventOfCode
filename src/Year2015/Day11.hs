@@ -3,13 +3,6 @@ module Year2015.Day11
     , part2
     ) where
 
-import Utils
-
-import Data.Either
-import Data.List (tails)
-import Text.Megaparsec
-import Text.Megaparsec.Char (char)
-
 
 incrStr :: String -> String
 incrStr = reverse . step . reverse
@@ -19,21 +12,10 @@ incrStr = reverse . step . reverse
               | otherwise = succ x : xs
 
 isValid :: String -> Bool
-isValid s = not (any (`elem` s) "iol") && isSuccessive s
-            && length (fromRight undefined $ parse parser "" s) > 1
-    where dupChars = do
-            a <- anySingle >>= char
-            return $ a : a : ""
-          parser :: Parsec () String [String]
-          parser = try (many (searchAll dupChars)) <|> return []
-          isSuccessive = any ordered . windows 3
-              where ordered []  = True
-                    ordered [_] = True
-                    ordered (x:y:xs)
-                        | y == succ x = ordered $ y : xs
-                        | otherwise   = False
-                    windows n = takeWhile ((==n) . length)
-                                . map (take n) . tails
+isValid s = or (zipWith3 increasing s (tail s) (tail (tail s)))
+            && length (filter id (scanl1 (\b x -> not b && x) (zipWith (==) s (tail s)))) >= 2
+            && not (any (`elem` s) "iol")
+    where increasing a b c = succ a == b && succ b == c
 
 part1 :: String -> String
 part1 = head . filter isValid . tail . iterate incrStr

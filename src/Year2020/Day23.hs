@@ -1,37 +1,38 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns, FlexibleContexts #-}
 
 module Year2020.Day23
     ( part1
     , part2
     ) where
 
+import qualified Control.Foldl as L
 import Data.Char
+import Data.Array.Base
 import Data.Array.ST
-import Data.Array.Unboxed
-import Data.Array.Unsafe
 
 
 parse :: [Int] -> (Int, UArray Int Int)
-parse nums = (head nums, array (minimum nums, maximum nums) $ zip nums $ tail nums ++ [head nums])
+parse nums = (head nums, array (0, mx) $ (end, head nums) : (zip nums $ tail nums))
+    where (Just mx, Just end) = L.fold ((,) <$> L.maximum <*> L.last) nums
 
 run :: Int -> Int -> UArray Int Int -> UArray Int Int
-run steps start arr = runSTUArray $ do
-                        m <- unsafeThaw arr
-                        step steps m start
-    where max' = snd $ bounds arr
-          step cnt m x
+run steps start arr = runSTUArray $ unsafeThaw arr >>= flip (step steps) start
+    where mx = snd $ bounds arr
+          next x = if x == 1 then mx else x - 1
+          step !cnt m x
               | cnt == 0 = pure m
               | otherwise = do
-                  a <- readArray m x
-                  b <- readArray m a
-                  c <- readArray m b
-                  readArray m c >>= writeArray m x
-                  let n = head [ y' | y <- [x-1, x-2 ..]
-                               , let y' = if y < 1 then y + max' else y
-                               , y' `notElem` [a, b, c] ]
-                  readArray m n >>= writeArray m c
-                  writeArray m n a
-                  readArray m x >>= step (cnt-1) m
+                  a <- unsafeRead m x
+                  b <- unsafeRead m a
+                  c <- unsafeRead m b
+                  unsafeRead m c >>= unsafeWrite m x
+                  let go !z
+                          | z == a || z == b || z == c = go $ next z
+                          | otherwise = z
+                      n = go $ next x
+                  unsafeRead m n >>= unsafeWrite m c
+                  unsafeWrite m n a
+                  unsafeRead m x >>= step (cnt-1) m
 
 part1 :: String -> String
 part1 input = let m = uncurry (run 100) $ parse $ map digitToInt input

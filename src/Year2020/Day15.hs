@@ -1,3 +1,5 @@
+{-# LANGUAGE NumericUnderscores #-}
+
 module Year2020.Day15
     ( part1
     , part2
@@ -22,4 +24,4 @@ part1 :: String -> Int
 part1 = run 2020
 
 part2 :: String -> Int
-part2 = run 30000000
+part2 = run 30_000_000

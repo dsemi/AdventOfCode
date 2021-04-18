@@ -40,7 +40,7 @@ timeFunc :: (NFData a, MonadIO m) => m a -> m (a, Double)
 timeFunc f = do
   start <- toNanoSecs <$> liftIO (getTime Monotonic)
   result <- f
-  rnf result `seq` return ()
+  rnf result `seq` pure ()
   end <- toNanoSecs <$> liftIO (getTime Monotonic)
   let elapsedTime = fromIntegral (end - start) / 10^9
   return (result, elapsedTime)

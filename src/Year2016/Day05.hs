@@ -12,7 +12,6 @@ import Crypto.Hash.MD5 (hash)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Base16 (encode)
-import Data.Monoid ((<>))
 import qualified Data.HashMap.Strict as M
 
 

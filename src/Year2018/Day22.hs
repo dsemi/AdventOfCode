@@ -1,26 +1,32 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric, NegativeLiterals, TypeFamilies #-}
 
 module Year2018.Day22
     ( part1
     , part2
     ) where
 
-import Data.Function.Memoize
+import Control.Lens
+import Data.Array
 import Data.Graph.AStar
 import Data.Hashable
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.Ix
 import Data.Maybe
 import GHC.Generics
+import Linear.V2
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
 
 
--- Look at ImplicitParams for (depth, target)
+type Coord = V2 Int
 
-type Coord = (Int, Int)
+data Tool = Neither | Torch | ClimbingGear deriving (Enum, Eq, Generic, Ord, Show)
+instance Hashable Tool
+
+next :: Tool -> Tool
+next ClimbingGear = Neither
+next x = succ x
 
 parseInput :: String -> (Int, Coord)
 parseInput = fromJust . parseMaybe parser
@@ -28,37 +34,34 @@ parseInput = fromJust . parseMaybe parser
           parser = do
             d <- string "depth: " *> decimal <* newline
             [x, y] <- string "target: " *> (decimal `sepBy` char ',')
-            pure (d, (x, y))
+            pure (d, V2 x y)
 
-erosionLevel :: (Int, Coord) -> Coord -> Int
-erosionLevel (depth, target) = memoFix go
-    where go f xy = (geologicIndex xy + depth) `mod` 20183
+erosionLevels :: Int -> Coord -> Array Coord Tool
+erosionLevels depth target = fmap (toEnum . (`mod` 3)) arr
+    where mx = maximum target + 3 -- Arbitrary buffer size for search
+          arr = listArray (V2 0 0, V2 mx mx) $ map go $ range (V2 0 0, V2 mx mx)
+          go xy = (geologicIndex xy + depth) `mod` 20183
               where geologicIndex :: Coord -> Int
-                    geologicIndex (0, 0) = 0
+                    geologicIndex (V2 0 0) = 0
                     geologicIndex xy' | xy' == target = 0
-                    geologicIndex (x, 0) = x * 16807
-                    geologicIndex (0, y) = y * 48271
-                    geologicIndex (x, y) = f (x-1, y) * f (x, y-1)
+                    geologicIndex (V2 x 0) = x * 16807
+                    geologicIndex (V2 0 y) = y * 48271
+                    geologicIndex (V2 x y) = arr ! V2 (x - 1) y * arr ! V2 x (y - 1)
 
 part1 :: String -> Int
-part1 input = sum $ map ((`mod` 3) . erosionLevel (depth, target)) $ range ((0, 0), target)
+part1 input = sum $ map (fromEnum . snd) $ filter (inRange (V2 0 0, target) . fst)
+              $ assocs $ erosionLevels depth target
     where (depth, target) = parseInput input
-
-data Tool = Neither | Torch | ClimbingGear deriving (Eq, Generic, Ord, Show)
-instance Hashable Tool
 
 type Node = (Coord, Tool)
 
-neighbors :: (Int, Coord) -> Node -> HashSet Node
-neighbors (depth, target) ((x, y), t) = S.fromList poss
-    where poss = filter (\((x', y'), t') -> x' >= 0 && y' >= 0 && viableMove t' (x', y'))
-                 $ map (,t) [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
-                 ++ map ((x, y),) (filter (/=t) [Neither, Torch, ClimbingGear])
-          viableMove t' xy = case t' of
-                               Neither -> type' `elem` [1, 2]
-                               Torch -> type' `elem` [0, 2]
-                               ClimbingGear -> type' `elem` [0, 1]
-              where type' = erosionLevel (depth, target) xy `mod` 3
+neighbors :: Int -> Coord -> Node -> HashSet Node
+neighbors depth target node = S.fromList poss
+    where els = erosionLevels depth target
+          poss = filter (\node' -> inRange (bounds els) (fst node') && viableMove node')
+                 $ traverseOf _1 (\x -> map (+x) [V2 -1 0, V2 1 0, V2 0 -1, V2 0 1]) node
+                 ++ map (\f -> over _2 f node) [next, next . next]
+          viableMove (xy, t) = t /= els ! xy
 
 time :: Node -> Node -> Int
 time (_, t1) (_, t2)
@@ -66,14 +69,14 @@ time (_, t1) (_, t2)
     | otherwise = 7
 
 heur :: Coord -> Node -> Int
-heur target ((x, y), _) = abs (x - fst target) + abs (y - snd target)
+heur target (xy, _) = sum $ abs $ target - xy
 
 part2 :: String -> Int
 part2 input = sum $ zipWith time path $ tail path
     where (depth, target) = parseInput input
-          path = ((0, 0), Torch) :
-                 fromJust (aStar (neighbors (depth, target))
+          path = (V2 0 0, Torch) :
+                 fromJust (aStar (neighbors depth target)
                                  time
                                  (heur target)
                                  (== (target, Torch))
-                                 ((0, 0), Torch))
+                                 (V2 0 0, Torch))

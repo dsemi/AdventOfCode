@@ -41,6 +41,7 @@ dependencies:
   - mtl
   - text
   - split
+  - strict
 library:
   source-dirs: src
   exposed-modules:
@@ -69,7 +70,6 @@ library:
     - hip
     - linear
     - megaparsec
-    - memoize
     - mod
     - monad-loops
     - mtl
@@ -80,10 +80,12 @@ library:
     - pipes-http
     - pointedlist
     - psqueues
+    - rate-limit
     - recursion-schemes
     - ref-fd
     - split
     - template-haskell
+    - time-units
     - transformers
     - unordered-containers
     - vector

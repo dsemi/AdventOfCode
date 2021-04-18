@@ -79,4 +79,4 @@ part1 = (! 0) . uncurry (runProg $ U.replicate 6 0) . parseInstrs
 
 -- Not sure if there's a better way than just deconstructing the assembly
 part2 :: String -> Int
-part2 _ = sigma 1 10551361
+part2 _ = sigma 1 (10551361 :: Int)

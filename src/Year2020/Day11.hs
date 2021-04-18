@@ -1,9 +1,12 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Year2020.Day11
     ( part1
     , part2
     ) where
 
 import Data.Array.Unboxed
+import qualified Data.HashMap.Strict as M
 import Linear.V2
 
 
@@ -27,11 +30,12 @@ stabilize nThreshold adjs grid = length $ filter (=='#') $ elems $ fst $ head
                                  $ filter (uncurry (==)) $ zip grids $ tail grids
     where nextState :: Grid -> Grid
           nextState g = array (bounds g) $ map (next g) $ indices grid
+          adjMap = M.fromList [ (k, adjs grid k) | (k, v) <- assocs grid, v /= '.' ]
           next g xy = (xy, v)
               where v | g ! xy == 'L' && numOcc == 0 = '#'
                       | g ! xy == '#' && numOcc >= nThreshold = 'L'
                       | otherwise = g ! xy
-                    numOcc = length $ filter (=='#') $ map (g !) $ adjs g xy
+                    numOcc = length $ filter (=='#') $ map (g !) $ adjMap M.! xy
           grids = iterate nextState grid
 
 part1 :: String -> Int

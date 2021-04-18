@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Year2020.Day07
     ( part1
     , part2
@@ -12,12 +14,11 @@ import Text.Megaparsec.Char.Lexer
 
 parseBags :: String -> Map String [(Int, String)]
 parseBags = M.fromList . map (fromJust . parseMaybe @() parser) . lines
-    where bag = manyTill anySingle $
-                chunk " bag" >> optional (single 's') >> optional (single '.')
+    where bag = manyTill anySingle $ " bag" >> optional "s" >> optional "."
           parser = do
-            key <- manyTill anySingle (chunk " bags contain ")
-            vals <- (chunk "no other bags." *> pure [])
-                    <|> (((,) <$> decimal <* single ' ' <*> bag) `sepBy` chunk ", ")
+            key <- manyTill anySingle " bags contain "
+            vals <- ("no other bags." *> pure [])
+                    <|> ((,) <$> decimal <* " " <*> bag) `sepBy` ", "
             pure (key, vals)
 
 part1 :: String -> Int

@@ -4,14 +4,17 @@ module Utils where
 
 import Control.DeepSeq
 import Control.Monad
+import Control.RateLimit
 import qualified Data.ByteString.Char8 as B
 import Data.Either (fromRight)
+import Data.IORef
 import Data.List (tails)
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.String.Interpolate
 import Data.Text (Text)
+import Data.Time.Units
 import qualified Data.Text as T
 import GHC.Conc
 import Linear.V2
@@ -21,26 +24,36 @@ import qualified Pipes.ByteString as PB
 import System.Directory
 import System.Environment
 import System.IO
+import System.IO.Unsafe
+import qualified System.IO.Strict as SIO
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
+
+downloadFn :: IORef (String -> String -> IO ())
+downloadFn = unsafePerformIO $ do
+               f <- rateLimitExecution (5 :: Second) go
+               newIORef $ curry f
+    where go (url, outFile) = do
+            req <- parseUrlThrow url >>= addCookie
+            manager <- newManager tlsManagerSettings
+            withHTTP req manager $ \resp ->
+                withFile outFile WriteMode $ \h ->
+                    runEffect $ responseBody resp >-> PB.toHandle h
+          addCookie req = do
+            cookie <- B.pack <$> getEnv "AOC_SESSION"
+            pure $ req { requestHeaders = [("Cookie", cookie)] }
 
 getProblemInput :: Int -> Int -> IO String
 getProblemInput year day = do
   exists <- doesFileExist inputFile
   unless exists $ do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
-    req <- parseUrlThrow url >>= addCookie
-    manager <- newManager tlsManagerSettings
-    withHTTP req manager $ \resp ->
-        withFile inputFile WriteMode $ \h ->
-            runEffect $ responseBody resp >-> PB.toHandle h
-  readFile inputFile
+    fn <- readIORef downloadFn
+    fn url inputFile
+  SIO.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]
-          addCookie req = do
-            cookie <- B.pack <$> getEnv "AOC_SESSION"
-            pure $ req { requestHeaders = [("Cookie", cookie)] }
 
 findAllInts :: (Num a) => String -> [a]
 findAllInts = findAll (signed (pure ()) decimal)

@@ -1,13 +1,13 @@
-{-# LANGUAGE NamedFieldPuns, TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts, NamedFieldPuns, TemplateHaskell #-}
 
 module Year2017.Day23
     ( part1
     , part2
     ) where
 
-import Data.Array
 import Control.Lens
-import Control.Monad.State
+import Control.Monad.Writer
+import Data.Array.Unboxed
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Math.NumberTheory.Primes.Testing
@@ -21,14 +21,11 @@ data Instr = Set Register Value
            | Mul Register Value
            | Jnz Value Value deriving (Show)
 
-data Sim = Sim { _regs :: Array Register Int
+data Sim = Sim { _regs :: UArray Register Int
                , _line :: Int
                , _instrs :: Vector Instr
                } deriving (Show)
 makeLenses ''Sim
-
-data Tracker m = Tracker { mul :: m ()
-                         }
 
 parseInstrs :: String -> Sim
 parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLine . lines
@@ -42,28 +39,23 @@ parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLi
           parse :: String -> Value
           parse x = maybe (Left $ head x) Right $ maybeRead x
 
-step :: (Monad m) => Tracker m -> Sim -> m (Maybe Sim)
-step tracker sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
+step :: (Monad m, MonadWriter [String] m) => Sim -> m (Maybe Sim)
+step sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
     where value :: Value -> Int
           value = either (\v -> sim ^?! (regs . ix v)) id
           eval (Set r v) = pure $ line +~ 1 $ (regs . ix r) .~ value v $ sim
-          eval (Sub r v) = pure $ line +~ 1 $ (regs . ix r) %~ (subtract $ value v) $ sim
+          eval (Sub r v) = pure $ line +~ 1 $ (regs . ix r) -~ value v $ sim
           eval (Mul r v) = do
-            mul tracker
-            pure $ line +~ 1 $ (regs . ix r) %~ (*value v) $ sim
+            tell ["mul"]
+            pure $ line +~ 1 $ (regs . ix r) *~ value v $ sim
           eval (Jnz a b) = pure $ line +~ (if value a /= 0 then value b else 1) $ sim
 
-run :: (Monad m) => Tracker m -> (Tracker m -> Sim -> m (Maybe Sim)) -> Sim -> m Sim
-run tracker next = go
-    where go sim = do
-            sim' <- next tracker sim
-            case sim' of
-              Just s -> go s
-              Nothing -> pure sim
+run :: (Monad m) => (Sim -> m (Maybe Sim)) -> Sim -> m Sim
+run next = go
+    where go sim = next sim >>= maybe (pure sim) go
 
 part1 :: String -> Int
-part1 = flip execState 0 . run tracker step . parseInstrs
-    where tracker = Tracker { mul = modify' succ }
+part1 = length . filter (=="mul") . execWriter . run step . parseInstrs
 
 data PrimalityCheck = PCheck { toCheck :: Register
                              , innerCounter :: Register
@@ -91,8 +83,8 @@ primalityCheck ins = do
   Jnz ((== Left g) -> True)         (Right (-13)) <- pure $ V.unsafeIndex ins 13
   pure $ PCheck b e d g f
 
-step' :: (Monad m) => Tracker m -> Sim -> m (Maybe Sim)
-step' tracker sim =
+step' :: (Monad m, MonadWriter [String] m) => Sim -> m (Maybe Sim)
+step' sim =
     case (primalityCheck $ V.drop (sim ^. line) $ sim ^. instrs) of
       Just (PCheck {toCheck, innerCounter, outerCounter, workspace, primeCheck}) ->
           let b = sim ^?! (regs . ix toCheck)
@@ -103,9 +95,8 @@ step' tracker sim =
                      $ (regs . ix innerCounter) .~ b
                      $ sim
           in pure $ Just sim'
-      Nothing -> step tracker sim
+      Nothing -> step sim
 
 part2 :: String -> Int
-part2 = (^?! (regs . ix 'h')) . runIdentity
-        . run tracker step' . ((regs . ix 'a') .~ 1) . parseInstrs
-    where tracker = Tracker { mul = pure () }
+part2 = (^?! (regs . ix 'h')) . fst . runWriter
+        . run step' . ((regs . ix 'a') .~ 1) . parseInstrs

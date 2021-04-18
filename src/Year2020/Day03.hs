@@ -3,12 +3,10 @@ module Year2020.Day03
     , part2
     ) where
 
-
 countTrees :: Int -> Int -> String -> Int
-countTrees right down = go . map cycle . lines
-    where go [] = 0
-          go xs = n + go (map (drop right) (drop down xs))
-              where n = if head (head xs) == '#' then 1 else 0
+countTrees right down = sum . map (\xs -> if (head (head xs)) == '#' then 1 else 0)
+                        . takeWhile (not . null) . iterate (map (drop right) . drop down)
+                        . map cycle . lines
 
 part1 :: String -> Int
 part1 = countTrees 3 1

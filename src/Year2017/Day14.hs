@@ -13,7 +13,6 @@ import qualified Data.ByteString as B
 import Data.Char (ord)
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.Ix (inRange, range)
 import Data.List (foldl')
 import Data.List.Split (chunksOf)
 import Data.Vector (Vector)

@@ -21,4 +21,5 @@ part1 input = uncurry (*) $ minimumBy (comparing snd)
     where (earliestTime, buses) = parse input
 
 part2 :: String -> Maybe Integer
-part2 = chineseRemainder . snd . parse
+part2 input = (`mod` product (map snd buses)) <$> chineseRemainder buses
+    where buses = snd $ parse input

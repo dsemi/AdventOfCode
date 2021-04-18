@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: arithmoi-0.11.0.1@sha256:5cb0d81848d25b20e58c1426bf1ff9dc4137efc182c9c4c567102e5fa16f1079,7639
+    pantry-tree:
+      size: 10135
+      sha256: 411702e6277e708f7567b398b676cf75d38d12114f6b5932a895ce835b362b3d
+  original:
+    hackage: arithmoi-0.11.0.1
+- completed:
     hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
     pantry-tree:
       size: 213
@@ -19,43 +26,15 @@ packages:
   original:
     hackage: hip-1.5.4.0
 - completed:
-    hackage: memoize-0.8.1@sha256:2146197c639c126796d850cb4457b24cfeb6966d6d878825f855aafce31f8874,1601
-    pantry-tree:
-      size: 473
-      sha256: 598188857937054d2cc4ac91aee580944d750e91120756507891d09e02056066
-  original:
-    hackage: memoize-0.8.1
-- completed:
-    hackage: mod-0.1.1.0@sha256:57f230d5664b1c311d1044c259ef880875e4b3bcbfc7c57eab3bf03fce87f445,1838
-    pantry-tree:
-      size: 464
-      sha256: ca61450dd1d84e6beefba010a7032dfb5a8bc2e8344a369430992c56ec083ad7
-  original:
-    hackage: mod-0.1.1.0
-- completed:
-    hackage: ref-fd-0.4.0.2@sha256:f9769107da8ad6866f096ee7c4fb74a411f48433cb6a43395033750fa11d6864,1160
-    pantry-tree:
-      size: 211
-      sha256: cb9d8c81535600e136f59b43216948512ab69a8aecaa99528574523a999fac92
-  original:
-    hackage: ref-fd-0.4.0.2
-- completed:
     hackage: repa-3.4.1.4@sha256:5c836bc314ea04ac284d21117b361eb95829d793e8f82508535aa0ca04911d9e,3315
     pantry-tree:
       size: 2965
       sha256: 658dece8ff797a9ff0940ad812b966e0a93c3e4442f73c27b96d615106db7db8
   original:
     hackage: repa-3.4.1.4
-- completed:
-    hackage: semirings-0.5.2@sha256:6e0fddb382d323e3024e232e09c69685eac4e11c741c2e882017d155d8f7a6c5,3791
-    pantry-tree:
-      size: 610
-      sha256: b26169fc6d14dac566f6bf161f64af8a351ed953898b65370a6cd78f45eb1f2a
-  original:
-    hackage: semirings-0.5.2
 snapshots:
 - completed:
-    size: 532414
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/22.yaml
-    sha256: e483fb88549fc0f454c190979bf35ac91c7aceff2c0e71e7d8edd11842d772d8
-  original: lts-16.22
+    size: 533252
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/27.yaml
+    sha256: c2aaae52beeacf6a5727c1010f50e89d03869abfab6d2c2658ade9da8ed50c73
+  original: lts-16.27
