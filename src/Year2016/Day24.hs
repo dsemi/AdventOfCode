@@ -35,7 +35,7 @@ parseGrid s = array bds [ (V2 x y, parseNode c) | (y, row) <- zip [0..] $ lines 
 
 findDistances :: Grid -> [(V2 Int, Node)] -> Map (Node, Node) Int
 findDistances grid ns = M.fromList $ findDist <$> ns <*> ns
-    where manhattanDist a b = sum $ abs a - b
+    where manhattanDist a b = sum $ abs $ a - b
           neighbors xy = S.fromList [ c | c <- map (xy+) [V2 1 0, V2 (-1) 0, V2 0 1, V2 0 (-1)]
                                     , inRange (bounds grid) c
                                     , grid ! c /= Wall

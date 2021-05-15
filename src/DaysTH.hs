@@ -7,7 +7,6 @@ module DaysTH
     ( apply
     , buildProbs
     , PType
-    , UnalteredString(..)
     ) where
 
 import Data.ByteString.Char8 (ByteString)
@@ -27,8 +26,6 @@ import System.FilePath.Glob
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
-
-newtype UnalteredString = UnalteredString { unwrap :: String }
 
 class PType a where
     un :: String -> a
@@ -53,16 +50,12 @@ instance {-# OVERLAPPING #-} PType Text where
     to = to . T.unpack
 
 instance {-# OVERLAPPING #-} PType String where
-    un = T.unpack . T.strip . T.pack
+    un = T.unpack . T.stripEnd . T.pack
     to = pure
 
 instance {-# OVERLAPPING #-} PType ByteString where
     un = B.pack . un
     to = pure . B.unpack
-
-instance {-# OVERLAPPING #-} PType UnalteredString where
-    un = UnalteredString
-    to = to . unwrap
 
 instance {-# OVERLAPPING #-} (PType a) => PType (IO a) where
     un = pure . un

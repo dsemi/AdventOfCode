@@ -14,7 +14,7 @@ type ExpansionMap = HashMap String String
 type Image = UArray (Int, Int) Char
 
 parseExpansions :: String -> ExpansionMap
-parseExpansions = M.fromList . concatMap parse . splitOn "\n"
+parseExpansions = M.fromList . concatMap parse . lines
     where parse x = let [k, rest] = splitOn " => " x
                         v = filter (/= '/') rest
                     in map (,v) $ orientations k
@@ -46,7 +46,7 @@ expandImage m arr = array (sqr 0 (size' - 1)) $ concat $ zipWith expandGrid coor
 countPxAfterExpanding :: Int -> String -> Int
 countPxAfterExpanding n input =
     length $ filter (=='#') $ elems $ (!! n) $ iterate (expandImage m) start
-    where m =  parseExpansions input
+    where m = parseExpansions input
           start = listArray (sqr 0 2) ".#...####"
 
 part1 :: String -> Int

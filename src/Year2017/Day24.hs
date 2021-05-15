@@ -24,11 +24,11 @@ parsePipes = map parse . lines
           f _ = error "Invalid pipe"
 
 combos :: [Pipe] -> [[Pipe]]
-combos = map snd . go (0, [])
-    where go br [] = [ br ]
+combos = go (0, [])
+    where go br [] = [ snd br ]
           go br ps = [ x | pipe <- ps
                      , Just br' <- [connect br pipe]
-                     , x <- br' : go br' (delete pipe ps) ]
+                     , x <- snd br' : go br' (delete pipe ps) ]
 
 strength :: [Pipe] -> Int
 strength = sum . map (uncurry (+))

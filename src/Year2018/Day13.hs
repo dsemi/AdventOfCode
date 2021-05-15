@@ -3,8 +3,6 @@ module Year2018.Day13
     , part2
     ) where
 
-import DaysTH (UnalteredString(..))
-
 import Control.Lens
 import Data.Array
 import Data.Set (Set)
@@ -35,7 +33,9 @@ parseTracks :: String -> (Array Coord Char, Set Cart)
 parseTracks input =
     let arr = [ (V2 r c, v) | (r, line) <- zip [0..] $ lines input
               , (c, v) <- zip [0..] line ]
-        grid = array (V2 0 0, fst (last arr)) arr
+        rows = length (lines input) - 1
+        cols = length (head (lines input)) - 1
+        grid = accumArray (flip const) ' ' (V2 0 0, V2 rows cols) arr
     in (grid , S.fromList $ findCarts grid)
 
 tick :: Array Coord Char -> Set Cart -> Set Cart -> ([Coord], Set Cart)
@@ -64,8 +64,8 @@ allFinalCartPos grid = map (^. _yx) . go
               | otherwise = let (crashes, carts') = tick grid S.empty carts
                             in crashes ++ go carts'
 
-part1 :: UnalteredString -> Coord
-part1 = head . uncurry allFinalCartPos . parseTracks . unwrap
+part1 :: String -> Coord
+part1 = head . uncurry allFinalCartPos . parseTracks
 
-part2 :: UnalteredString -> Coord
-part2 = last . uncurry allFinalCartPos . parseTracks . unwrap
+part2 :: String -> Coord
+part2 = last . uncurry allFinalCartPos . parseTracks

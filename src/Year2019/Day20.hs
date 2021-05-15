@@ -12,14 +12,13 @@ import Data.Maybe
 import qualified Data.Map.Strict as M
 import Linear.V2
 
-import DaysTH (UnalteredString(..))
 import Utils
 
 
 parseMaze :: String -> (V2 Int, V2 Int, (V2 Int, Int) -> [(V2 Int, Int)])
 parseMaze (lines -> rows) = (invert outer M.! "AA", invert outer M.! "ZZ", neighbors)
     where grid :: UArray (V2 Int) Bool
-          grid = array (V2 0 0, V2 (length (head rows) - 1) (length rows - 1))
+          grid = accumArray (flip const) False (V2 0 0, V2 (length (head rows) - 1) (length rows - 1))
                  [ (V2 x y, v == '.') | (y, row) <- zip [0..] rows, (x, v) <- zip [0..] row ]
           match f = catMaybes . zipWith go [0..] . tails
               where go n (a:b:'.':_) | isUpper a && isUpper b = Just $ f (n+2) [a, b]
@@ -39,12 +38,12 @@ parseMaze (lines -> rows) = (invert outer M.! "AA", invert outer M.! "ZZ", neigh
                                                ((,level+1) <$> M.lookup pos inner') :
                                                map (Just . (,level)) (adjs pos)
 
-part1 :: UnalteredString -> Maybe Int
-part1 = search . parseMaze . unwrap
+part1 :: String -> Maybe Int
+part1 = search . parseMaze
     where search (start, end, neighbors) = fmap fst $ find ((==end) . snd)
                                            $ bfs start $ map fst . neighbors . (,undefined)
 
-part2 :: UnalteredString -> Maybe Int
-part2 = search . parseMaze . unwrap
+part2 :: String -> Maybe Int
+part2 = search . parseMaze
     where search (start, end, neighbors) = fmap fst $ find ((==(end, 0)) . snd)
                                            $ bfs (start, 0) $ filter ((>=0) . snd) . neighbors

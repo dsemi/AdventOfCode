@@ -65,7 +65,7 @@ neighbors g (o, t) = S.fromList [ (o', if o' == t then o else t)
     where isBlocked c = used (g ! c) > 100
 
 part2 :: String -> Maybe Int
-part2 s = let g =  buildGrid . mapMaybe (parseMaybe parseNode) . drop 2 $ lines s
+part2 s = let g = buildGrid . mapMaybe (parseMaybe parseNode) . drop 2 $ lines s
               open = fst . head . filter ((==0) . used . snd) $ assocs g
               target = V2 (view _x . snd $ bounds g) 0
           in length <$> aStar (neighbors g) (\_ -> const 1) heuristic ((==V2 0 0) . snd) (open, target)

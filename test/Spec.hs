@@ -15,9 +15,9 @@ import Data.Text (Text, pack)
 import Test.Hspec
 
 
-validatePart :: Int -> Int -> Text -> (String -> IO String) -> String -> Spec
-validatePart year day expected part input =
-    describe [i|#{year} Day #{day} part 1|] $
+validatePart :: Int -> Int -> Int -> Text -> (String -> IO String) -> String -> Spec
+validatePart year day p expected part input =
+    describe [i|#{year} Day #{day} part #{p}|] $
              it "returns the correct answer for the problem input" $
                 fmap pack (part input) >>= (`shouldBe` expected)
 
@@ -29,8 +29,8 @@ validateDay year day (part1, part2) = do
   case expect year day of
     [expected1, expected2] -> do
       input <- runIO $ getProblemInput year day
-      validatePart year day expected1 part1 input
-      validatePart year day expected2 part2 input
+      validatePart year day 1 expected1 part1 input
+      validatePart year day 2 expected2 part2 input
     _ -> pure ()
 
 
