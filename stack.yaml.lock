@@ -3,38 +3,45 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    hackage: arithmoi-0.11.0.1@sha256:5cb0d81848d25b20e58c1426bf1ff9dc4137efc182c9c4c567102e5fa16f1079,7639
-    pantry-tree:
-      size: 10135
-      sha256: 411702e6277e708f7567b398b676cf75d38d12114f6b5932a895ce835b362b3d
-  original:
-    hackage: arithmoi-0.11.0.1
-- completed:
-    hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
-    pantry-tree:
-      size: 213
-      sha256: c4176cc3fc9ad39f2a9fc7eb4346c87b6e60b70ba23d8e2adbdfc81fe544b808
-  original:
-    hackage: astar-0.3.0.0
-- completed:
-    hackage: hip-1.5.4.0@sha256:f1a79c096dd5ddf4debbf0b351e20a93232d550c04816f71ae1069df72edc12d,6988
-    pantry-tree:
-      size: 7456
-      sha256: 4d97960499bd1bdac9892a8ed53c9511f957d54021bfb26551b98db886092fa8
-  original:
-    hackage: hip-1.5.4.0
-- completed:
-    hackage: repa-3.4.1.4@sha256:5c836bc314ea04ac284d21117b361eb95829d793e8f82508535aa0ca04911d9e,3315
-    pantry-tree:
-      size: 2965
-      sha256: 658dece8ff797a9ff0940ad812b966e0a93c3e4442f73c27b96d615106db7db8
-  original:
-    hackage: repa-3.4.1.4
 snapshots:
-- completed:
-    size: 533252
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/27.yaml
+- original: lts-16.27
+  completed:
     sha256: c2aaae52beeacf6a5727c1010f50e89d03869abfab6d2c2658ade9da8ed50c73
-  original: lts-16.27
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/16/27.yaml
+    size: 533252
+packages:
+- original:
+    hackage: arithmoi-0.11.0.1
+  completed:
+    pantry-tree:
+      sha256: 411702e6277e708f7567b398b676cf75d38d12114f6b5932a895ce835b362b3d
+      size: 10135
+    hackage: arithmoi-0.11.0.1@sha256:5cb0d81848d25b20e58c1426bf1ff9dc4137efc182c9c4c567102e5fa16f1079,7639
+- original:
+    hackage: astar-0.3.0.0
+  completed:
+    pantry-tree:
+      sha256: c4176cc3fc9ad39f2a9fc7eb4346c87b6e60b70ba23d8e2adbdfc81fe544b808
+      size: 213
+    hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
+- original:
+    hackage: hip-1.5.4.0
+  completed:
+    pantry-tree:
+      sha256: 4d97960499bd1bdac9892a8ed53c9511f957d54021bfb26551b98db886092fa8
+      size: 7456
+    hackage: hip-1.5.4.0@sha256:f1a79c096dd5ddf4debbf0b351e20a93232d550c04816f71ae1069df72edc12d,6988
+- original:
+    hackage: memoize-0.8.1
+  completed:
+    pantry-tree:
+      sha256: 598188857937054d2cc4ac91aee580944d750e91120756507891d09e02056066
+      size: 473
+    hackage: memoize-0.8.1@sha256:2146197c639c126796d850cb4457b24cfeb6966d6d878825f855aafce31f8874,1601
+- original:
+    hackage: repa-3.4.1.4
+  completed:
+    pantry-tree:
+      sha256: 658dece8ff797a9ff0940ad812b966e0a93c3e4442f73c27b96d615106db7db8
+      size: 2965
+    hackage: repa-3.4.1.4@sha256:5c836bc314ea04ac284d21117b361eb95829d793e8f82508535aa0ca04911d9e,3315
