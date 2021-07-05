@@ -50,27 +50,9 @@ data Instr a = Add a a a
              | Hlt
                deriving (Functor, Foldable, Traversable)
 
-parseInstr :: Int -> Memory -> (Int, Instr (Mode, Int))
-parseInstr idx mem = (idx + len, instr)
-    where (len, instr) =
-              mapAccumL (\i _ -> (i + 1, (mode i, idx + i))) 1 $
-              case mem ! idx `mod` 100 of
-                1  -> Add () () ()
-                2  -> Mul () () ()
-                3  -> Sav ()
-                4  -> Out ()
-                5  -> Jit () ()
-                6  -> Jif () ()
-                7  -> Lt  () () ()
-                8  -> Eql () () ()
-                9  -> Arb ()
-                99 -> Hlt
-                _  -> error $ "Unknown op code: " ++ show (mem ! idx)
-          mode i = toEnum (mem ! idx `div` 10^(i+1) `mod` 10)
-
 run :: Int -> Int -> Memory -> Free Action Int
 run idx rb mem =
-    case applyMode <$> instr of
+    case instr of
       Add a b c -> run idx' rb $ M.insert c (val a + val b) mem
       Mul a b c -> run idx' rb $ M.insert c (val a * val b) mem
       Sav a     -> input >>= \v -> run idx' rb $ M.insert a v mem
@@ -81,13 +63,24 @@ run idx rb mem =
       Eql a b c -> run idx' rb $ M.insert c (bool 0 1 $ val a == val b) mem
       Arb a     -> run idx' (rb + val a) mem
       Hlt       -> pure $ mem ! 0
-    where (idx', instr) = parseInstr idx mem
-          val i = M.findWithDefault 0 i mem
-          applyMode (mode, i) =
-              case mode of
-                Pos -> val i
-                Imm -> i
-                Rel -> val i + rb
+    where val i = M.findWithDefault 0 i mem
+          (idx', instr) = mapAccumL (\i _ -> (i + 1, mode i)) (idx + 1) $
+                          case mem ! idx `mod` 100 of
+                            1  -> Add () () ()
+                            2  -> Mul () () ()
+                            3  -> Sav ()
+                            4  -> Out ()
+                            5  -> Jit () ()
+                            6  -> Jif () ()
+                            7  -> Lt  () () ()
+                            8  -> Eql () () ()
+                            9  -> Arb ()
+                            99 -> Hlt
+                            _  -> error $ "Unknown op code: " ++ show (mem ! idx)
+          mode i = case toEnum (mem ! idx `div` 10^(i-idx+1) `mod` 10) of
+                     Pos -> val i
+                     Imm -> i
+                     Rel -> val i + rb
 
 runPure :: Memory -> Free Action ()
 runPure = void . run 0 0

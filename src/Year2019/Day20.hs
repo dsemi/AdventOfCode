@@ -15,10 +15,13 @@ import Linear.V2
 import Utils
 
 
-parseMaze :: String -> (V2 Int, V2 Int, (V2 Int, Int) -> [(V2 Int, Int)])
-parseMaze (lines -> rows) = (invert outer M.! "AA", invert outer M.! "ZZ", neighbors)
-    where grid :: UArray (V2 Int) Bool
-          grid = accumArray (flip const) False (V2 0 0, V2 (length (head rows) - 1) (length rows - 1))
+parseMaze :: String -> (V2 Int, V2 Int, (V2 Int, Int) -> Int, (V2 Int, Int) -> [(V2 Int, Int)])
+parseMaze (lines -> rows) = (invert outer M.! "AA", invert outer M.! "ZZ", enc, neighbors)
+    where nCols = length (head rows)
+          m = nCols * length rows
+          enc (V2 x y, n) = n * m + y*nCols + x
+          grid :: UArray (V2 Int) Bool
+          grid = accumArray (flip const) False (V2 0 0, V2 (nCols - 1) (length rows - 1))
                  [ (V2 x y, v == '.') | (y, row) <- zip [0..] rows, (x, v) <- zip [0..] row ]
           match f = catMaybes . zipWith go [0..] . tails
               where go n (a:b:'.':_) | isUpper a && isUpper b = Just $ f (n+2) [a, b]
@@ -40,10 +43,10 @@ parseMaze (lines -> rows) = (invert outer M.! "AA", invert outer M.! "ZZ", neigh
 
 part1 :: String -> Maybe Int
 part1 = search . parseMaze
-    where search (start, end, neighbors) = fmap fst $ find ((==end) . snd)
-                                           $ bfs start $ map fst . neighbors . (,undefined)
+    where search (start, end, _, neighbors) = fmap fst $ find ((==end) . snd)
+                                              $ bfs start $ map fst . neighbors . (,undefined)
 
 part2 :: String -> Maybe Int
 part2 = search . parseMaze
-    where search (start, end, neighbors) = fmap fst $ find ((==(end, 0)) . snd)
-                                           $ bfs (start, 0) $ filter ((>=0) . snd) . neighbors
+    where search (start, end, f, neighbors) = fmap fst $ find ((==(end, 0)) . snd)
+                                              $ bfsOnInt f (start, 0) $ filter ((>=0) . snd) . neighbors

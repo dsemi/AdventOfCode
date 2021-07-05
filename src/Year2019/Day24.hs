@@ -31,9 +31,11 @@ findDupBio = go S.empty
 part1 :: String -> Int
 part1 = findDupBio . parseGrid
 
+empty :: Planet
+empty = fromLists $ replicate 5 (replicate 5 0)
+
 pad :: [Planet] -> [Planet]
 pad planets = [empty, empty] ++ planets ++ [empty, empty]
-    where empty = fromLists $ replicate 5 (replicate 5 0)
 
 step :: [Planet] -> [Planet]
 step (pad -> planets) = zipWith3 (\o v i -> G.izipWith (f o i) v $ neighborCount v)

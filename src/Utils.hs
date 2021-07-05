@@ -12,6 +12,8 @@ import Data.List (tails)
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as I
 import Data.String.Interpolate
 import Data.Text (Text)
 import Data.Time.Units
@@ -90,6 +92,16 @@ bfsOn f start neighbors = go S.empty [(0, start)]
 
 bfs :: (Ord a) => a -> (a -> [a]) -> [(Int, a)]
 bfs = bfsOn id
+
+bfsOnInt :: forall a. (a -> Int) -> a -> (a -> [a]) -> [(Int, a)]
+bfsOnInt f start neighbors = go I.empty [(0, start)]
+    where go :: IntSet -> [(Int, a)] -> [(Int, a)]
+          go _       [] = []
+          go visited ((depth, node) : nodes)
+              | I.member key visited = go visited nodes
+              | otherwise = (depth, node) :
+                            go (I.insert key visited) (nodes ++ map (depth+1,) (neighbors node))
+              where key = f node
 
 move :: Char -> V2 Int
 move '^' = V2 0 (-1)
