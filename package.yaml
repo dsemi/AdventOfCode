@@ -80,6 +80,7 @@ library:
     - pipes-bytestring
     - pipes-http
     - pointedlist
+    - pqueue
     - psqueues
     - rate-limit
     - recursion-schemes
