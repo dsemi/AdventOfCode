@@ -8,7 +8,7 @@ import qualified Data.HashMap.Strict as M
 
 
 midpt :: Int -> Int -> Int
-midpt x y = (x - y) `div` 2 + y
+midpt x y = (x + y) `div` 2
 
 takeUntil :: (a -> Bool) -> [a] -> [a]
 takeUntil _ [] = []

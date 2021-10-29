@@ -34,4 +34,4 @@ findDup = go empty
               | otherwise  = go (insert x s) xs
 
 part2 :: String -> Int
-part2 =  sum . abs . findDup . path
+part2 = sum . abs . findDup . path

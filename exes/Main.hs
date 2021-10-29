@@ -4,9 +4,10 @@ import Days (problem)
 import Utils (getProblemInput)
 
 import Control.DeepSeq
-import Control.Monad
 import Control.Monad.IO.Class
+import Data.List (maximumBy)
 import Data.List.Split
+import Data.Ord
 import System.Console.ANSI
 import System.Clock
 import System.Environment
@@ -43,11 +44,13 @@ timeFunc f = do
   rnf result `seq` pure ()
   end <- toNanoSecs <$> liftIO (getTime Monotonic)
   let elapsedTime = fromIntegral (end - start) / 10^9
-  return (result, elapsedTime)
+  pure (result, elapsedTime)
 
 maybeRun :: Int -> Int -> IO Double
 maybeRun y n = maybe notfound run $ problem y n
-    where notfound = return 0
+    where notfound = do
+            putStrLn $ show y ++ " Day " ++ show n ++ " not implemented"
+            pure 0
           str = "Part %s: %32s  Elapsed time %s seconds\n"
           run (p1, p2) = do
             input <- getProblemInput y n
@@ -56,10 +59,13 @@ maybeRun y n = maybe notfound run $ problem y n
             printf str "1" ans1 $ colorizeTime elapsedTime1
             (ans2, elapsedTime2) <- timeFunc $ p2 input
             printf str "2" ans2 $ colorizeTime elapsedTime2
-            return $ elapsedTime1 + elapsedTime2
+            pure $ elapsedTime1 + elapsedTime2
 
 main :: IO ()
 main = do
   args <- parseArgs <$> getArgs
-  totalTime <- foldM (\acc -> liftM (+acc) . maybeRun (year args)) 0 $ probNums args
+  times <- mapM (\day -> (day,) <$> maybeRun (year args) day) $ probNums args
+  let (maxDay, maxTime) = maximumBy (comparing snd) times
+  let totalTime = sum $ map snd times
+  printf "Max: Day %2d %48.3f seconds\n" maxDay maxTime
   printf "Total: %53.3f seconds\n" totalTime
