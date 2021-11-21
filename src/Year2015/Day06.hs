@@ -4,10 +4,12 @@ module Year2015.Day06
     ) where
 
 import Control.Monad
-import Data.Array.ST
-import Data.Array.Unboxed
+import Control.Monad.ST
 import Data.Bits
 import Data.Maybe
+import Data.Vector.Unboxed (Vector)
+import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as MV
 import Text.Megaparsec
 import Text.Megaparsec.Char (char, spaceChar, string)
 import Text.Megaparsec.Char.Lexer (decimal)
@@ -34,27 +36,24 @@ command = fromJust . parseMaybe parser
                            <* string " through " <*> pair
 
 runCommands :: (Int -> Int) -> (Int -> Int) -> (Int -> Int)
-               -> UArray Int Int -> [Command] -> UArray Int Int
-runCommands f1 f2 f3 grid commands =
-  runSTUArray $ do
-    arr <- thaw grid
-    forM_ commands $ \(Command a (x1, y1) (x2, y2)) -> do
-      let f = case a of
-                Off    -> f1
-                On     -> f2
-                Toggle -> f3
-      forM_ [x1..x2] $ \x ->
-        forM_ [y1+1000*x..y2+1000*x] $ \k ->
-            readArray arr k >>= writeArray arr k . f
-    pure arr
-
-emptyGrid :: UArray Int Int
-emptyGrid = listArray (0, 999999) $ repeat 0
+            -> [Command] -> Vector Int
+runCommands f1 f2 f3 commands =
+  runST $ do
+    arr <- MV.new 1000000
+    forM_ commands $ \(Command a (x1, y1) (x2, y2)) ->
+        let f = case a of
+                  Off    -> f1
+                  On     -> f2
+                  Toggle -> f3
+        in forM_ [x1..x2] $ \x ->
+            let row = 1000 * x
+            in forM_ [row + y1..row + y2] $ MV.unsafeModify arr f
+    V.unsafeFreeze arr
 
 part1 :: String -> Int
-part1 = sum . elems . runCommands (const 0) (const 1) (xor 1) emptyGrid
+part1 = V.sum . runCommands (const 0) (const 1) (xor 1)
         . map command . lines
 
 part2 :: String -> Int
-part2 = sum . elems . runCommands (max 0 . subtract 1) (+1) (+2) emptyGrid
+part2 = V.sum . runCommands (max 0 . subtract 1) (+1) (+2)
         . map command . lines
