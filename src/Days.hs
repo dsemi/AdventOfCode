@@ -156,5 +156,6 @@ import Year2020.Day22
 import Year2020.Day23
 import Year2020.Day24
 import Year2020.Day25
+import Year2021.Day01
 
 $(buildProbs)
