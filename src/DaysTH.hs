@@ -35,6 +35,10 @@ instance (Read a, Show a) => PType a where
     un = read . un
     to = to . show
 
+instance {-# OVERLAPPING #-} (PType a) => PType [a] where
+    un = map un . lines
+    to = fmap unlines . mapM to
+
 instance {-# OVERLAPPING #-} (PType a, PType b) => PType (Either a b) where
     un = Right . un
     to = \case
@@ -84,7 +88,6 @@ instance {-# OVERLAPPING #-} (PType a) => PType (a, a, a) where
 instance {-# OVERLAPPING #-} (PType a) => PType (V3 a) where
     un = undefined
     to (V3 a b c) = intercalate "," <$> mapM to [a, b, c]
-
 
 apply :: (PType a, PType b) => (a -> b) -> String -> IO String
 apply f = to . f . un
