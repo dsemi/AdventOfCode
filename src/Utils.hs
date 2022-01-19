@@ -19,6 +19,7 @@ import Data.Text (Text)
 import Data.Time.Units
 import qualified Data.Text as T
 import GHC.Conc
+import Math.NumberTheory.Moduli.Chinese
 import Linear.V2
 import Pipes
 import Pipes.HTTP
@@ -123,3 +124,7 @@ combinations :: [a] -> Int -> [[a]]
 combinations  _ 0 = [[]]
 combinations xs n = [ y:ys | y:xs' <- tails xs
                     , ys <- combinations xs' $ n-1 ]
+
+chineseRemainder :: [(Integer, Integer)] -> Maybe Integer
+chineseRemainder (x:xs) = uncurry mod <$> foldM chinese x xs
+chineseRemainder [] = error "empty list"

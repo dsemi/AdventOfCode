@@ -114,6 +114,6 @@ buildProbs = do
      problem :: Int -> Int -> Maybe (String -> IO String, String -> IO String)
      problem year day = lookup year problems >>= lookup day|]
     where accProbs (year, prob) acc = M.insertWith (++) year [prob] acc
-          toLit (a, b) = TupE [ LitE (IntegerL a)
-                              , ListE b
+          toLit (a, b) = TupE [ Just (LitE (IntegerL a))
+                              , Just (ListE b)
                               ]

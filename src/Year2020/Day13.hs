@@ -6,8 +6,8 @@ module Year2020.Day13
 import Data.List (minimumBy)
 import Data.List.Split (splitOn)
 import Data.Ord (comparing)
-import Math.NumberTheory.Moduli.Chinese (chineseRemainder)
 
+import Utils
 
 parse :: String -> (Integer, [(Integer, Integer)])
 parse input = (read time, buses)
@@ -21,5 +21,5 @@ part1 input = uncurry (*) $ minimumBy (comparing snd)
     where (earliestTime, buses) = parse input
 
 part2 :: String -> Maybe Integer
-part2 input = (`mod` product (map snd buses)) <$> chineseRemainder buses
+part2 input = chineseRemainder buses
     where buses = snd $ parse input
