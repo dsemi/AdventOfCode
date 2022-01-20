@@ -5,6 +5,7 @@ module Year2021.Day16
     , part2
     ) where
 
+import Control.Monad.Loops
 import Control.Monad.State.Strict
 import Data.Char
 import Data.List (foldl1')
@@ -32,19 +33,10 @@ packet = do
       _ -> undefined
     where bin n = foldl1' (\a b -> a * 2 + b) . map digitToInt <$> state (splitAt n)
           parseId = f 0
-              where f n = do
-                      x <- bin 1
-                      y <- bin 4
-                      if x == 1
-                      then f $ n * 16 + y
-                      else pure $ n * 16 + y
+              where f n = bin 5 >>= \x -> (if x >= 16 then f else pure) $ n * 16 + x `mod` 16
           parseLTid0 = do
             rest <- bin 15 >>= \n -> state (swap . splitAt n)
-            f <* put rest
-              where f = do
-                      s <- get
-                      if null s then pure []
-                      else packet >>= \x -> fmap (x :) f
+            unfoldM (get >>= \s -> if null s then pure Nothing else Just <$> packet) <* put rest
           parseLTid1 = bin 11 >>= \n -> mapM (const packet) [1..n]
 
 toBin :: String -> String
