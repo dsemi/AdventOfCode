@@ -10,7 +10,6 @@ import Control.Monad.State.Strict
 import Data.Char
 import Data.List (foldl1')
 import Data.Tuple
-import Numeric
 import Text.Printf
 
 
@@ -30,7 +29,7 @@ packet = do
       5 -> pure (v + sum vs, if ns !! 0 > ns !! 1 then 1 else 0)
       6 -> pure (v + sum vs, if ns !! 0 < ns !! 1 then 1 else 0)
       7 -> pure (v + sum vs, if ns !! 0 == ns !! 1 then 1 else 0)
-      _ -> undefined
+      _ -> error $ "Invalid type id: " ++ show typeId
     where bin n = foldl1' (\a b -> a * 2 + b) . map digitToInt <$> state (splitAt n)
           parseId = f 0
               where f n = bin 5 >>= \x -> (if x >= 16 then f else pure) $ n * 16 + x `mod` 16
@@ -40,7 +39,7 @@ packet = do
           parseLTid1 = bin 11 >>= \n -> mapM (const packet) [1..n]
 
 toBin :: String -> String
-toBin = concatMap (\x -> printf "%04b" (fst $ head $ readHex [x] :: Int))
+toBin = concatMap (printf "%04b" . digitToInt)
 
 part1 :: String -> Int
 part1 = fst . evalState packet . toBin
