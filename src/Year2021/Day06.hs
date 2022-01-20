@@ -4,16 +4,11 @@ module Year2021.Day06
     ) where
 
 import Data.Char
-import Control.Monad
-import Control.Monad.ST
-import qualified Data.Vector.Unboxed.Mutable as MV
 
 solve :: Int -> String -> Int
-solve n s = runST $ do
-  v <- MV.generate 9 (\x -> length $ filter (==intToDigit x) s)
-  forM_ [0..n-1] $ \i ->
-      MV.read v (i `mod` 9) >>= \x -> MV.modify v (+x) ((i + 7) `mod` 9)
-  MV.foldl' (+) 0 v
+solve n s = sum $ take 9 $ drop n ms
+    where ns = take 9 $ drop 7 $ cycle $ map (\x -> length $ filter (== intToDigit x) s) [0..8]
+          ms = ns ++ zipWith (+) ms (drop 2 ms)
 
 part1 :: String -> Int
 part1 = solve 80
