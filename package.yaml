@@ -107,6 +107,8 @@ tests:
       - -threaded
     dependencies:
       - Advent
+      - htoml
+      - unordered-containers
 build-type: Custom
 custom-setup:
   dependencies:

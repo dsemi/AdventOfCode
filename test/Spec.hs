@@ -6,14 +6,16 @@ module Main where
 
 import Utils (getProblemInput)
 
-import Control.Lens ((^..))
+import Control.Lens ((^?))
 import Control.Monad
+import Data.Aeson
 import Data.Aeson.Lens
 import Data.String.Interpolate
 import Days (problems)
 import Data.Text (Text, pack)
+import qualified Data.Text.IO as T
 import Test.Hspec
-
+import Text.Toml
 
 validatePart :: Int -> Int -> Int -> Text -> (String -> IO String) -> String -> Spec
 validatePart year day p expected part input =
@@ -21,21 +23,30 @@ validatePart year day p expected part input =
              it "returns the correct answer for the problem input" $
                 fmap pack (part input) >>= (`shouldBe` expected)
 
+tshow :: (Show a) => a -> Text
+tshow = pack . show
 
-validateDay :: Int -> Int -> (String -> IO String, String -> IO String) -> Spec
-validateDay year day (part1, part2) = do
-  solns <- runIO $ readFile "test/expectedAnswers.json"
-  let expect y d = solns ^.. key (pack $ show y) . key (pack $ show d) . values . _String
+validateDay :: Value -> Int -> Int -> (String -> IO String, String -> IO String) -> Spec
+validateDay solns year day (part1, part2) = do
+  let expect y d = (,) <$> (solns ^? key (tshow y) . key (tshow d) . key "part1" . _String) <*>
+                     (solns ^? key (tshow y) . key (tshow d) . key "part2" . _String)
   case expect year day of
-    [expected1, expected2] -> do
-      input <- runIO $ getProblemInput year day
+    Just (expected1, expected2) -> do
+      input <- runIO $ getProblemInput year day False
       validatePart year day 1 expected1 part1 input
       validatePart year day 2 expected2 part2 input
     _ -> pure ()
 
+readSolns :: IO Value
+readSolns = do
+  toml <- parseTomlDoc "" <$> T.readFile "test/expectedAnswers.toml"
+  case toml of
+    (Left _) -> error "error parsing solution file"
+    (Right v) -> pure $ toJSON v
 
 main :: IO ()
 main = hspec $ do
+         solns <- runIO $ readSolns
          forM_ problems $ \(year, days) ->
              forM_ days $ \(day, parts) ->
-                 validateDay year day parts
+                 validateDay solns year day parts

@@ -53,7 +53,7 @@ maybeRun y n = maybe notfound run $ problem y n
             pure 0
           str = "Part %s: %32s  Elapsed time %s seconds\n"
           run (p1, p2) = do
-            input <- getProblemInput y n
+            input <- getProblemInput y n True
             putStrLn $ "Day " ++ show n
             (ans1, elapsedTime1) <- timeFunc $ p1 input
             printf str "1" ans1 $ colorizeTime elapsedTime1

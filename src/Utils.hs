@@ -47,10 +47,10 @@ downloadFn = unsafePerformIO $ do
             cookie <- B.pack <$> getEnv "AOC_SESSION"
             pure $ req { requestHeaders = [("Cookie", cookie)] }
 
-getProblemInput :: Int -> Int -> IO String
-getProblemInput year day = do
+getProblemInput :: Int -> Int -> Bool -> IO String
+getProblemInput year day download = do
   exists <- doesFileExist inputFile
-  unless exists $ do
+  when (not exists && download) $ do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
     fn <- readIORef downloadFn
     fn url inputFile
