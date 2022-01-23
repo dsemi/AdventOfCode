@@ -160,6 +160,7 @@ import Year2021.Day01
 import Year2021.Day02
 import Year2021.Day03
 import Year2021.Day04
+import Year2021.Day05
 import Year2021.Day06
 import Year2021.Day16
 import Year2021.Day18
