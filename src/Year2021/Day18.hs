@@ -1,37 +1,35 @@
+{-# LANGUAGE RankNTypes #-}
+
 module Year2021.Day18
     ( part1
     , part2
     ) where
 
-import Data.Maybe
+import Control.Lens
 import Data.List (foldl1')
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
 
-data Snailfish = Reg Int | Pair Snailfish Snailfish
+data Snailfish = Reg Int | Pair { _left :: Snailfish, _right :: Snailfish }
+makeLenses ''Snailfish
 
-snailfish :: String -> [Snailfish]
-snailfish = map (fromJust . parseMaybe @() go) . lines
+snailfish :: String -> Maybe [Snailfish]
+snailfish = traverse (parseMaybe @() go) . lines
     where go = (Reg <$> decimal) <|> (Pair <$> (char '[' *> go <* char ',') <*> (go <* char ']'))
 
-addL :: Int -> Snailfish -> Snailfish
-addL 0 sf = sf
-addL n (Reg v) = Reg (v + n)
-addL n (Pair a b) = Pair (addL n a) b
-
-addR :: Int -> Snailfish -> Snailfish
-addR 0 sf = sf
-addR n (Reg v) = Reg (v + n)
-addR n (Pair a b) = Pair a (addR n b)
+addToLeaf :: ASetter' Snailfish Snailfish -> Int -> Snailfish -> Snailfish
+addToLeaf _ 0 x = x
+addToLeaf _ n (Reg v) = Reg (v + n)
+addToLeaf f n fish = over f (addToLeaf f n) fish
 
 explode :: Snailfish -> Maybe Snailfish
 explode = fmap snd . go 0
     where go _ (Reg _) = Nothing
           go 4 (Pair (Reg a) (Reg b)) = Just ((a, b), Reg 0)
           go d (Pair a b) = explodeL <$> go (d+1) a <|> explodeR <$> go (d+1) b
-              where explodeL ((x, y), newL) = ((x, 0), Pair newL (addL y b))
-                    explodeR ((x, y), newR) = ((0, y), Pair (addR x a) newR)
+              where explodeL ((x, y), newL) = ((x, 0), Pair newL (addToLeaf left y b))
+                    explodeR ((x, y), newR) = ((0, y), Pair (addToLeaf right x a) newR)
 
 split :: Snailfish -> Maybe Snailfish
 split (Reg n)
@@ -47,8 +45,8 @@ mag :: Snailfish -> Int
 mag (Reg n) = n
 mag (Pair a b) = 3*mag a + 2*mag b
 
-part1 :: String -> Int
-part1 = mag . foldl1' add . snailfish
+part1 :: String -> Maybe Int
+part1 = fmap (mag . foldl1' add) . snailfish
 
-part2 :: String -> Int
-part2 (snailfish -> xs) = maximum [mag (add x y) | x <- xs, y <- xs]
+part2 :: String -> Maybe Int
+part2 input = (\xs -> maximum [mag (add x y) | x <- xs, y <- xs]) <$> snailfish input
