@@ -13,7 +13,7 @@ import Data.Tuple
 import Text.Printf
 
 
-packet :: (Monad m, MonadState String m) => m (Int, Int)
+packet :: (MonadState String m) => m (Int, Int)
 packet = do
   v <- bin 3
   typeId <- bin 3
