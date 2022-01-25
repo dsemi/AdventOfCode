@@ -59,6 +59,7 @@ maybeRun y n = maybe notfound run $ problem y n
             printf str "1" ans1 $ colorizeTime elapsedTime1
             (ans2, elapsedTime2) <- timeFunc $ p2 input
             printf str "2" ans2 $ colorizeTime elapsedTime2
+            putStrLn ""
             pure $ elapsedTime1 + elapsedTime2
 
 main :: IO ()
