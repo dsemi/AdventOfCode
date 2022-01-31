@@ -174,6 +174,12 @@ import Year2021.Day15
 import Year2021.Day16
 import Year2021.Day17
 import Year2021.Day18
+import Year2021.Day19
+import Year2021.Day20
+import Year2021.Day21
+import Year2021.Day22
+import Year2021.Day23
 import Year2021.Day24
+import Year2021.Day25
 
 $(buildProbs)
