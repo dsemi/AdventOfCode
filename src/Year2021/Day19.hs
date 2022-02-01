@@ -87,18 +87,18 @@ align a b aa = flip runContT (pure) $ callCC $ \k -> do
               let ori = idx `div` 4096
                   axis = ori `div` 2
                   neg = ori `mod` 2 == 1
-              n' <- lift $ n +. (min' b)!axis .+.
-                    (if neg then (min' a)!aa else (-2048) -. (min' a)!aa)
-              lift $ modifySTRef' (offset b) (lns aa .~ (if neg then -n' else n'))
-              when (axis /= aa) $ do
-                lift $ modifySTRef' (min' b) (swap axis aa)
-                lift $ modifySTRef' (ps b) $ map (swap aa axis)
-              if neg then do
-                lift $ modifySTRef' (min' b) (lns aa %~ (n' - 2047 -))
-                lift $ modifySTRef' (ps b) $ map (lns aa %~ (n' -))
+              n <- lift $ n +. (min' b)!axis .+.
+                   (if neg then (min' a)!aa else (-2048) -. (min' a)!aa)
+              lift $ modifySTRef' (offset b) (lns aa .~ (if neg then -n else n))
+              when (axis /= aa) $ lift $ do
+                modifySTRef' (min' b) $ swap aa axis
+                modifySTRef' (ps b) $ map (swap aa axis)
+              lift $ if neg then do
+                modifySTRef' (min' b) $ lns aa %~ (n - 2047 -)
+                modifySTRef' (ps b) $ map (lns aa %~ (n -))
               else do
-                lift $ modifySTRef' (min' b) (lns aa %~ (subtract n'))
-                lift $ modifySTRef' (ps b) $ map (lns aa %~ (subtract n'))
+                modifySTRef' (min' b) $ lns aa %~ (subtract n)
+                modifySTRef' (ps b) $ map (lns aa %~ (subtract n))
               k True
             lift $ modifySTRef' base (+4096)))
   pure False
