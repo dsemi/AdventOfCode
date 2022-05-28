@@ -51,7 +51,7 @@ maybeRun y n = maybe notfound run $ problem y n
     where notfound = do
             putStrLn $ show y ++ " Day " ++ show n ++ " not implemented"
             pure 0
-          str = "Part %s: %32s  Elapsed time %s seconds\n"
+          str = "Part %s: %50s  Elapsed time %s seconds\n"
           run (p1, p2) = do
             input <- getProblemInput y n True
             putStrLn $ "Day " ++ show n
@@ -68,5 +68,5 @@ main = do
   times <- mapM (\day -> (day,) <$> maybeRun (year args) day) $ probNums args
   let (maxDay, maxTime) = maximumBy (comparing snd) times
   let totalTime = sum $ map snd times
-  printf "Max: Day %2d %48.3f seconds\n" maxDay maxTime
-  printf "Total: %53.3f seconds\n" totalTime
+  printf "Max: Day %2d %66.3f seconds\n" maxDay maxTime
+  printf "Total: %71.3f seconds\n" totalTime

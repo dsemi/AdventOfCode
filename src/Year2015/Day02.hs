@@ -3,14 +3,18 @@ module Year2015.Day02
     , part2
     ) where
 
-import Data.List.Split
+import Data.Text (Text)
+import Data.Maybe
+import Text.Megaparsec
+import Text.Megaparsec.Char (char)
+import Text.Megaparsec.Char.Lexer (decimal)
 
+process :: (Num a) => ((a, a, a) -> a) -> Text -> a
+process f xs = sum $ map f $ fromJust $ parseMaybe @() (line `sepBy` char '\n') xs
+    where line = (,,) <$> decimal <* char 'x' <*> decimal <* char 'x' <*> decimal
 
-process :: (Num a, Read a) => (a -> a -> a -> a) -> String -> a
-process f xs = sum [ f l w h | [l, w, h] <- map (map read . splitOn "x") $ lines xs ]
+part1 :: Text -> Int
+part1 = process $ \(l, w, h) -> 2*l*w + 2*l*h + 2*w*h + minimum [l*w, l*h, w*h]
 
-part1 :: String -> Int
-part1 = process $ \l w h -> 2*l*w + 2*l*h + 2*w*h + minimum [l*w, l*h, w*h]
-
-part2 :: String -> Int
-part2 = process $ \l w h -> l*w*h + 2 * minimum [l+w, l+h, w+h]
+part2 :: Text -> Int
+part2 = process $ \(l, w, h) -> l*w*h + 2 * minimum [l+w, l+h, w+h]

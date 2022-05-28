@@ -3,6 +3,7 @@ module Year2021.Day23
     , part2
     ) where
 
+import Control.Applicative
 import Control.Lens
 import Data.Bits
 import Data.Bool
@@ -53,7 +54,7 @@ baseCost rooom =
                  , base + (cost0 * (moveCost (i - glyph0) + 1)) + (cost1 * moveCost (i - glyph1))
                  , secondRow + cost1)
 
-newtype Room = Room Word32 deriving (Show)
+newtype Room = Room Word32
 
 emptyRoom :: Room -> Int -> Bool
 emptyRoom (Room room) r = shiftR room (8 * r) .&. 0xff  == 0
@@ -66,7 +67,7 @@ popRoom (Room room) r = let mask1 = shiftL 0xff (8 * r)
                             mask2 = shiftL 0x3f (8 * r)
                         in Room $ (shiftR room 2 .&. mask2) .|. (room .&. complement mask1)
 
-newtype Hall = Hall Word32 deriving (Show)
+newtype Hall = Hall Word32
 
 emptyHall :: Hall -> Int -> Bool
 emptyHall (Hall hall) h = hall .&. shiftL 4 (4 * h) == 0
@@ -83,7 +84,7 @@ getHall (Hall hall) h = fromIntegral $ shiftR hall (4 * h) .&. 3
 maskHall :: Hall -> Word32
 maskHall (Hall hall) = hall .&. 0x4444444
 
-data GameState = GameState Room Hall deriving (Show)
+data GameState = GameState Room Hall
 
 solved :: GameState -> Bool
 solved (GameState (Room room) (Hall hall)) = room .|. hall == 0
@@ -111,20 +112,19 @@ obstructed (GameState _ (Hall hall)) r h =
 bits :: (FiniteBits b, Num b) => b -> [Int]
 bits = map countTrailingZeros . takeWhile (/=0) . iterate (\m -> m .&. (m - 1))
 
-forceOne :: GameState -> (Bool, GameState)
-forceOne st@(GameState room hall) = let (b, st') = checkHallToRoom $ bits $ maskHall hall
-                                    in if b then (b, st')
-                                       else checkRoomToRoom [0..3]
-    where checkHallToRoom [] = (False, st)
+forceOne :: GameState -> Maybe GameState
+forceOne st@(GameState room hall) = checkHallToRoom (bits (maskHall hall)) <|> checkRoomToRoom [0..3]
+    where checkHallToRoom [] = Nothing
           checkHallToRoom (b:bs)
-              | emptyRoom room r && not (obstructed st r h) = (True, GameState room (clearHall hall h))
+              | emptyRoom room r && not (obstructed st r h) = Just $ GameState room (clearHall hall h)
               | otherwise = checkHallToRoom bs
               where h = b `div` 4
                     r = getHall hall h
-          checkRoomToRoom [] = (False, st)
+          checkRoomToRoom [] = Nothing
           checkRoomToRoom (r:rs)
               | emptyRoom room r || g == r || not (emptyRoom room g) = checkRoomToRoom rs
-              | not (obstructed st r $ if r < g then roomR g else roomL g) = (True, GameState (popRoom room r) hall)
+              | not (obstructed st r $ if r < g then roomR g else roomL g) =
+                  Just $ GameState (popRoom room r) hall
               | otherwise = checkRoomToRoom rs
               where g = fromIntegral $ getRoom room r
 
@@ -178,8 +178,8 @@ neighbors st@(GameState room hall) skip = go [0..3]
                         | deadlocked st2 = go2 hs
                         | otherwise = let (st3, skips) = go3 st2 $ safeSkips !! skipIdx
                                       in if crowded st3 then go2 hs
-                                         else ((fromIntegral $ cost'' * fromIntegral (cost !! g), st3, skips) :)
-                                                  $ go2 hs
+                                         else let cst = fromIntegral $ cost'' * fromIntegral (cost !! g)
+                                              in (cst, st3, skips) : go2 hs
                         where skipIdx = 8 * r + h
                               cost' = 2 * (if h < lo then lo - h else if hi < h then h - hi else 0)
                               a = bool 0 1 $ (bool (0::Int) 1 (cost' == 0) .|. bool 0 1 (r == g)) == 0
@@ -187,61 +187,60 @@ neighbors st@(GameState room hall) skip = go [0..3]
                               room' = popRoom room r
                               hall' = setHall hall h g
                               st2 = GameState room' hall'
-                              go3 st skips
-                                  | b = go3 next 0
-                                  | otherwise = (next, skips)
-                                  where (b, next) = forceOne st
+                              go3 n skips = case forceOne n of
+                                              Just next -> go3 next 0
+                                              Nothing -> (n, skips)
 
 newtype Hash = Hash (Vector (Word64, (Word16, Word32)))
 
 size :: Int
 size = 14983
 
-findHash :: Hash -> Word64 -> Int
-findHash (Hash table) key = go $ fromIntegral key `mod` fromIntegral size
+findHash :: Word64 -> Hash -> Int
+findHash key (Hash table) = go $ fromIntegral key `mod` fromIntegral size
     where go idx
               | first /= 0 && first /= complement key = go $ (idx+1) `mod` size
               | otherwise = idx
               where first = fst (table ! idx)
 
-insertHash :: Hash -> Word64 -> (Word16, Word32) -> Hash
-insertHash hsh@(Hash table) key value =
-    let idx = findHash hsh key
+insertHash :: Word64 -> (Word16, Word32) -> Hash -> Hash
+insertHash key value hsh@(Hash table) =
+    let idx = findHash key hsh
     in Hash $ V.modify (\v -> MV.write v idx (complement key, value)) table
 
-setHash :: Hash -> Int -> (Word16, Word32) -> Hash
-setHash (Hash table) idx value =
-    Hash $ V.modify (\v -> MV.read v idx >>= MV.write v idx . set _2 value) table
+setHash :: Int -> (Word16, Word32) -> Hash -> Hash
+setHash idx value (Hash table) =
+    Hash $ V.modify (\v -> MV.read v idx >>= MV.write v idx . (_2 .~ value)) table
 
-getHash :: Hash -> Int -> (Word16, Word32)
-getHash (Hash table) idx = snd $ table ! idx
+getHash :: Int -> Hash -> (Word16, Word32)
+getHash idx (Hash table) = snd $ table ! idx
 
-existsHash :: Hash -> Int -> Bool
-existsHash (Hash table) idx = fst (table ! idx) /= 0
+existsHash :: Int -> Hash -> Bool
+existsHash idx (Hash table) = fst (table ! idx) /= 0
 
 solve :: GameState -> Int
-solve start = go (insertHash (Hash (V.replicate size (0, (0, 0)))) (hashState start) (0, 0))
+solve start = go (insertHash (hashState start) (0, 0) (Hash (V.replicate size (0, (0, 0)))))
               $ Q.singleton (0, hashState start)
     where go cst q
-            | Q.null q = fromIntegral $ fst $ getHash cst (findHash cst 0)
+            | Q.null q = fromIntegral $ fst $ getHash (findHash 0 cst) cst
             | queueCost /= curCost = go cst q'
             | solved cur = go cst Q.empty
             | otherwise = go cst' q''
             where ((queueCost, curHash), q') = Q.deleteFindMin q
-                  (curCost, curSkips) = getHash cst (findHash cst curHash)
+                  (curCost, curSkips) = getHash (findHash curHash cst) cst
                   cur = newState curHash
                   (cst', q'') = foldl' go2 (cst, q') $ neighbors cur $ fromIntegral curSkips
                   go2 (cst, q) (delta, state, skips) =
                       let hash = hashState state
                           newCost = curCost + delta
-                          newIdx = findHash cst hash
-                          (prevCost, prevSkips) = getHash cst newIdx
-                      in if not (existsHash cst newIdx)
-                         then (insertHash cst hash (newCost, skips), Q.insert (newCost, hash) q)
+                          newIdx = findHash hash cst
+                          (prevCost, prevSkips) = getHash newIdx cst
+                      in if not (existsHash newIdx cst)
+                         then (insertHash hash (newCost, skips) cst, Q.insert (newCost, hash) q)
                          else if newCost == prevCost
-                              then (setHash cst newIdx (prevCost, prevSkips .&. skips), q)
+                              then (setHash newIdx (prevCost, prevSkips .&. skips) cst, q)
                               else if newCost < prevCost
-                                   then (setHash cst newIdx (newCost, skips), Q.insert (newCost, hash) q)
+                                   then (setHash newIdx (newCost, skips) cst, Q.insert (newCost, hash) q)
                                    else (cst, q)
 
 part1 :: String -> Int

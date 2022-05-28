@@ -15,7 +15,7 @@ import Data.Functor.Identity
 import qualified Data.Map.Strict as M
 import Data.Maybe
 import Data.Mod
-import Data.List (intercalate, sort)
+import Data.List (sort)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.TypeLits (KnownNat)
@@ -28,16 +28,16 @@ import Text.Megaparsec.Char
 
 
 class PType a where
-    un :: String -> a
-    to :: a -> IO String
+    un :: Text -> a
+    to :: a -> IO Text
 
 instance (Read a, Show a) => PType a where
     un = read . un
     to = to . show
 
 instance {-# OVERLAPPING #-} (PType a) => PType [a] where
-    un = map un . lines
-    to = fmap unlines . mapM to
+    un = map un . T.lines
+    to = fmap T.unlines . mapM to
 
 instance {-# OVERLAPPING #-} (PType a, PType b) => PType (Either a b) where
     un = Right . un
@@ -50,16 +50,16 @@ instance {-# OVERLAPPING #-} (KnownNat n) => PType (Mod n) where
     to = to . unMod
 
 instance {-# OVERLAPPING #-} PType Text where
-    un = T.pack . un
-    to = to . T.unpack
-
-instance {-# OVERLAPPING #-} PType String where
-    un = T.unpack . T.stripEnd . T.pack
+    un = T.stripEnd
     to = pure
 
+instance {-# OVERLAPPING #-} PType String where
+    un = T.unpack . un
+    to = to . T.pack
+
 instance {-# OVERLAPPING #-} PType ByteString where
-    un = B.pack . un
-    to = pure . B.unpack
+    un = B.pack . T.unpack . un
+    to = to . T.pack . B.unpack
 
 instance {-# OVERLAPPING #-} (PType a) => PType (IO a) where
     un = pure . un
@@ -75,21 +75,21 @@ instance {-# OVERLAPPING #-} (PType a) => PType (Maybe a) where
 
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a) where
     un = undefined
-    to (a, b) = intercalate "," <$> mapM to [a, b]
+    to (a, b) = T.intercalate "," <$> mapM to [a, b]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (V2 a) where
     un = undefined
-    to (V2 a b) = intercalate "," <$> mapM to [a, b]
+    to (V2 a b) = T.intercalate "," <$> mapM to [a, b]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a, a) where
     un = undefined
-    to (a, b, c) = intercalate "," <$> mapM to [a, b, c]
+    to (a, b, c) = T.intercalate "," <$> mapM to [a, b, c]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (V3 a) where
     un = undefined
-    to (V3 a b c) = intercalate "," <$> mapM to [a, b, c]
+    to (V3 a b c) = T.intercalate "," <$> mapM to [a, b, c]
 
-apply :: (PType a, PType b) => (a -> b) -> String -> IO String
+apply :: (PType a, PType b) => (a -> b) -> Text -> IO Text
 apply f = to . f . un
 
 buildProbs :: Q [Dec]
@@ -108,10 +108,10 @@ buildProbs = do
                 parser = (,) <$> (string "src/Year" *> some digitChar)
                          <*> (string "/Day" *> some digitChar <* string ".hs")
                 nm = varE . mkName
-  [d|problems :: [(Int, [(Int, (String -> IO String, String -> IO String))])]
+  [d|problems :: [(Int, [(Int, (Text -> IO Text, Text -> IO Text))])]
      problems = $(ListE . map toLit . M.toAscList . foldr accProbs M.empty <$> mapM parseP pFiles)
 
-     problem :: Int -> Int -> Maybe (String -> IO String, String -> IO String)
+     problem :: Int -> Int -> Maybe (Text -> IO Text, Text -> IO Text)
      problem year day = lookup year problems >>= lookup day|]
     where accProbs (year, prob) acc = M.insertWith (++) year [prob] acc
           toLit (a, b) = TupE [ Just (LitE (IntegerL a))

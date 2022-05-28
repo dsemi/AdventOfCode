@@ -18,6 +18,7 @@ import Data.String.Interpolate
 import Data.Text (Text)
 import Data.Time.Units
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import GHC.Conc
 import Math.NumberTheory.Moduli.Chinese
 import Linear.V2
@@ -28,7 +29,6 @@ import System.Directory
 import System.Environment
 import System.IO
 import System.IO.Unsafe
-import qualified System.IO.Strict as SIO
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -47,14 +47,14 @@ downloadFn = unsafePerformIO $ do
             cookie <- B.pack <$> getEnv "AOC_SESSION"
             pure $ req { requestHeaders = [("Cookie", cookie)] }
 
-getProblemInput :: Int -> Int -> Bool -> IO String
+getProblemInput :: Int -> Int -> Bool -> IO Text
 getProblemInput year day download = do
   exists <- doesFileExist inputFile
   when (not exists && download) $ do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
     fn <- readIORef downloadFn
     fn url inputFile
-  SIO.readFile inputFile
+  TIO.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]
 

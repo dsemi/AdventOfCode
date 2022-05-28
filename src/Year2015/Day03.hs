@@ -10,7 +10,6 @@ import Linear.V2
 
 import Utils
 
-
 visitedSquares :: String -> HashSet (V2 Int)
 visitedSquares = S.fromList . scanl (+) (V2 0 0) . map move
 
