@@ -164,7 +164,7 @@ neighbors st@(GameState room hall) skip = go [0..3]
           go [] = []
           go (r:rs)
               | skipRooms .&. shiftL 1 r /= 0 || emptyRoom room r = go rs
-              | otherwise = go2 [0..7] ++ go rs
+              | otherwise = go2 [0..6] ++ go rs
               where g = fromIntegral $ getRoom room r
                     (lo, hi) = case compare r g of
                                  LT -> (roomR r, roomL g)
