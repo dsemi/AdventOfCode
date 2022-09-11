@@ -3,7 +3,6 @@ module Year2017.Day17
     , part2
     ) where
 
-import Control.Lens
 import Data.List (foldl')
 import qualified Data.Sequence as S
 
@@ -18,13 +17,14 @@ part1 :: Int -> Int
 part1 = spinlock 2017
 
 spinlock' :: Int -> Int -> Int
-spinlock' n step = view _3 $ foldl' go (0, 0, 0) [1..n]
-    where go (i, indexOf0, valueAfter0) v
-              | i' <= indexOf0 = (i', indexOf0 + 1, valueAfter0)
-              | i' == indexOf0 + 1 = (i', indexOf0, v)
-              | otherwise = (i', indexOf0, valueAfter0)
-              where i' = (i + step) `mod` v + 1
-{-# INLINABLE spinlock' #-}
+spinlock' v step = go (0, 0, 0)
+    where go (pos, n, valAft0)
+              | n >= v = valAft0
+              | otherwise = go ((pos + skip * (step+1) - 1) `mod` n' + 1
+                               , n'
+                               , if pos == 1 then n else valAft0)
+              where skip = (n - pos) `div` step + 1
+                    n' = n + skip
 
 part2 :: Int -> Int
 part2 = spinlock' (5*10^7)
