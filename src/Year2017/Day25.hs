@@ -55,4 +55,4 @@ part1 :: String -> Maybe Int
 part1 = fmap (sum . tape . uncurry step) . parseMachine
 
 part2 :: String -> String
-part2 = const ""
+part2 = const " "

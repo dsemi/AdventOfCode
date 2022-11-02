@@ -40,4 +40,4 @@ part1 :: String -> Int
 part1 = last . findAllInts . map chr . runWithInput (map ord instrs) . parse
 
 part2 :: String -> String
-part2 = const ""
+part2 = const " "

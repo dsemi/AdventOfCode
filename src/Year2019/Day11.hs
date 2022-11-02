@@ -33,7 +33,7 @@ part1 :: String -> Int
 part1 = M.size . runRobot M.empty . parse
 
 draw :: Map (V2 Int) Int -> String
-draw points = ('\n' :) . unlines
+draw points = ('\n' :) . init . unlines
               $ flip map [minY .. maxY] $ \y ->
                   flip map [minX .. maxX] $ \x ->
                       case M.findWithDefault 0 (V2 x y) points of

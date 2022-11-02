@@ -24,7 +24,7 @@ parse = mapMaybe (parseMaybe parser) . lines
           int = optional space >> signed (pure ()) decimal
 
 showObjs :: [Obj] -> String
-showObjs objs = '\n' : unlines (map (\y -> map (f . (\x -> V2 x y)) [x0..x1]) [y0..y1])
+showObjs objs = '\n' : init (unlines (map (\y -> map (f . (\x -> V2 x y)) [x0..x1]) [y0..y1]))
     where ((x0, y0), (x1, y1)) = boundingBox objs
           f x = fromMaybe ' ' $ lookup x m
               where m = map ((, '#') . pos) objs

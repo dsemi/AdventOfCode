@@ -21,4 +21,4 @@ part1 input = 252533 ^ index * 20151125
           index = n * (n - 1) `div` 2 + c - 1
 
 part2 :: String -> String
-part2 = const ""
+part2 = const " "

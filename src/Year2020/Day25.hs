@@ -19,4 +19,4 @@ part1 input = fmap (door ^%) $ do
     where [card, door] = findAllInts input
 
 part2 :: String -> String
-part2 = const ""
+part2 = const " "

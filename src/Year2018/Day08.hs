@@ -3,7 +3,7 @@ module Year2018.Day08
     , part2
     ) where
 
-import Control.Lens
+import Data.List.Extra ((!?))
 import Data.Maybe (fromJust, mapMaybe)
 import Data.Tree
 import Text.Megaparsec
@@ -24,5 +24,6 @@ part1 = sum . fmap sum . parseNodes
 
 part2 :: String -> Int
 part2 = go . parseNodes
-    where go (Node metadata []) = sum metadata
-          go (Node metadata cs) = sum $ map go $ mapMaybe ((cs ^?) . ix . pred) metadata
+    where go :: Tree [Int] -> Int
+          go (Node metadata []) = sum metadata
+          go (Node metadata cs) = sum $ map go $ mapMaybe ((cs !?) . pred) metadata

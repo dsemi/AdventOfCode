@@ -30,4 +30,4 @@ part1 input = go 1 (map (toInt '>') grid) (map (toInt 'v') grid)
           rot n = shiftR n 1 .|. (if testBit n 0 then bit (mc-1) else 0)
 
 part2 :: String -> String
-part2 = const ""
+part2 = const " "

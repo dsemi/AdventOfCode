@@ -40,7 +40,7 @@ data Simulator = Sim { _a :: Int
                      }
 makeLenses ''Simulator
 
-reg :: Char -> Lens' Simulator Int
+reg :: Functor f => Char -> (Int -> f Int) -> Simulator -> f Simulator
 reg 'a' = a
 reg 'b' = b
 reg 'c' = c

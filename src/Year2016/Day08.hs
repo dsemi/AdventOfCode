@@ -50,7 +50,7 @@ part1 :: String -> Int
 part1 = S.size . litPixels
 
 showDisplay :: HashSet Coord -> String
-showDisplay litPix = '\n' : (unlines $ map (\r -> map (f . (r,)) [0..w-1]) [0..h-1])
+showDisplay litPix = '\n' : init (unlines $ map (\r -> map (f . (r,)) [0..w-1]) [0..h-1])
     where f p
               | S.member p litPix = '#'
               | otherwise         = ' '

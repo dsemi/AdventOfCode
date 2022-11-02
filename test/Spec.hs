@@ -17,16 +17,16 @@ import qualified Data.Text.IO as T
 import Test.Hspec
 import Text.Toml
 
-validatePart :: Int -> Int -> Int -> Text -> (String -> IO String) -> String -> Spec
+validatePart :: Int -> Int -> Int -> Text -> (Text -> IO Text) -> Text -> Spec
 validatePart year day p expected part input =
     describe [i|#{year} Day #{day} part #{p}|] $
              it "returns the correct answer for the problem input" $
-                fmap pack (part input) >>= (`shouldBe` expected)
+                part input >>= (`shouldBe` expected)
 
 tshow :: (Show a) => a -> Text
 tshow = pack . show
 
-validateDay :: Value -> Int -> Int -> (String -> IO String, String -> IO String) -> Spec
+validateDay :: Value -> Int -> Int -> (Text -> IO Text, Text -> IO Text) -> Spec
 validateDay solns year day (part1, part2) = do
   let expect y d = (,) <$> (solns ^? key (tshow y) . key (tshow d) . key "part1" . _String) <*>
                      (solns ^? key (tshow y) . key (tshow d) . key "part2" . _String)

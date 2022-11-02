@@ -15,4 +15,4 @@ part1 = solve . minimumBy (comparing $ count '0') . chunksOf 150
 
 part2 :: String -> String
 part2 = draw . map (head . filter (/= '2')) . transpose . chunksOf 150
-    where draw = ('\n':) . unlines . chunksOf 25 . map (\case '0' -> ' '; _ -> '#')
+    where draw = ('\n':) . init . unlines . chunksOf 25 . map (\case '0' -> ' '; _ -> '#')

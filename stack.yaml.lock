@@ -5,113 +5,71 @@
 
 packages:
 - completed:
+    hackage: aeson-1.5.6.0@sha256:5003bb6fd260d2e2d5a51dee2bf5c8e8f29e4e0e0288fef805c22dcc80ecab06,6788
+    pantry-tree:
+      sha256: 1f61b87807bfb4362a978a492e2f17be9e3ebfe32f983ee49863ddde970b32ce
+      size: 37981
+  original:
+    hackage: aeson-1.5.6.0
+- completed:
     hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
     pantry-tree:
-      size: 213
       sha256: c4176cc3fc9ad39f2a9fc7eb4346c87b6e60b70ba23d8e2adbdfc81fe544b808
+      size: 213
   original:
     hackage: astar-0.3.0.0
 - completed:
     hackage: Chart-diagrams-1.9.3@sha256:63668daff044a79827b7edb265265a4a8237424abb8f808ad1fcbdb3d47e753d,1801
     pantry-tree:
-      size: 934
       sha256: a22d6af342382f81988881de23dfab36cc6491ba46edb8697066f5dbde237635
+      size: 934
   original:
     hackage: Chart-diagrams-1.9.3
 - completed:
-    hackage: active-0.2.0.15@sha256:56d95c2205a8e52911bf08784b9958be430036e6ea16521b957c3e27cc71235c,1792
+    hackage: htoml-1.0.0.3@sha256:0b9c8ca2d30e4ebaf315f1400fd6c48f24c0841c50299000ec76e93cbf2091a9,3768
     pantry-tree:
-      size: 1017
-      sha256: 5f2c007588a7e5b2c3500a077cbae93a78c0869f1d2985b0ddcb318285e65def
+      sha256: 6f009ff5f517bfd5165102853be7ead17406b5cc9477725fadbf5556eaa4f9a3
+      size: 10417
   original:
-    hackage: active-0.2.0.15@sha256:56d95c2205a8e52911bf08784b9958be430036e6ea16521b957c3e27cc71235c,1792
-- completed:
-    hackage: dual-tree-0.2.3.0@sha256:be4b8ecb2ecef798f88ee569d043f3f19c32f6dd083329cd7cfcb482f0bc6233,2882
-    pantry-tree:
-      size: 387
-      sha256: db681941c4b21ef09d6aef232a8424edd2ca08ad8d4480480d9fbbbad78b0e50
-  original:
-    hackage: dual-tree-0.2.3.0@sha256:be4b8ecb2ecef798f88ee569d043f3f19c32f6dd083329cd7cfcb482f0bc6233,2882
-- completed:
-    hackage: monoid-extras-0.6.1@sha256:294eaeb51e0d047500119131f133bc4a7988f330baa4bb20256995aae3385b33,2220
-    pantry-tree:
-      size: 1187
-      sha256: 54a0e2666e9358b2a5fd2a1e61fc894acd6f62643ca36ea06427cdf405934d09
-  original:
-    hackage: monoid-extras-0.6.1@sha256:294eaeb51e0d047500119131f133bc4a7988f330baa4bb20256995aae3385b33,2220
+    hackage: htoml-1.0.0.3
 - completed:
     hackage: statestack-0.3@sha256:437941f253bc7a6d8321e67938667bae53d7765b256a45976accadd85f6e1703,1146
     pantry-tree:
-      size: 272
       sha256: 5b0ba98ac695eccbba33aae8eccf2b6dd8aa3d16d38db65e9e4c231aaa5e4082
+      size: 272
   original:
     hackage: statestack-0.3@sha256:437941f253bc7a6d8321e67938667bae53d7765b256a45976accadd85f6e1703,1146
 - completed:
     hackage: SVGFonts-1.7.0.1@sha256:1aac5ffd1a7c09317f92e9d31380d61eb96ce412b0dbd4e2d22c609c3d0be360,4039
     pantry-tree:
-      size: 1836
       sha256: 69e91027b97050991ce3a1f360a9a63ce90be8c3661a5c3db184536485e645cf
+      size: 1836
   original:
     hackage: SVGFonts-1.7.0.1@sha256:1aac5ffd1a7c09317f92e9d31380d61eb96ce412b0dbd4e2d22c609c3d0be360,4039
 - completed:
-    hackage: diagrams-core-1.5.0@sha256:8ffd24eb97ce309b41c52e5fa3a8acee5e4063565919eb4d41abb5c219b3d49b,2971
-    pantry-tree:
-      size: 2018
-      sha256: 670806e0af1e31792557a3bc2c4ffe4c39929fea718c3071eb4702c4512c9795
-  original:
-    hackage: diagrams-core-1.5.0@sha256:8ffd24eb97ce309b41c52e5fa3a8acee5e4063565919eb4d41abb5c219b3d49b,2971
-- completed:
-    hackage: diagrams-lib-1.4.5.1@sha256:b6a27de84eb65c4b4baac668e82c648f7db83210d5a863ac787fb6fa9e56177b,8233
-    pantry-tree:
-      size: 11604
-      sha256: e445321fc8401e88cc8ae81817942ce9ecd7274d28df4b3dd5991a8030ad3fac
-  original:
-    hackage: diagrams-lib-1.4.5.1@sha256:b6a27de84eb65c4b4baac668e82c648f7db83210d5a863ac787fb6fa9e56177b,8233
-- completed:
     hackage: diagrams-postscript-1.5.1@sha256:f1bd02682105abd7e45f1e70ca24f8fe68b12340ebf026788d3349502b3faf71,2332
     pantry-tree:
-      size: 480
       sha256: 37cc817b4e25365995577f93e294e66df1ecac0bc4b606ebf1d7b32e9da6b95c
+      size: 480
   original:
     hackage: diagrams-postscript-1.5.1@sha256:f1bd02682105abd7e45f1e70ca24f8fe68b12340ebf026788d3349502b3faf71,2332
-- completed:
-    hackage: diagrams-svg-1.4.3.1@sha256:b3944d39ecdfd60b9771f28e1312ca1467c79c8388aac2243210aeac8574d614,3117
-    pantry-tree:
-      size: 475
-      sha256: ca0a663d59729324f9ef7c20a04b3d434adfbd3fad20fefddc581ab9d0552436
-  original:
-    hackage: diagrams-svg-1.4.3.1@sha256:b3944d39ecdfd60b9771f28e1312ca1467c79c8388aac2243210aeac8574d614,3117
-- completed:
-    hackage: svg-builder-0.1.1@sha256:825ebc18c4e457efa1bc6ca5f90f5abc80566992e8ffdab6ccb782407a46db32,1569
-    pantry-tree:
-      size: 535
-      sha256: 4082f112e4f3d6363df6d12906b24bdcc9ebd7ac2c683841fac1254324373f8f
-  original:
-    hackage: svg-builder-0.1.1@sha256:825ebc18c4e457efa1bc6ca5f90f5abc80566992e8ffdab6ccb782407a46db32,1569
 - completed:
     hackage: hip-1.5.6.0@sha256:296c55622f62485422c0a593c7306af1a5abf8ba9f866dcdffc281b01eba65d7,6988
     pantry-tree:
-      size: 7456
       sha256: d79395e6ec9caf1132a7e001f6fe9b8ebada31e0e52087a4a1a971e3f295a7f4
+      size: 7456
   original:
     hackage: hip-1.5.6.0
 - completed:
     hackage: memoize-1.1.1@sha256:a4c636df010564307ce1fe6e69379192de0c756f7766e61224da8a896ffd5fe1,1926
     pantry-tree:
-      size: 687
       sha256: 903833765b601ec1cfd8bfeb2290dffaf6e551eaf4b1754c62858b181c414843
+      size: 687
   original:
     hackage: memoize-1.1.1
-- completed:
-    hackage: repa-3.4.1.5@sha256:4d94845e66d668345130f75f5de8f7c69139b91495c8c4b5a825014e8985e2fd,3562
-    pantry-tree:
-      size: 2965
-      sha256: 1bb5ad1decd581b0d44b0e05cbdef5eb7967cdd80da481a06c3aab73e16087b9
-  original:
-    hackage: repa-3.4.1.5
 snapshots:
 - completed:
-    size: 586120
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/22.yaml
-    sha256: f9970d6f25c63e3e4265aa8e9c69a047ba8919d1107e4996bdd7555b75aad0eb
-  original: lts-18.22
+    sha256: e5f56f619132209b826084cacd6374d7f0344cc88a9d1d305878190e4204ae1f
+    size: 619205
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/31.yaml
+  original: lts-19.31

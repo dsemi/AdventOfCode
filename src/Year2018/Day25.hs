@@ -36,4 +36,4 @@ part1 :: String -> Int
 part1 = length . constellations . parsePoints
 
 part2 :: String -> String
-part2 = const ""
+part2 = const " "

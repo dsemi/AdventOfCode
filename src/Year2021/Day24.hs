@@ -32,7 +32,7 @@ data Prog = Prog { _w :: Int
                  } deriving (Show)
 makeLenses ''Prog
 
-reg :: Char -> Lens' Prog Int
+reg :: Functor f => Char -> (Int -> f Int) -> Prog -> f Prog
 reg 'w' = w
 reg 'x' = x
 reg 'y' = y
