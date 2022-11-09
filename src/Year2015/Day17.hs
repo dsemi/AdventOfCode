@@ -3,14 +3,21 @@ module Year2015.Day17
     , part2
     ) where
 
-import Utils
+import Data.List (sortBy)
 
-
-allCombinationsTotaling :: Int -> [Int] -> [[[Int]]]
-allCombinationsTotaling n xs = map (filter ((==n) . sum) . combinations xs) [1..length xs]
+combos :: Int -> Int -> [Int] -> [Int]
+combos x y input = go (sortBy (flip compare) input) x y
+    where go containers nog len
+             | nog == 0 = [len]
+             | otherwise = case containers' of
+                             [] -> []
+                             (n:rest) -> go rest nog len ++ go rest (nog - n) (len + 1)
+             where containers' = dropWhile (>nog) containers
 
 part1 :: String -> Int
-part1 = sum . map length . allCombinationsTotaling 150 . map read . lines
+part1 = length . combos 150 0 . map read . lines
 
 part2 :: String -> Int
-part2 = length . head . filter (not . null) . allCombinationsTotaling 150 . map read . lines
+part2 input = let lens = combos 150 0 $ map read $ lines input
+                  m = minimum lens
+              in length $ filter (== m) lens

@@ -54,7 +54,7 @@ getProblemInput year day download = do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
     fn <- readIORef downloadFn
     fn url inputFile
-  TIO.readFile inputFile
+  T.stripEnd <$> TIO.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]
 

@@ -50,7 +50,7 @@ instance {-# OVERLAPPING #-} (KnownNat n) => PType (Mod n) where
     to = to . unMod
 
 instance {-# OVERLAPPING #-} PType Text where
-    un = T.stripEnd
+    un = id
     to = pure
 
 instance {-# OVERLAPPING #-} PType String where

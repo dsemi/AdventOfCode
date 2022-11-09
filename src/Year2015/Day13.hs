@@ -36,23 +36,21 @@ parseLine = fromJust . parseMaybe parser
 constructMap :: [Edge] -> HashMap Char (HashMap Char Int)
 constructMap = foldr addEdgeToMap M.empty
     where addEdgeToMap (Edge p1 p2 n) m = let m' = M.lookupDefault M.empty p1 m
-                                          in M.insert p1 (M.insert p2 n m') m
+                                              m'' = M.insert p1 (M.insertWith (+) p2 n m') m
+                                              m''' = M.lookupDefault M.empty p2 m''
+                                          in M.insert p2 (M.insertWith (+) p1 n m''') m''
 
-maxHappinessOrdering :: HashMap Char (HashMap Char Int) -> Int
-maxHappinessOrdering m = maximum $ map happinessDiff orders
-    where orders = permutations $ M.keys m
-          happinessDiff [] = error "No vals"
+maxHappinessOrdering :: Bool -> HashMap Char (HashMap Char Int) -> Int
+maxHappinessOrdering p1 m = maximum $ map happinessDiff $ permutations $ M.keys m
+    where happinessDiff [] = error "No vals"
           happinessDiff xss@(x:_) = go 0 xss
               where go _ [] = error "No vals"
-                    go !c [y] = c + hd x y
+                    go !c [y] = if p1 then c + hd x y else c
                     go !c (a:b:xs) = go (c + hd a b) (b:xs)
-          hd a b = m ! a ! b + m ! b ! a
+          hd a b = m ! a ! b
 
 part1 :: String -> Int
-part1 = maxHappinessOrdering . constructMap . map parseLine . lines
+part1 = maxHappinessOrdering True . constructMap . map parseLine . lines
 
 part2 :: String -> Int
-part2 input = let m = constructMap . map parseLine $ lines input
-                  meMap = M.fromList . zip (M.keys m) $ repeat 0
-                  m' = M.insert 'X' meMap $ M.map (M.insert 'X' 0) m
-              in maxHappinessOrdering m'
+part2 = maxHappinessOrdering False . constructMap . map parseLine . lines
