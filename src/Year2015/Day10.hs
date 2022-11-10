@@ -3,7 +3,6 @@ module Year2015.Day10
     , part2
     ) where
 
-
 lookAndSay :: String -> String
 lookAndSay [] = error "Invalid input"
 lookAndSay (y:ys) = go y 1 ys
@@ -15,7 +14,7 @@ lookAndSay (y:ys) = go y 1 ys
               | otherwise = say n c ++ go x 1 xs
 
 part1 :: String -> Int
-part1 =  length . (!! 40) . iterate lookAndSay
+part1 = length . (!! 40) . iterate lookAndSay
 
 part2 :: String -> Int
 part2 = length . (!! 50) . iterate lookAndSay
