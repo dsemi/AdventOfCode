@@ -1,4 +1,4 @@
-{-# LANGUAGE ImplicitParams, OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
+{-# LANGUAGE ImplicitParams, NumericUnderscores, OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
 
 module Utils where
 
@@ -16,13 +16,13 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Data.String.Interpolate
 import Data.Text (Text)
-import Data.Time.Clock
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import GHC.Conc
 import Linear.V2
 import Math.NumberTheory.Moduli.Chinese
 import Network.HTTP.Simple
+import System.Clock
 import System.Directory
 import System.Environment
 import Text.Megaparsec
@@ -37,19 +37,19 @@ downloadFn url outFile = do
             cookie <- B.pack <$> getEnv "AOC_SESSION"
             pure $ addRequestHeader "Cookie" cookie req
 
-rateLimit :: NominalDiffTime
-rateLimit = 5
+rateUs :: Integer
+rateUs = 5_000_000
 
-getProblemInput :: (?prevRef :: IORef UTCTime) => Int -> Int -> Bool -> IO Text
+getProblemInput :: (?prevRef :: IORef Integer) => Int -> Int -> Bool -> IO Text
 getProblemInput year day download = do
   exists <- doesFileExist inputFile
   when (not exists && download) $ do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
     prev <- readIORef ?prevRef
-    now <- getCurrentTime
-    let target = addUTCTime rateLimit prev
-    when (target > now) $ threadDelay $ floor $ (*1000000) $ toRational (diffUTCTime target now)
-    getCurrentTime >>= writeIORef ?prevRef
+    now <- (`div` 1000) . toNanoSecs <$> getTime Monotonic
+    let target = prev + rateUs
+    when (target > now) $ threadDelay $ fromInteger $ target - now
+    getTime Monotonic >>= writeIORef ?prevRef . (`div` 1000) . toNanoSecs
     downloadFn url inputFile
   T.stripEnd <$> TIO.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]

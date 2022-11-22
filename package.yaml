@@ -40,7 +40,6 @@ dependencies:
   - lens-aeson
   - mtl
   - text
-  - time
   - split
   - strict
 library:

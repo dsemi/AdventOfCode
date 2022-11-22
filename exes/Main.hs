@@ -3,7 +3,7 @@
 module Main where
 
 import Days (problem)
-import Utils (getProblemInput, rateLimit)
+import Utils (getProblemInput, rateUs)
 
 import Control.DeepSeq
 import Control.Monad.IO.Class
@@ -12,7 +12,6 @@ import Data.List (maximumBy)
 import Data.List.Split
 import Data.Ord
 import Data.Text (Text)
-import Data.Time.Clock
 import System.Console.ANSI
 import System.Clock
 import System.Environment
@@ -51,13 +50,13 @@ timeFunc f = do
   let elapsedTime = fromIntegral (end - start) / 10^9
   pure (result, elapsedTime)
 
-maybeRun :: (?prevRef :: IORef UTCTime) => Int -> Int -> IO Double
+maybeRun :: (?prevRef :: IORef Integer) => Int -> Int -> IO Double
 maybeRun y n = maybe notfound run $ problem y n
     where notfound = do
             putStrLn $ show y ++ " Day " ++ show n ++ " not implemented"
             pure 0
           str = "Part %s: %50s  Elapsed time %s seconds\n"
-          run :: (?prevRef :: IORef UTCTime) => (Text -> IO Text, Text -> IO Text) -> IO Double
+          run :: (?prevRef :: IORef Integer) => (Text -> IO Text, Text -> IO Text) -> IO Double
           run (p1, p2) = do
             input <- getProblemInput y n True
             putStrLn $ "Day " ++ show n
@@ -71,7 +70,7 @@ maybeRun y n = maybe notfound run $ problem y n
 main :: IO ()
 main = do
   args <- parseArgs <$> getArgs
-  prevR <- getCurrentTime >>= newIORef . addUTCTime (-rateLimit)
+  prevR <- getTime Monotonic >>= \t -> newIORef $ toNanoSecs t `div` 1000 - rateUs
   let ?prevRef = prevR
   times <- mapM (\day -> (day,) <$> maybeRun (year args) day) $ probNums args
   let (maxDay, maxTime) = maximumBy (comparing snd) times
