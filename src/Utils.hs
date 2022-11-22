@@ -1,59 +1,56 @@
-{-# LANGUAGE OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
+{-# LANGUAGE ImplicitParams, OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
 
 module Utils where
 
 import Control.DeepSeq
 import Control.Monad
-import Control.RateLimit
 import qualified Data.ByteString.Char8 as B
+import Conduit
 import Data.Either (fromRight)
 import Data.IORef
+import Data.IntSet (IntSet)
+import qualified Data.IntSet as I
 import Data.List (tails)
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.IntSet (IntSet)
-import qualified Data.IntSet as I
 import Data.String.Interpolate
 import Data.Text (Text)
-import Data.Time.Units
+import Data.Time.Clock
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import GHC.Conc
-import Math.NumberTheory.Moduli.Chinese
 import Linear.V2
-import Pipes
-import Pipes.HTTP
-import qualified Pipes.ByteString as PB
+import Math.NumberTheory.Moduli.Chinese
+import Network.HTTP.Simple
 import System.Directory
 import System.Environment
-import System.IO
-import System.IO.Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 
-downloadFn :: IORef (String -> String -> IO ())
-downloadFn = unsafePerformIO $ do
-               f <- rateLimitExecution (5 :: Second) go
-               newIORef $ curry f
-    where go (url, outFile) = do
-            req <- parseUrlThrow url >>= addCookie
-            manager <- newManager tlsManagerSettings
-            withHTTP req manager $ \resp ->
-                withFile outFile WriteMode $ \h ->
-                    runEffect $ responseBody resp >-> PB.toHandle h
-          addCookie req = do
+downloadFn :: String -> String -> IO ()
+downloadFn url outFile = do
+  req <- parseRequestThrow url >>= addCookie
+  runResourceT $ runConduit $ httpSource req getResponseBody .| sinkFileCautious outFile
+    where addCookie req = do
             cookie <- B.pack <$> getEnv "AOC_SESSION"
-            pure $ req { requestHeaders = [("Cookie", cookie)] }
+            pure $ addRequestHeader "Cookie" cookie req
 
-getProblemInput :: Int -> Int -> Bool -> IO Text
+rateLimit :: NominalDiffTime
+rateLimit = 5
+
+getProblemInput :: (?prevRef :: IORef UTCTime) => Int -> Int -> Bool -> IO Text
 getProblemInput year day download = do
   exists <- doesFileExist inputFile
   when (not exists && download) $ do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
-    fn <- readIORef downloadFn
-    fn url inputFile
+    prev <- readIORef ?prevRef
+    now <- getCurrentTime
+    let target = addUTCTime rateLimit prev
+    when (target > now) $ threadDelay $ floor $ (*1000000) $ toRational (diffUTCTime target now)
+    getCurrentTime >>= writeIORef ?prevRef
+    downloadFn url inputFile
   T.stripEnd <$> TIO.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]

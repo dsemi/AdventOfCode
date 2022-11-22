@@ -5,13 +5,6 @@
 
 packages:
 - completed:
-    hackage: aeson-1.5.6.0@sha256:5003bb6fd260d2e2d5a51dee2bf5c8e8f29e4e0e0288fef805c22dcc80ecab06,6788
-    pantry-tree:
-      sha256: 1f61b87807bfb4362a978a492e2f17be9e3ebfe32f983ee49863ddde970b32ce
-      size: 37981
-  original:
-    hackage: aeson-1.5.6.0
-- completed:
     hackage: astar-0.3.0.0@sha256:8bf6350542e9db9451490e8993560ee843dc48a61d46a206985430f9b62461c8,967
     pantry-tree:
       sha256: c4176cc3fc9ad39f2a9fc7eb4346c87b6e60b70ba23d8e2adbdfc81fe544b808
@@ -19,57 +12,15 @@ packages:
   original:
     hackage: astar-0.3.0.0
 - completed:
-    hackage: Chart-diagrams-1.9.3@sha256:63668daff044a79827b7edb265265a4a8237424abb8f808ad1fcbdb3d47e753d,1801
+    hackage: memoize-1.1.1@sha256:d902fc631020d04689aa66e804e13480c0b5ad01a29c12d31a22e2bdb767aba4,2007
     pantry-tree:
-      sha256: a22d6af342382f81988881de23dfab36cc6491ba46edb8697066f5dbde237635
-      size: 934
-  original:
-    hackage: Chart-diagrams-1.9.3
-- completed:
-    hackage: htoml-1.0.0.3@sha256:0b9c8ca2d30e4ebaf315f1400fd6c48f24c0841c50299000ec76e93cbf2091a9,3768
-    pantry-tree:
-      sha256: 6f009ff5f517bfd5165102853be7ead17406b5cc9477725fadbf5556eaa4f9a3
-      size: 10417
-  original:
-    hackage: htoml-1.0.0.3
-- completed:
-    hackage: statestack-0.3@sha256:437941f253bc7a6d8321e67938667bae53d7765b256a45976accadd85f6e1703,1146
-    pantry-tree:
-      sha256: 5b0ba98ac695eccbba33aae8eccf2b6dd8aa3d16d38db65e9e4c231aaa5e4082
-      size: 272
-  original:
-    hackage: statestack-0.3@sha256:437941f253bc7a6d8321e67938667bae53d7765b256a45976accadd85f6e1703,1146
-- completed:
-    hackage: SVGFonts-1.7.0.1@sha256:1aac5ffd1a7c09317f92e9d31380d61eb96ce412b0dbd4e2d22c609c3d0be360,4039
-    pantry-tree:
-      sha256: 69e91027b97050991ce3a1f360a9a63ce90be8c3661a5c3db184536485e645cf
-      size: 1836
-  original:
-    hackage: SVGFonts-1.7.0.1@sha256:1aac5ffd1a7c09317f92e9d31380d61eb96ce412b0dbd4e2d22c609c3d0be360,4039
-- completed:
-    hackage: diagrams-postscript-1.5.1@sha256:f1bd02682105abd7e45f1e70ca24f8fe68b12340ebf026788d3349502b3faf71,2332
-    pantry-tree:
-      sha256: 37cc817b4e25365995577f93e294e66df1ecac0bc4b606ebf1d7b32e9da6b95c
-      size: 480
-  original:
-    hackage: diagrams-postscript-1.5.1@sha256:f1bd02682105abd7e45f1e70ca24f8fe68b12340ebf026788d3349502b3faf71,2332
-- completed:
-    hackage: hip-1.5.6.0@sha256:296c55622f62485422c0a593c7306af1a5abf8ba9f866dcdffc281b01eba65d7,6988
-    pantry-tree:
-      sha256: d79395e6ec9caf1132a7e001f6fe9b8ebada31e0e52087a4a1a971e3f295a7f4
-      size: 7456
-  original:
-    hackage: hip-1.5.6.0
-- completed:
-    hackage: memoize-1.1.1@sha256:a4c636df010564307ce1fe6e69379192de0c756f7766e61224da8a896ffd5fe1,1926
-    pantry-tree:
-      sha256: 903833765b601ec1cfd8bfeb2290dffaf6e551eaf4b1754c62858b181c414843
+      sha256: e31720ad0cdc3a6e7e7f89dd28e39041e737532a9b68ff14cc0038aba451830b
       size: 687
   original:
     hackage: memoize-1.1.1
 snapshots:
 - completed:
-    sha256: e5f56f619132209b826084cacd6374d7f0344cc88a9d1d305878190e4204ae1f
-    size: 619205
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/31.yaml
-  original: lts-19.31
+    sha256: b73b2b116143aea728c70e65c3239188998bac5bc3be56465813dacd74215dc5
+    size: 648424
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/1.yaml
+  original: lts-20.1

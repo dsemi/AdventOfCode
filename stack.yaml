@@ -15,7 +15,7 @@
 # resolver:
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
-resolver: lts-19.31
+resolver: lts-20.1
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -42,14 +42,7 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps:
-- aeson-1.5.6.0
 - astar-0.3.0.0
-- Chart-diagrams-1.9.3
-- htoml-1.0.0.3
-- statestack-0.3@sha256:437941f253bc7a6d8321e67938667bae53d7765b256a45976accadd85f6e1703,1146
-- SVGFonts-1.7.0.1@sha256:1aac5ffd1a7c09317f92e9d31380d61eb96ce412b0dbd4e2d22c609c3d0be360,4039
-- diagrams-postscript-1.5.1@sha256:f1bd02682105abd7e45f1e70ca24f8fe68b12340ebf026788d3349502b3faf71,2332
-- hip-1.5.6.0
 - memoize-1.1.1
 
 # Override default flag values for local packages and extra-deps

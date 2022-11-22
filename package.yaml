@@ -40,6 +40,7 @@ dependencies:
   - lens-aeson
   - mtl
   - text
+  - time
   - split
   - strict
 library:
@@ -55,6 +56,7 @@ library:
     - base16-bytestring
     - bytestring
     - comonad
+    - conduit
     - containers >=0.5.8.1
     - cryptohash-md5
     - data-ordlist
@@ -78,16 +80,14 @@ library:
     - parser-combinators
     - pipes
     - pipes-bytestring
-    - pipes-http
+    - http-conduit
     - pointedlist
     - pqueue
     - psqueues
-    - rate-limit
     - recursion-schemes
     - ref-fd
     - split
     - template-haskell
-    - time-units
     - transformers
     - unordered-containers
     - vector
