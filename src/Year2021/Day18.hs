@@ -6,16 +6,20 @@ module Year2021.Day18
     ) where
 
 import Control.Lens
+import Control.Parallel.Strategies (parBuffer, runEval, rseq)
 import Data.List (foldl1')
+import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
 
+import Utils
+
 data Snailfish = Reg Int | Pair { _left :: Snailfish, _right :: Snailfish }
 makeLenses ''Snailfish
 
-snailfish :: String -> Maybe [Snailfish]
-snailfish = traverse (parseMaybe @() go) . lines
+snailfish :: String -> [Snailfish]
+snailfish = fromJust . traverse (parseMaybe @() go) . lines
     where go = (Reg <$> decimal) <|> (Pair <$> (char '[' *> go <* char ',') <*> (go <* char ']'))
 
 addToLeaf :: ASetter' Snailfish Snailfish -> Int -> Snailfish -> Snailfish
@@ -45,8 +49,9 @@ mag :: Snailfish -> Int
 mag (Reg n) = n
 mag (Pair a b) = 3*mag a + 2*mag b
 
-part1 :: String -> Maybe Int
-part1 = fmap (mag . foldl1' add) . snailfish
+part1 :: String -> Int
+part1 = mag . foldl1' add . snailfish
 
-part2 :: String -> Maybe Int
-part2 input = (\xs -> maximum [mag (add x y) | x <- xs, y <- xs]) <$> snailfish input
+part2 :: String -> IO Int
+part2 input = parallel $ maximum $ runEval $ parBuffer 1000 rseq [mag (add x y) | x <- xs, y <- xs]
+    where xs = snailfish input
