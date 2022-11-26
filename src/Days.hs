@@ -182,5 +182,29 @@ import Year2021.Day23
 import Year2021.Day24
 import Year2021.Day25
 import Year2022.Day01
+import Year2022.Day02
+import Year2022.Day03
+import Year2022.Day04
+import Year2022.Day05
+import Year2022.Day06
+import Year2022.Day07
+import Year2022.Day08
+import Year2022.Day09
+import Year2022.Day10
+import Year2022.Day11
+import Year2022.Day12
+import Year2022.Day13
+import Year2022.Day14
+import Year2022.Day15
+import Year2022.Day16
+import Year2022.Day17
+import Year2022.Day18
+import Year2022.Day19
+import Year2022.Day20
+import Year2022.Day21
+import Year2022.Day22
+import Year2022.Day23
+import Year2022.Day24
+import Year2022.Day25
 
 $(buildProbs)

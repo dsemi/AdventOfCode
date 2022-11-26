@@ -25,6 +25,7 @@ import Network.HTTP.Simple
 import System.Clock
 import System.Directory
 import System.Environment
+import System.FilePath.Posix
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -50,6 +51,7 @@ getProblemInput year day download = do
     let target = prev + rateUs
     when (target > now) $ threadDelay $ fromInteger $ target - now
     getTime Monotonic >>= writeIORef ?prevRef . (`div` 1000) . toNanoSecs
+    createDirectoryIfMissing True $ takeDirectory inputFile
     downloadFn url inputFile
   T.stripEnd <$> TIO.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
