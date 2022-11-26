@@ -5,9 +5,14 @@ module Year2021.Day22
     , part2
     ) where
 
-import qualified Data.HashMap.Strict as M
-import Data.List (foldl')
+import Control.Arrow
+import Control.Monad
+import Control.Monad.ST
 import Data.Maybe
+import Data.Vector ((!))
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as MV
+import qualified Data.IntSet as S
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer (decimal, signed)
@@ -21,31 +26,49 @@ parseCubes = fromJust . parseMaybe @() cubes
                  <*> int <* ".." <*> int
           cubes = cube `sepBy` char '\n'
 
+data Interval = Interval Int Int
+
+intersects :: Interval -> Interval -> Bool
+intersects (Interval lo0 hi0) (Interval lo1 hi1) = lo0 < hi1 && lo1 < hi0
+
+intersect :: Interval -> Interval -> Interval
+intersect (Interval lo0 hi0) (Interval lo1 hi1) = Interval (max lo0 lo1) (min hi0 hi1)
+
+len :: Interval -> Int
+len (Interval lo hi) = hi - lo
+
+data Cube = Cube Interval Interval Interval
+
+volume :: Cube -> Int
+volume (Cube x y z) = len x * len y * len z
+
+inters :: Cube -> Cube -> Bool
+inters (Cube x0 y0 z0) (Cube x1 y1 z1) = intersects x0 x1 && intersects y0 y1 && intersects z0 z1
+
+inter :: Cube -> Cube -> Cube
+inter (Cube x0 y0 z0) (Cube x1 y1 z1) = Cube (intersect x0 x1) (intersect y0 y1) (intersect z0 z1)
+
 solve :: Int -> Int -> String -> Int
-solve lo hi = sum . map func . M.toList . foldl' go M.empty . parseCubes
-    where func ((x0', x1', y0', y1', z0', z1'), s) =
-              let (x0, x1) = (max lo x0', min hi x1')
-                  (y0, y1) = (max lo y0', min hi y1')
-                  (z0, z1) = (max lo z0', min hi z1')
-              in max 0 (x1 - x0 + 1) * max 0 (y1 - y0 + 1) * max 0 (z1 - z0 + 1) * s
-          go cubes (w, nx0, nx1, ny0, ny1, nz0, nz1) =
-              let update = foldl' fun M.empty $ M.toList cubes
-                  update' = if w == "off" then update
-                            else M.alter (Just . (+1) . fromMaybe 0) (nx0, nx1, ny0, ny1, nz0, nz1) update
-              in foldl' (\c (k, v) -> M.alter (Just . (+v) . fromMaybe 0) k c) cubes $ M.toList update'
-              where fun upd ((ex0, ex1, ey0, ey1, ez0, ez1), es) =
-                        let (x0, x1) = (max nx0 ex0, min nx1 ex1)
-                            (y0, y1) = (max ny0 ey0, min ny1 ey1)
-                            (z0, z1) = (max nz0 ez0, min nz1 ez1)
-                            f v = case v of
-                                    Nothing -> Just $ -es
-                                    Just v' -> Just $ v' - es
-                        in if x0 <= x1 && y0 <= y1 && z0 <= z1
-                           then M.alter f (x0, x1, y0, y1, z0, z1) upd
-                           else upd
+solve lo hi input = sum $ map (\i -> intersectVolume (cubes ! i) (bs ! i))
+                    $ filter (on !) $ [0 .. length cubes - 1]
+    where activeCube = Cube (Interval lo hi) (Interval lo hi) (Interval lo hi)
+          (cubes, on) = (V.fromList *** V.fromList) $ unzip
+                        [ (cube, w == "on" && inters cube activeCube)
+                        | (w, x0, x1, y0, y1, z0, z1) <- parseCubes input
+                        , let cube = Cube (Interval x0 (x1 + 1)) (Interval y0 (y1 + 1)) (Interval z0 (z1 + 1)) ]
+          bs = runST $ do
+            v <- MV.replicate (length cubes) S.empty
+            forM_ [0 .. length cubes - 1] $ \i ->
+                forM_ [0 .. i-1] $ \j ->
+                    when (inters (cubes ! i) (cubes ! j)) $ MV.modify v (S.insert i) j
+            V.unsafeFreeze v
+          intersectVolume cube set = S.foldl' fld (volume cube) set
+              where fld vol idx = let common = inter cube (cubes ! idx)
+                                      int = S.intersection set (bs ! idx)
+                                  in vol - intersectVolume common int
 
 part1 :: String -> Int
-part1 = solve (-50) 50
+part1 = solve (-50) 51
 
 part2 :: String -> Int
 part2 = solve minBound maxBound
