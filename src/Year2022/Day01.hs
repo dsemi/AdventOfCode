@@ -3,8 +3,14 @@ module Year2022.Day01
     , part2
     ) where
 
-part1 :: String -> String
-part1 = id
+import Data.List (sortBy)
+import Data.List.Split
 
-part2 :: String -> String
-part2 = const ""
+elves :: String -> [Int]
+elves = map (sum . map read . lines) . splitOn "\n\n"
+
+part1 :: String -> Int
+part1 = maximum . elves
+
+part2 :: String -> Int
+part2 = sum . take 3 . sortBy (flip compare) . elves
