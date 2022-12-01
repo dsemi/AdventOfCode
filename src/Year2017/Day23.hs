@@ -39,7 +39,7 @@ parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLi
           parse :: String -> Value
           parse x = maybe (Left $ head x) Right $ maybeRead x
 
-step :: (Monad m, MonadWriter [String] m) => Sim -> m (Maybe Sim)
+step :: (MonadWriter [String] m) => Sim -> m (Maybe Sim)
 step sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
     where value :: Value -> Int
           value = either (\v -> sim ^?! (regs . ix v)) id
@@ -83,7 +83,7 @@ primalityCheck ins = do
   Jnz ((== Left g) -> True)         (Right (-13)) <- pure $ V.unsafeIndex ins 13
   pure $ PCheck b e d g f
 
-step' :: (Monad m, MonadWriter [String] m) => Sim -> m (Maybe Sim)
+step' :: (MonadWriter [String] m) => Sim -> m (Maybe Sim)
 step' sim =
     case (primalityCheck $ V.drop (sim ^. line) $ sim ^. instrs) of
       Just (PCheck {toCheck, innerCounter, outerCounter, workspace, primeCheck}) ->

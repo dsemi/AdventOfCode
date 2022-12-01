@@ -1,4 +1,4 @@
-{-# LANGUAGE ImplicitParams, NumericUnderscores, OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
+{-# LANGUAGE NumericUnderscores, OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
 
 module Utils where
 
@@ -26,6 +26,7 @@ import System.Clock
 import System.Directory
 import System.Environment
 import System.FilePath.Posix
+import System.IO.Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
@@ -38,19 +39,22 @@ downloadFn url outFile = do
             cookie <- B.pack <$> getEnv "AOC_SESSION"
             pure $ addRequestHeader "Cookie" cookie req
 
+prevRef :: IORef Integer
+prevRef = unsafePerformIO $ getTime Monotonic >>= (\t -> newIORef $ toNanoSecs t `div` 1000 - rateUs)
+
 rateUs :: Integer
 rateUs = 5_000_000
 
-getProblemInput :: (?prevRef :: IORef Integer) => Int -> Int -> Bool -> IO Text
+getProblemInput :: Int -> Int -> Bool -> IO Text
 getProblemInput year day download = do
   exists <- doesFileExist inputFile
   when (not exists && download) $ do
     putStrLn [i|Downloading input for Year #{year} Day #{day}|]
-    prev <- readIORef ?prevRef
+    prev <- readIORef prevRef
     now <- (`div` 1000) . toNanoSecs <$> getTime Monotonic
     let target = prev + rateUs
     when (target > now) $ threadDelay $ fromInteger $ target - now
-    getTime Monotonic >>= writeIORef ?prevRef . (`div` 1000) . toNanoSecs
+    getTime Monotonic >>= writeIORef prevRef . (`div` 1000) . toNanoSecs
     createDirectoryIfMissing True $ takeDirectory inputFile
     downloadFn url inputFile
   T.stripEnd <$> TIO.readFile inputFile
