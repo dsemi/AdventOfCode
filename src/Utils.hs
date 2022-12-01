@@ -6,6 +6,7 @@ import Control.DeepSeq
 import Control.Monad
 import qualified Data.ByteString.Char8 as B
 import Conduit
+import Data.Aeson.TH
 import Data.Either (fromRight)
 import Data.IORef
 import Data.IntSet (IntSet)
@@ -30,14 +31,25 @@ import System.IO.Unsafe
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
+addCookie :: Request -> IO Request
+addCookie req = do
+  cookie <- B.pack <$> getEnv "AOC_SESSION"
+  pure $ addRequestHeader "Cookie" cookie req
 
 downloadFn :: String -> String -> IO ()
 downloadFn url outFile = do
   req <- parseRequestThrow url >>= addCookie
   runResourceT $ runConduit $ httpSource req getResponseBody .| sinkFileCautious outFile
-    where addCookie req = do
-            cookie <- B.pack <$> getEnv "AOC_SESSION"
-            pure $ addRequestHeader "Cookie" cookie req
+
+data Answer = Answer { level :: Int, answer :: Text }
+$(deriveJSON defaultOptions ''Answer)
+
+submitAnswer :: Int -> Int -> Int -> Text -> IO ()
+submitAnswer year day part ans = do
+  let body = Answer { level = part, answer = ans }
+  req <- setRequestBodyJSON body . setRequestMethod "POST" <$> parseRequestThrow url >>= addCookie
+  runResourceT $ runConduit $ httpSource req getResponseBody .| stdoutC
+    where url = [i|https://adventofcode.com/#{year}/day/#{day}/answer|]
 
 prevRef :: IORef Integer
 prevRef = unsafePerformIO $ getTime Monotonic >>= (\t -> newIORef $ toNanoSecs t `div` 1000 - rateUs)
