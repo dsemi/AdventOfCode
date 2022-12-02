@@ -6,7 +6,6 @@ import Control.DeepSeq
 import Control.Monad
 import qualified Data.ByteString.Char8 as B
 import Conduit
-import Data.Aeson.TH
 import Data.Either (fromRight)
 import Data.IORef
 import Data.IntSet (IntSet)
@@ -41,13 +40,10 @@ downloadFn url outFile = do
   req <- parseRequestThrow url >>= addCookie
   runResourceT $ runConduit $ httpSource req getResponseBody .| sinkFileCautious outFile
 
-data Answer = Answer { level :: Int, answer :: Text }
-$(deriveJSON defaultOptions ''Answer)
-
 submitAnswer :: Int -> Int -> Int -> Text -> IO ()
 submitAnswer year day part ans = do
-  let body = Answer { level = part, answer = ans }
-  req <- setRequestBodyJSON body . setRequestMethod "POST" <$> parseRequestThrow url >>= addCookie
+  let body = [("level", B.pack (show part)), ("answer", B.pack (T.unpack ans))]
+  req <- setRequestBodyURLEncoded body <$> parseRequestThrow url >>= addCookie
   runResourceT $ runConduit $ httpSource req getResponseBody .| stdoutC
     where url = [i|https://adventofcode.com/#{year}/day/#{day}/answer|]
 
