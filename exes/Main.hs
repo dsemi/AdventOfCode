@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Main where
 
 import Days (problem)
@@ -18,7 +20,7 @@ import Text.Printf
 
 
 data Args = Submit { year :: Int, day :: Int }
-          | Run { year :: Int, probNums :: [Int] }
+          | Run { year :: Int, days :: [Int] }
 
 parseArgs :: [String] -> Args
 parseArgs []       = undefined
@@ -70,13 +72,13 @@ main :: IO ()
 main = do
   args <- parseArgs <$> getArgs
   case args of
-    Submit year day -> do
+    Submit{..} -> do
      maybeRun year day >>= \case
               Just (_, a1, a2) -> if T.null a2 || a2 == T.pack "0"
                                   then submitAnswer year day 1 a1
                                   else submitAnswer year day 2 a2
               Nothing -> error "Day not implemented"
-    Run year days -> do
+    Run{..} -> do
       times <- mapMaybeM (\day -> fmap (\(t, _, _) -> (day, t)) <$> maybeRun year day) days
       let (maxDay, maxTime) = maximumBy (comparing snd) times
       let totalTime = sum $ map snd times
