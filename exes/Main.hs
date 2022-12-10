@@ -13,6 +13,7 @@ import Data.List.Split
 import Data.Ord
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import System.Console.ANSI
 import System.Clock
 import System.Environment
@@ -51,20 +52,31 @@ timeFunc f = do
   let elapsedTime = fromIntegral (end - start) / 10^9
   pure (result, elapsedTime)
 
+printOutput :: Int -> Text -> Double -> IO ()
+printOutput part output t = do
+  putStr $ printf "Part %d: " part
+  let lns = T.lines output
+      len = length lns
+  forM_ (zip [0..] lns) $ \(i, ln) -> do
+    if i == len - 1
+    then if i == 0
+         then printf "%54s  Elapsed time %s seconds\n" ln (colorizeTime t)
+         else printf "%-62s  Elapsed time %s seconds\n" ln (colorizeTime t)
+    else T.putStrLn ln
+
 maybeRun :: Int -> Int -> IO (Maybe (Double, Text, Text))
 maybeRun y n = maybe notfound run $ problem y n
     where notfound = do
             putStrLn $ show y ++ " Day " ++ show n ++ " not implemented"
             pure Nothing
-          str = "Part %s: %50s  Elapsed time %s seconds\n"
           run :: (Text -> IO Text, Text -> IO Text) -> IO (Maybe (Double, Text, Text))
           run (p1, p2) = do
             input <- getProblemInput y n True
             putStrLn $ "Day " ++ show n
             (ans1, elapsedTime1) <- timeFunc $ p1 input
-            printf str "1" ans1 $ colorizeTime elapsedTime1
+            printOutput 1 ans1 elapsedTime1
             (ans2, elapsedTime2) <- timeFunc $ p2 input
-            printf str "2" ans2 $ colorizeTime elapsedTime2
+            printOutput 2 ans2 elapsedTime2
             putStrLn ""
             pure $ Just (elapsedTime1 + elapsedTime2, ans1, ans2)
 
@@ -82,5 +94,5 @@ main = do
       times <- mapMaybeM (\day -> fmap (\(t, _, _) -> (day, t)) <$> maybeRun year day) days
       let (maxDay, maxTime) = maximumBy (comparing snd) times
       let totalTime = sum $ map snd times
-      printf "Max: Day %2d %66.3f seconds\n" maxDay maxTime
-      printf "Total: %71.3f seconds\n" totalTime
+      printf "Max: Day %2d %70.3f seconds\n" maxDay maxTime
+      printf "Total: %75.3f seconds\n" totalTime
