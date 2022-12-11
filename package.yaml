@@ -91,6 +91,7 @@ library:
     - transformers
     - unordered-containers
     - vector
+    - vector-algorithms
 executables:
   Advent:
     main: Main.hs
