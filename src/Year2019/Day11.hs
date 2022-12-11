@@ -9,6 +9,7 @@ import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 import Linear.V2
 
+import Ocr
 import Year2019.IntCode
 
 
@@ -43,4 +44,4 @@ draw points = ('\n' :) . init . unlines
           V2 maxX maxY = foldr1 (liftM2 max) $ M.keys points
 
 part2 :: String -> String
-part2 = draw . runRobot (M.singleton (V2 0 0) 1) . parse
+part2 = parseLetters . draw . runRobot (M.singleton (V2 0 0) 1) . parse

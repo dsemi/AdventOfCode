@@ -10,6 +10,7 @@ import Text.Megaparsec (Parsec, between, optional, parseMaybe)
 import Text.Megaparsec.Char (char, space, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
+import Ocr
 
 data Obj = Obj { pos :: V2 Int
                , vel :: V2 Int
@@ -42,7 +43,7 @@ findMessage = go 0
               where ((_, y0), (_, y1)) = boundingBox objs
 
 part1 :: String -> String
-part1 = showObjs . snd . findMessage . parse
+part1 = parseLetters . showObjs . snd . findMessage . parse
 
 part2 :: String -> Int
 part2 = fst . findMessage . parse

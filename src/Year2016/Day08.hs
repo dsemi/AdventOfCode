@@ -11,6 +11,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char (string)
 import Text.Megaparsec.Char.Lexer (decimal)
 
+import Ocr
 
 type Coord = (Int, Int)
 
@@ -56,4 +57,4 @@ showDisplay litPix = '\n' : init (unlines $ map (\r -> map (f . (r,)) [0..w-1]) 
               | otherwise         = ' '
 
 part2 :: String -> String
-part2 = showDisplay . litPixels
+part2 = parseLetters . showDisplay . litPixels

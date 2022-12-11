@@ -9,10 +9,11 @@ import Utils (getProblemInput)
 import Control.Lens ((^?))
 import Control.Monad
 import Data.Aeson
+import Data.Aeson.Key
 import Data.Aeson.Lens
 import Data.String.Interpolate
 import Days (problems)
-import Data.Text (Text, pack)
+import Data.Text (Text)
 import qualified Data.Text.IO as T
 import Test.Hspec
 import Text.Toml
@@ -23,13 +24,13 @@ validatePart year day p expected part input =
              it "returns the correct answer for the problem input" $
                 part input >>= (`shouldBe` expected)
 
-tshow :: (Show a) => a -> Text
-tshow = pack . show
+tkey :: (Show a) => a -> Key
+tkey = fromString . show
 
 validateDay :: Value -> Int -> Int -> (Text -> IO Text, Text -> IO Text) -> Spec
 validateDay solns year day (part1, part2) = do
-  let expect y d = (,) <$> (solns ^? key (tshow y) . key (tshow d) . key "part1" . _String) <*>
-                     (solns ^? key (tshow y) . key (tshow d) . key "part2" . _String)
+  let expect y d = (,) <$> (solns ^? key (tkey y) . key (tkey d) . key "part1" . _String) <*>
+                     (solns ^? key (tkey y) . key (tkey d) . key "part2" . _String)
   case expect year day of
     Just (expected1, expected2) -> do
       input <- runIO $ getProblemInput year day False
@@ -43,6 +44,16 @@ readSolns = do
   case toml of
     (Left _) -> error "error parsing solution file"
     (Right v) -> pure $ toJSON v
+
+instance ToJSON Node where
+    toJSON (VTable v)    = toJSON v
+    toJSON (VTArray v)   = toJSON v
+    toJSON (VString v)   = toJSON v
+    toJSON (VInteger v)  = toJSON v
+    toJSON (VFloat v)    = toJSON v
+    toJSON (VBoolean v)  = toJSON v
+    toJSON (VDatetime v) = toJSON v
+    toJSON (VArray v)    = toJSON v
 
 main :: IO ()
 main = hspec $ do

@@ -9,6 +9,8 @@ import qualified Data.HashSet as S
 import Data.List (foldl')
 import Data.List.Split (splitOn)
 
+import Ocr
+
 parse :: String -> (HashSet (Int, Int), [String])
 parse input = let [dots, instrs] = splitOn "\n\n" input
               in ( S.fromList
@@ -29,8 +31,7 @@ part1 input = S.size $ fold paper $ head instrs
     where (paper, instrs) = parse input
 
 part2 :: String -> String
-part2 input = init $ '\n' : unlines [[bool ' ' '#' $ S.member (x, y) paper | x <- [0..mx]] 
-                                    | y <- [0..my]]
+part2 input = parseLetters $ unlines [[bool ' ' '#' $ S.member (x, y) paper | x <- [0..mx]] | y <- [0..my]]
     where (paper', instrs) = parse input
           paper = foldl' fold paper' instrs
           (mx, my) = foldr (\(x, y) (x', y') -> (max x x', max y y')) (0, 0) paper

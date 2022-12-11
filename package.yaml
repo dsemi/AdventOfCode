@@ -107,7 +107,7 @@ tests:
       - -threaded
     dependencies:
       - Advent
-      - htoml
+      - htoml-megaparsec
       - unordered-containers
 build-type: Custom
 custom-setup:
