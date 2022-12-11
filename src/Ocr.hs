@@ -6,7 +6,6 @@ import Control.Applicative
 import Data.Maybe
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
-import Debug.Trace
 
 smallK :: String
 smallK =
