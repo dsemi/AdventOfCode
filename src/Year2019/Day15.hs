@@ -13,7 +13,7 @@ import Year2019.IntCode
 
 
 search :: Free Action () -> [(Int, (Bool, V2 Int, Free Action ()))]
-search actions = bfsOn (view _2) (False, V2 0 0, actions) neighbors
+search actions = bfsOn (view _2) [(False, V2 0 0, actions)] neighbors
     where neighbors (_, pos, Free (Input f)) = do
             (i, dir) <- [(1, V2 0 1), (2, V2 0 (-1)), (3, V2 (-1) 0), (4, V2 1 0)]
             let pos' = pos + dir

@@ -92,8 +92,8 @@ parallel x = do
   x `deepseq` setNumCapabilities prev
   pure x
 
-bfsOn :: forall a k. (Ord k) => (a -> k) -> a -> (a -> [a]) -> [(Int, a)]
-bfsOn f start neighbors = go S.empty [(0, start)]
+bfsOn :: forall a k. (Ord k) => (a -> k) -> [a] -> (a -> [a]) -> [(Int, a)]
+bfsOn f starts neighbors = go S.empty $ map (0,) starts
     where go :: Set k -> [(Int, a)] -> [(Int, a)]
           go _       [] = []
           go visited ((depth, node) : nodes)
@@ -103,7 +103,10 @@ bfsOn f start neighbors = go S.empty [(0, start)]
               where key = f node
 
 bfs :: (Ord a) => a -> (a -> [a]) -> [(Int, a)]
-bfs = bfsOn id
+bfs x = bfsOn id [x]
+
+bfsMany :: (Ord a) => [a] -> (a -> [a]) -> [(Int, a)]
+bfsMany = bfsOn id
 
 bfsOnInt :: forall a. (a -> Int) -> a -> (a -> [a]) -> [(Int, a)]
 bfsOnInt f start neighbors = go I.empty [(0, start)]
