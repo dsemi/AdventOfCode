@@ -66,6 +66,7 @@ library:
     - filepath
     - foldl
     - free
+    - ghc
     - Glob
     - groups
     - hashable
