@@ -92,28 +92,20 @@ parallel x = do
   x `deepseq` setNumCapabilities prev
   pure x
 
-bfsOnM :: forall a k m. (Ord k, Monad m) => (a -> k) -> [a] -> (a -> m [a]) -> m [(Int, a)]
-bfsOnM f starts neighbors = go S.empty $ map (0,) starts
-    where go :: Set k -> [(Int, a)] -> m [(Int, a)]
-          go _       [] = pure []
+bfsOn :: forall a k. (Ord k) => (a -> k) -> [a] -> (a -> [a]) -> [(Int, a)]
+bfsOn f starts neighbors = go S.empty $ map (0,) starts
+    where go :: Set k -> [(Int, a)] -> [(Int, a)]
+          go _       [] = []
           go visited ((depth, node) : nodes)
               | S.member key visited = go visited nodes
-              | otherwise = do
-            ns <- neighbors node
-            ((depth, node) :) <$> go (S.insert key visited) (nodes ++ map (depth+1,) ns)
+              | otherwise = (depth, node) : go (S.insert key visited) (nodes ++ map (depth+1,) (neighbors node))
               where key = f node
-
-bfsOn :: (Ord k) => (a -> k) -> [a] -> (a -> [a]) -> [(Int, a)]
-bfsOn f sts nbs = runIdentity $ bfsOnM f sts $ pure . nbs
 
 bfs :: (Ord a) => a -> (a -> [a]) -> [(Int, a)]
 bfs x = bfsOn id [x]
 
 bfsMany :: (Ord a) => [a] -> (a -> [a]) -> [(Int, a)]
-bfsMany sts nbs = runIdentity $ bfsManyM sts $ pure . nbs
-
-bfsManyM :: (Ord a, Monad m) => [a] -> (a -> m [a]) -> m [(Int, a)]
-bfsManyM = bfsOnM id
+bfsMany = bfsOn id
 
 bfsOnInt :: forall a. (a -> Int) -> a -> (a -> [a]) -> [(Int, a)]
 bfsOnInt f start neighbors = go I.empty [(0, start)]
