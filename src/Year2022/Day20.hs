@@ -14,14 +14,13 @@ mix scale times input = runST $ do
   locs <- V.thaw locations
   forM_ [1..times] $ \_ ->
       forM_ (zip [0..] ns) $ \(i, n) -> do
-        v <- V.unsafeFreeze locs
-        let Just loc = V.elemIndex i v
+        Just loc <- V.elemIndex i <$> V.unsafeFreeze locs
         MV.move (MV.slice loc (m - loc - 1) locs) (MV.slice (loc + 1) (m - loc - 1) locs)
         let idx = (n + loc) `mod` (m - 1)
         MV.move (MV.slice (idx + 1) (m - idx - 1) locs) (MV.slice idx (m - idx - 1) locs)
         MV.write locs idx i
   v <- V.freeze locs
-  let Just z = elemIndex 0 ns >>= (`V.elemIndex` v)
+  let Just z = (`V.elemIndex` v) =<< elemIndex 0 ns
   pure $ ns !! (v V.! ((z + 1000) `mod` m)) +
        ns !! (v V.! ((z + 2000) `mod` m)) +
        ns !! (v V.! ((z + 3000) `mod` m))
