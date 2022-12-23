@@ -16,13 +16,12 @@ move dir elf elves
     | and adjs || null pot = elf
     | otherwise = head pot
     where adjs = [ not (S.member (elf + d) elves) | d <- dirs ]
-          poss = [ (adjs !! 0 && adjs !! 1 && adjs !! 2, elf + V2 0 1)
+          poss = take 4 $ drop dir $ cycle
+                 [ (adjs !! 0 && adjs !! 1 && adjs !! 2, elf + V2 0 1)
                  , (adjs !! 5 && adjs !! 6 && adjs !! 7, elf + V2 0 (-1))
                  , (adjs !! 0 && adjs !! 3 && adjs !! 5, elf + V2 (-1) 0)
                  , (adjs !! 2 && adjs !! 4 && adjs !! 7, elf + V2 1 0)]
-          pot = [ elf' | i <- [0..3]
-                , let (avail, elf') = poss !! ((dir + i) `mod` 4)
-                , avail ]
+          pot = [ elf' | (avail, elf') <- poss, avail ]
 
 steps :: String -> [HashSet (V2 Int)]
 steps input = let elves = S.fromList [V2 c (-r) | (r, row) <- zip [0..] $ lines input
