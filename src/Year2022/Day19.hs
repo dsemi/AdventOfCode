@@ -36,12 +36,12 @@ sim time (Blueprint _ costs maxCosts) = dfs 0 time (V.fromList [0, 0, 0, 0]) (V.
                             in dfs res (tim-1) (V.zipWith (+) amts bots) bots bns
               where geodes = amts ! 0
                     geodeBots = bots ! 0
-                    upperBd = upper (geodes + tim * geodeBots) (amts ! 1) (bots ! 1) (tim-1)
                     obsCost = costs !! 0 ! 1
-                    upper ub obs obsRate t
-                        | t == 0 = ub
-                        | obs >= obsCost = upper (ub + t) (obs + obsRate - obsCost) obsRate (t-1)
-                        | otherwise = upper ub (obs + obsRate) (obsRate + 1) (t-1)
+                    upperBd = upper (geodes + tim * geodeBots) (amts ! 1) (bots ! 1) (tim-1)
+                        where upper ub obs obsRate t
+                                  | t == 0 = ub
+                                  | obs >= obsCost = upper (ub + t) (obs + obsRate - obsCost) obsRate (t-1)
+                                  | otherwise = upper ub (obs + obsRate) (obsRate + 1) (t-1)
                     go (res, bns) (i, cost)
                         | bns .&. shiftL 1 i == 0 &&
                           (i == 0 || bots ! i < maxCosts ! i) &&
