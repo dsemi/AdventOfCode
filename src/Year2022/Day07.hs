@@ -19,7 +19,7 @@ allSizes = go 0 [] . tail . lines
           go size fstree [] = scanl (+) size fstree
 
 part1 :: String -> Int
-part1 = sum . filter (<=100000) . allSizes
+part1 = sum . filter (<= 100000) . allSizes
 
 part2 :: String -> Int
 part2 input = minimum $ filter (>= target) sizes
