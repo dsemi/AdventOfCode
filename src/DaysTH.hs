@@ -11,6 +11,7 @@ module DaysTH
 
 import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as B
+import Data.Complex.Cyclotomic
 import Data.Functor.Identity
 import qualified Data.Map.Strict as M
 import Data.Maybe
@@ -33,6 +34,10 @@ class PType a where
 
 instance (Read a, Show a) => PType a where
     un = read . un
+    to = to . show
+
+instance {-# OVERLAPPING #-} PType Cyclotomic where
+    un = undefined
     to = to . show
 
 instance {-# OVERLAPPING #-} (PType a) => PType [a] where

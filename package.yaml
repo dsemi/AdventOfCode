@@ -59,6 +59,7 @@ library:
     - conduit
     - containers >=0.5.8.1
     - cryptohash-md5
+    - cyclotomic
     - data-ordlist
     - deepseq
     - directory
