@@ -7,10 +7,13 @@ import Control.Monad
 import qualified Data.ByteString.Char8 as B
 import Conduit
 import Data.Either (fromRight)
+import Data.Hashable
+import qualified Data.HashMap.Strict as M
+import qualified Data.HashPSQ as Q
 import Data.IORef
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as I
-import Data.List (tails)
+import Data.List (foldl', tails)
 import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -116,6 +119,20 @@ bfsOnInt f start neighbors = go I.empty [(0, start)]
               | otherwise = (depth, node) :
                             go (I.insert key visited) (nodes ++ map (depth+1,) (neighbors node))
               where key = f node
+
+dijkstra :: forall a. (Hashable a, Ord a) => a -> (a -> [(Int, a)]) -> [(Int, a)]
+dijkstra start neighbors = go M.empty $ Q.singleton start 0 start
+    where go :: M.HashMap a Int -> Q.HashPSQ a Int a -> [(Int, a)]
+          go dists (Q.minView -> Just (_, dist, item, queue))
+              | dist <= M.findWithDefault maxBound item dists = (dist, item) : go dists' queue'
+              | otherwise = (dist, item) : go dists queue
+              where (dists', queue') = foldl' process (M.insert item dist dists, queue) $ neighbors item
+                    process (ds, q) (d, st2)
+                        | d2 < shrt = (M.insert st2 d2 ds, Q.insert st2 d2 st2 q)
+                        | otherwise = (ds, q)
+                        where d2 = dist + d
+                              shrt = M.findWithDefault (d2+1) st2 ds
+          go _ _ = []
 
 move :: Char -> V2 Int
 move '^' = V2 0 (-1)
