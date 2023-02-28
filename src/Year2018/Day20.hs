@@ -12,7 +12,7 @@ import qualified Data.HashSet as S
 import Data.Maybe
 import Data.List (foldl')
 import Linear.V2
-import Text.Megaparsec (between, many, oneOf, parseMaybe, sepBy, try, (<|>))
+import Text.Megaparsec (between, many, parseMaybe, sepBy, try, (<|>))
 import Text.Megaparsec.Char
 
 
@@ -23,12 +23,11 @@ parseEdges = fromJust . parseMaybe @() (evalStateT (between (char '^') (char '$'
     where edges = fmap S.unions . many $ try step <|> branch
           step = do
             pos <- get
-            d <- oneOf "NSEW"
-            let pos' = pos + case d of
-                               'N' -> V2 0 (-1)
-                               'E' -> V2 1 0
-                               'S' -> V2 0 1
-                               'W' -> V2 (-1) 0
+            d <- (char 'N' >> pure (V2 0 (-1))) <|>
+                 (char 'E' >> pure (V2 1 0)) <|>
+                 (char 'S' >> pure (V2 0 1)) <|>
+                 (char 'W' >> pure (V2 (-1) 0))
+            let pos' = pos + d
             put pos'
             S.insert (if pos <= pos' then (pos, pos') else (pos', pos)) <$> edges
           branch = between (char '(') (char ')') $ do

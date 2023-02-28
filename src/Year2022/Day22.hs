@@ -38,6 +38,7 @@ walk f input = final $ foldl' go (V2 0 (head (filter ((== '.') . (grid !) . (V2 
               where (pos', dir') = case f pos dir of
                                      Just (p, d) -> (p, d)
                                      Nothing -> (move dir pos, dir)
+          go _ _ = error "Bad input"
           final (V2 x y, dir) = 1000*(x + 1) + 4*(y + 1) + fromEnum dir
 
 part1 :: String -> Int

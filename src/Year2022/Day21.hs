@@ -19,12 +19,11 @@ monkeys = M.fromList . map (fromJust . parseMaybe @() monkey) . lines
     where name = some letterChar
           monkey = (,) <$> name <* chunk ": " <*> (num <|> math)
           num = Num <$> decimal
-          math = Math <$> name <* spaceChar <*> (op <$> oneOf "+-*/") <* spaceChar <*> name
-          op '+' = (+)
-          op '-' = (-)
-          op '*' = (*)
-          op '/' = (/)
-          op _ = error "Malformed input"
+          math = Math <$> name <* spaceChar <*> op <* spaceChar <*> name
+          op = (char '+' >> pure (+)) <|>
+               (char '-' >> pure (-)) <|>
+               (char '*' >> pure (*)) <|>
+               (char '/' >> pure (/))
 
 eval :: String -> HashMap String Monkey -> Cyclotomic
 eval k m = case m ! k of
