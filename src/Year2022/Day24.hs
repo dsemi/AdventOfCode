@@ -1,61 +1,83 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, RecordWildCards, NamedFieldPuns #-}
 
 module Year2022.Day24
     ( part1
     , part2
     ) where
 
+import Control.Monad
+import Control.Monad.ST
 import Control.Monad.State.Strict
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as S
-import Linear.V2
+import Data.Bits
+import Data.List (transpose)
+import Data.Vector.Unboxed (Vector)
+import qualified Data.Vector.Unboxed as V
+import qualified Data.Vector.Unboxed.Mutable as MV
+import Data.Word
 
-data Valley = Valley Int Int [(V2 Int, V2 Int)] (HashSet (V2 Int))
+data Valley = Valley { w :: Int
+                     , h :: Int
+                     , nBlizz :: Vector Word64
+                     , sBlizz :: Vector Word64
+                     , wBlizz :: Vector Word64
+                     , eBlizz :: Vector Word64
+                     , walls :: Vector Word64
+                     }
 
-parse :: String -> (V2 Int, V2 Int, Valley)
-parse input = (start, goal, Valley w h blizz walls)
-    where w = length (head $ lines input) - 2
-          h = length (lines input) - 2
-          start = V2 0 1
-          goal = V2 (h+1) w
-          grid = [ (V2 r c, v) | (r, row) <- zip [0..] $ lines input
-                 , (c, v) <- zip [0..] row]
-          blizz = [ (p, d) | (p, v) <- grid
-                  , v `elem` "^v<>"
-                  , let d = case v of
-                              '^' -> V2 (-1) 0
-                              'v' -> V2 1 0
-                              '<' -> V2 0 (-1)
-                              '>' -> V2 0 1
-                              _ -> error "impossible"]
-          walls = S.insert (goal + V2 1 0) $ S.insert (start + V2 (-1) 0)
-                  $ S.fromList [ p | (p, v) <- grid, v == '#' ]
+parse :: String -> Valley
+parse input = Valley { w = length grid
+                     , h = length (head grid)
+                     , nBlizz = readIns '^'
+                     , sBlizz = readIns 'v'
+                     , wBlizz = readIns '<'
+                     , eBlizz = readIns '>'
+                     , walls = readIns '#'
+                     }
+    where grid = transpose $ lines input
+          readIns d = V.fromList $ map (foldr (\c acc -> shiftL acc 1 .|. (if c == d then 1 else 0)) 0) grid
 
-shortestPath :: V2 Int -> V2 Int -> Valley -> (Int, Valley)
-shortestPath start goal (Valley w h blizzard walls) =
-    let (cnt, blizz) = go 0 blizzard (S.singleton start)
-    in (cnt, Valley w h blizz walls)
-    where go !cnt blizz edges
-              | S.member goal edges = (cnt, blizz)
-              | otherwise = go (cnt+1) blizz' edges'
-              where blizz' = [ (pos', d) | (V2 r c, d@(V2 dr dc)) <- blizz
-                             , let pos' = V2 ((r+dr-1) `mod` h + 1) ((c+dc-1) `mod` w + 1) ]
-                    blizzSet = S.fromList $ map fst blizz'
-                    edges' = S.fromList $
-                             [ p | p <- S.toList edges
-                             , not (S.member p walls || S.member p blizzSet) ] ++
-                             [ p' | p <- S.toList edges
-                             , p' <- fmap (+p) [V2 0 (-1), V2 0 1, V2 1 0, V2 (-1) 0]
-                             , not (S.member p' walls || S.member p' blizzSet) ]
+shortestPath :: (Int, Int)-> (Int, Int) -> Valley -> (Int, Valley)
+shortestPath (startR, startC) (goalR, goalC) (Valley{..}) = runST $ do
+  frontier <- MV.replicate w (0 :: Word64)
+  MV.modify frontier (`setBit` startR) startC
+  (nb, sb, wb, eb) <- (,,,) <$> V.thaw nBlizz <*> V.thaw sBlizz <*> V.thaw wBlizz <*> V.thaw eBlizz
+  t <- go 0 frontier nb sb wb eb
+  (nb', sb', wb', eb') <- (,,,) <$> V.freeze nb <*> V.freeze sb <*> V.freeze wb <*> V.freeze eb
+  pure (t, Valley {w, h, nBlizz = nb', sBlizz = sb', wBlizz = wb', eBlizz = eb', walls})
+    where go !t frontier nBliz sBliz wBliz eBliz = do
+            done <- (`testBit` goalR) <$> MV.read frontier goalC
+            if done then pure t
+            else do
+              pwBliz <- V.freeze wBliz
+              peBliz <- V.freeze eBliz
+              pFrontier <- V.freeze frontier
+              forM_ [0..w-1] $ \c -> do
+                MV.modify nBliz (\v -> (shiftR v 1 .|. shiftL (v .&. 2) (h - 3)) .&. complement (walls V.! c)) c
+                MV.modify sBliz (\v -> (shiftL v 1 .|. shiftR v (h - 3) .&. 2) .&. complement (walls V.! c)) c
+                MV.write wBliz c (pwBliz V.! ((c - 2 + w) `mod` (w - 2) + 1))
+                MV.write eBliz c (peBliz V.! ((c - 4 + w) `mod` (w - 2) + 1))
+                MV.modify frontier (\v -> v .|. shiftR (pFrontier V.! c) 1 .|.
+                                          shiftL (pFrontier V.! c) 1 .|.
+                                          (pFrontier V.! ((c + 1) `mod` w)) .|.
+                                          (pFrontier V.! ((c - 1) `mod` w))) c
+                MV.modifyM frontier (\v -> do
+                                       (nb, sb, wb, eb) <- (,,,) <$> MV.read nBliz c <*>
+                                                           MV.read sBliz c <*>
+                                                           MV.read wBliz c <*>
+                                                           MV.read eBliz c
+                                       pure $ v .&. complement ((walls V.! c) .|. nb .|. sb .|. wb .|. eb)) c
+              go (t+1) frontier nBliz sBliz wBliz eBliz
 
 part1 :: String -> Int
-part1 input = fst $ shortestPath start goal valley
-    where (start, goal, valley) = parse input
+part1 input = fst $ shortestPath (0, 1) (h valley - 1, w valley - 2) valley
+    where valley = parse input
 
 part2 :: String -> Int
-part2 input = flip evalState valley $ do
-                a <- state (shortestPath start goal)
-                b <- state (shortestPath goal start)
-                c <- state (shortestPath start goal)
-                pure $ a + b + c
-    where (start, goal, valley) = parse input
+part2 input = flip evalState val $ do
+  t1 <- state $ shortestPath start goal
+  t2 <- state $ shortestPath goal start
+  t3 <- state $ shortestPath start goal
+  pure $ t1 + t2 + t3
+    where val = parse input
+          start = (0, 1)
+          goal = (h val - 1, w val - 2)
