@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Year2022.Day23
     ( part1
     , part2
@@ -53,15 +51,13 @@ checkCollisions [_, s, _, _] [_, _, w, e] [n, _, _, _] =
     , stepWest w .&. complement (stepEast e)
     , stepEast e .&. complement (stepWest w) ]
 
-zeroes :: [Integer]
-zeroes = [0, 0]
-
+step :: [Dir] -> MV.MVector s Integer -> ST s Bool
 step dirs grid = do
   moved <- newSTRef False
   frz <- V.freeze grid
   let froms = map (\[above, cur, below] -> checkCollisions above cur below) $ windows 3 $
               map (\[above, cur, below] -> propose dirs above cur below) $ windows 3 $
-              map (\row -> [stepEast row, row, stepWest row]) $ zeroes ++ V.toList frz ++ zeroes
+              map (\row -> [stepEast row, row, stepWest row]) $ [0, 0] ++ V.toList frz ++ [0, 0]
   forM_ (zip [0..] froms) $ \(i, [fromS, fromN, fromE, fromW]) ->
       let dests = fromN .|. fromS .|. fromW .|. fromE
       in when (dests /= 0) $ do
@@ -76,7 +72,7 @@ part1 :: String -> Int
 part1 input = runST $ do
   grid <- V.thaw $ makeGrid input
   go 10 dirs grid
-  (x0, x1, y0, y1, cnt) <- V.ifoldl' f (9999, 0, 9999, 0, 0) <$> V.freeze grid
+  (x0, x1, y0, y1, cnt) <- V.ifoldl' f (maxBound, minBound, maxBound, minBound, 0) <$> V.freeze grid
   pure $ (x1 - x0) * (y1 - y0) - cnt
     where dirs = cycle [North, South, West, East]
           go 0 _ _ = pure ()
@@ -95,7 +91,7 @@ part2 input = runST $ do
   grid <- V.thaw $ makeGrid input
   go 1 dirs grid
     where dirs = cycle [North, South, West, East]
-          go i ds grd = do
+          go !i ds grd = do
             b <- step ds grd
             if b then go (i+1) (tail ds) grd
             else pure i
