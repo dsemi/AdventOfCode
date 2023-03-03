@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Year2022.Day23
     ( part1
     , part2
@@ -8,11 +10,9 @@ import Control.Monad.ST
 import Data.Bits
 import Data.List (foldl')
 import Data.STRef
-import Data.Vector (Vector)
+import Data.Vector ((!), Vector)
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-
-import Utils (windows)
 
 type Grid = Vector Integer
 
@@ -31,41 +31,47 @@ makeGrid input = runST $ do
     MV.write res r $ foldl' (\acc (c, v) -> acc .|. (shiftL (if v == '#' then 1 else 0) c)) 0 $ zip [72..] line
   V.freeze res
 
-propose :: [Dir] -> [Integer] -> [Integer] -> [Integer] -> [Integer]
-propose dirs [nw, n, ne] [w, c, e] [sw, s, se] =
-    let proposals = V.replicate 4 c
-        passed = nw .|. n .|. ne .|. w .|. e .|. sw .|. s .|. se
-    in V.toList $ fst $ foldl' go (proposals, passed) $ take 4 dirs
-    where go (props, pass) d = let (i, dir) = case d of
-                                                North -> (0, complement (ne .|. n .|. nw))
-                                                South -> (1, complement (se .|. s .|. sw))
-                                                West -> (2, complement (nw .|. w .|. sw))
-                                                East -> (3, complement (ne .|. e .|. se))
-                               in ( props V.// [(i, props V.! i .&. dir .&. pass)]
-                                  , pass .&. complement dir )
+type Edge = (Integer, Integer, Integer)
 
-checkCollisions :: [Integer] -> [Integer] -> [Integer] -> [Integer]
-checkCollisions [_, s, _, _] [_, _, w, e] [n, _, _, _] =
-    [ n .&. complement s
-    , s .&. complement n
-    , stepWest w .&. complement (stepEast e)
-    , stepEast e .&. complement (stepWest w) ]
+propose :: [Dir] -> Edge -> Edge -> Edge -> Vector Integer
+propose dirs (nw, n, ne) (w, c, e) (sw, s, se) = runST $ do
+  proposals <- MV.replicate 4 c
+  let go passed d = do
+        let (i, dir) = case d of
+                         North -> (0, ne .|. n .|. nw)
+                         South -> (1, se .|. s .|. sw)
+                         West -> (2, nw .|. w .|. sw)
+                         East -> (3, ne .|. e .|. se)
+        MV.modify proposals (complement dir .&. passed .&.) i
+        pure $ passed .&. dir
+  foldM_ go (nw .|. n .|. ne .|. w .|. e .|. sw .|. s .|. se) $ take 4 dirs
+  V.freeze proposals
+
+checkCollisions :: Vector Integer -> Vector Integer -> Vector Integer -> (Integer, Integer, Integer, Integer)
+checkCollisions a b c = ( n .&. complement s
+                        , s .&. complement n
+                        , stepWest w .&. complement (stepEast e)
+                        , stepEast e .&. complement (stepWest w) )
+    where n = c ! 0
+          s = a ! 1
+          w = b ! 2
+          e = b ! 3
 
 step :: [Dir] -> MV.MVector s Integer -> ST s Bool
 step dirs grid = do
   moved <- newSTRef False
   frz <- V.freeze grid
-  let froms = map (\[above, cur, below] -> checkCollisions above cur below) $ windows 3 $
-              map (\[above, cur, below] -> propose dirs above cur below) $ windows 3 $
-              map (\row -> [stepEast row, row, stepWest row]) $ [0, 0] ++ V.toList frz ++ [0, 0]
-  forM_ (zip [0..] froms) $ \(i, [fromS, fromN, fromE, fromW]) ->
+  let expRows = map (\row -> (stepEast row, row, stepWest row)) $ [0, 0] ++ V.toList frz ++ [0, 0]
+      props = zipWith3 (propose dirs) expRows (tail expRows) (drop 2 expRows)
+      froms = zipWith3 checkCollisions props (tail props) (drop 2 props)
+  forM_ (zip [0..] froms) $ \(i, (fromS, fromN, fromE, fromW)) ->
       let dests = fromN .|. fromS .|. fromW .|. fromE
       in when (dests /= 0) $ do
            writeSTRef moved True
-           MV.modify grid (.&. complement fromS) (i + 1)
-           MV.modify grid (.&. complement fromN) (i - 1)
-           MV.modify grid (.&. (complement (stepWest fromW) .&. complement (stepEast fromE))) i
-           MV.modify grid (.|. dests) i
+           MV.modify grid (complement fromS .&.) (i + 1)
+           MV.modify grid (complement fromN .&.) (i - 1)
+           MV.modify grid (complement (stepWest fromW) .&. complement (stepEast fromE) .&.) i
+           MV.modify grid (dests .|.) i
   readSTRef moved
 
 part1 :: String -> Int

@@ -158,6 +158,3 @@ combinations xs n = [ y:ys | y:xs' <- tails xs
 chineseRemainder :: [(Integer, Integer)] -> Maybe Integer
 chineseRemainder (x:xs) = uncurry mod <$> foldM chinese x xs
 chineseRemainder [] = error "empty list"
-
-windows :: Int -> [a] -> [[a]]
-windows n xs = zipWith (flip const) (drop (n-1) xs) $ map (take n) $ tails xs
