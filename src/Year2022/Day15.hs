@@ -5,33 +5,34 @@ module Year2022.Day15
 
 import Control.Arrow
 import Control.Monad
-import Data.IntSet (IntSet, fromList, toList)
+import Data.IntSet (fromList, toList)
+import Data.Ix
+import Data.List (sortBy)
 import Data.List.Split
+import Data.Ord
 
 data Sensor = Sensor Int Int Int
 
-data Interval = Interval Int Int
+type Interval = (Int, Int)
 
-union :: Interval -> Interval -> Interval
-union (Interval lo0 hi0) (Interval lo1 hi1) = Interval (min lo0 lo1) (max hi0 hi1)
-
-len :: Interval -> Int
-len (Interval lo hi) = hi - lo
-
-parse :: String -> ([Sensor], IntSet)
-parse input = (sens, beaconXs)
-    where (sens, beacs) = unzip [ (Sensor sx sy dist, (bx, by)) | line <- lines input
-                                , let [sx, sy, bx, by] = map (read . last) $ chunksOf 2 $ splitOneOf "=,:" line
-                                , let dist = abs (sx - bx) + abs (sy - by) ]
-          beaconXs = fromList $ map fst $ filter ((== 2000000) . snd) beacs
+parse :: String -> ([Sensor], [Interval])
+parse input = unzip [ (Sensor sx sy dist, (bx, by)) | line <- lines input
+                    , let [sx, sy, bx, by] = map (read . last) $ chunksOf 2 $ splitOneOf "=,:" line
+                    , let dist = abs (sx - bx) + abs (sy - by) ]
 
 part1 :: String -> Int
-part1 input = len interval - length (filter (\b -> b >= lo && b < hi) $ toList bs)
-    where (sensors, bs) = parse input
-          interval@(Interval lo hi) = foldl1 union [ Interval (x - diff) (x + diff + 1)
-                                                   | (Sensor x y dist) <- sensors
-                                                   , let diff = dist - abs (y - 2000000)
-                                                   , diff >= 0 ]
+part1 input = sum (map rangeSize compressed) -
+              length (filter (\x -> any (`inRange` x) compressed) $ toList beaconXs)
+    where (sensors, beacons) = parse input
+          target = 2000000
+          beaconXs = fromList $ map fst $ filter ((== target) . snd) beacons
+          intervals = sortBy (comparing fst) [ (x - diff, x + diff) | (Sensor x y dist) <- sensors
+                                             , let diff = dist - abs (y - target), diff >= 0 ]
+          compressed = go (head intervals) (tail intervals)
+              where go int [] = [int]
+                    go int@(a0, b0) (int'@(a, b):ints)
+                        | a <= b + 1 = go (min a0 a, max b0 b) ints
+                        | otherwise = int : go int' ints
 
 data Line = Line Int Int Int Int
 
