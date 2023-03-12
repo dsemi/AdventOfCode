@@ -5,12 +5,10 @@ module Year2015.Day21
 
 import Utils
 
-import Data.Bool
-import Data.List (tails)
+import Data.List (foldl1')
 import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer (decimal)
-
 
 data Equip = Equip { cost :: Int, _damage :: Int, _armor :: Int}
 
@@ -57,14 +55,14 @@ parseBoss = fromJust . parseMaybe parser
             pure $ Person hp $ Equip 0 d a
 
 allEquipCombos :: [Person]
-allEquipCombos = [ Person 100 $ foldl1 add [weapon, armor', rings']
-                 | (weapon, armor') <- (,) <$> weapons <*> armors
-                 , combo <- combinations rings 2
-                 , rings' <- map (foldl1 add) . init $ tails combo ]
+allEquipCombos = [ Person 100 $ foldl1' add [weapon, armor', rings']
+                 | rings' <- Equip 0 0 0 : map (foldl1' add) (combinations rings 2)
+                 , weapon <- weapons
+                 , armor' <- armors ]
 
 isWinning :: Person -> Person -> Bool
 isWinning b p = ttd p b >= ttd b p
-    where ttd (Person hp (Equip _ _ a)) (Person _ (Equip _ d _)) = bool (q+1) q $ r == 0
+    where ttd (Person hp (Equip _ _ a)) (Person _ (Equip _ d _)) = if r == 0 then q else q + 1
               where (q, r) = hp `quotRem` max 1 (d - a)
 
 part1 :: String -> Int
