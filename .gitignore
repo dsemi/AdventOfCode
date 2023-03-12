@@ -3,6 +3,8 @@
 Advent.cabal
 
 dist
+dist-*
+newdist
 cabal-dev
 *.o
 *.hi
