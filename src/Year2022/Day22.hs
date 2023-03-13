@@ -16,28 +16,20 @@ import Data.Maybe
 import GHC.Generics (Generic)
 import Linear.V2
 import Linear.V3
+import Linear.Vector
 import Text.Megaparsec
 import Text.Megaparsec.Char.Lexer
-
-xAxis :: V3 Int
-xAxis = V3 1 0 0
-
-yAxis :: V3 Int
-yAxis = V3 0 1 0
-
-zAxis :: V3 Int
-zAxis = V3 0 0 1
 
 data Face = Top | Bottom | Back | Front | Starboard | Port deriving (Eq)
 
 axis :: Face -> V3 Int
 axis = \case
-       Top -> zAxis
-       Bottom -> -zAxis
-       Back -> yAxis
-       Front -> -yAxis
-       Starboard -> xAxis
-       Port -> -xAxis
+       Top -> unit _z
+       Bottom -> -unit _z
+       Back -> unit _y
+       Front -> -unit _y
+       Starboard -> unit _x
+       Port -> -unit _x
 
 fallOff :: Face -> V3 Int -> (Face, V3 Int)
 fallOff face dir = let dir' = case dir of
@@ -48,7 +40,7 @@ fallOff face dir = let dir' = case dir of
                                 V3 1 0 0 -> Starboard
                                 V3 (-1) 0 0 -> Port
                                 _ -> error "unreachable"
-                   in (dir', - axis face)
+                   in (dir', -axis face)
 
 rotate :: Face -> V3 Int -> V3 Int
 rotate face (V3 x y z) = case face of
@@ -106,26 +98,27 @@ data Edge = Edge { pos :: V2 Int
 
 cubeEdges :: Board -> HashMap Vec Vec
 cubeEdges (Board grid _ topLeft) =
-    edgeMap $ go True M.empty topLeft U (V3 0 (cubeSize-1) (cubeSize-1)) (V3 0 1 0) Top
+    edgeMap $ go M.empty topLeft U (V3 0 (cubeSize-1) (cubeSize-1)) (V3 0 1 0) Top
     where V2 rows cols = fmap (+1) snd $ bounds grid
           cubeSize = gcd rows cols
-          go first edges pos@(V2 r c) dir pos3d dir3d face
-              | not first && pos == topLeft = M.elems edges
-              | otherwise = let steps = [ (toEnum $ (fromEnum dir - 1) `mod` 4, rotate face dir3d)
-                                        , (dir, dir3d)
-                                        , (toEnum $ (fromEnum dir + 1) `mod` 4, rotate face (-dir3d))]
-                                (edgs, (d2, d3):_) = span (\(d, _) -> not $ valid grid (move d pos)) steps
-                                ((face', dir3d'), pos3d') =
-                                    if d2 == D && (r + 1) `mod` cubeSize == 0 ||
-                                       d2 == R && (c + 1) `mod` cubeSize == 0 ||
-                                       d2 == U && r `mod` cubeSize == 0 ||
-                                       d2 == L && c `mod` cubeSize == 0
-                                    then (fallOff face d3, pos3d)
-                                    else ((face, d3), pos3d + d3)
-                                edges' = foldr (\(d2', d3') -> M.insertWith (++) pos3d $
-                                                               [Edge pos d2' face (fst (fallOff face d3'))])
-                                         edges edgs
-                            in go False edges' (move d2 pos) d2 pos3d' dir3d' face'
+          go edges pos@(V2 r c) dir pos3d dir3d face =
+              let steps = [ (toEnum $ (fromEnum dir - 1) `mod` 4, rotate face dir3d)
+                          , (dir, dir3d)
+                          , (toEnum $ (fromEnum dir + 1) `mod` 4, rotate face (-dir3d))]
+                  (edgs, (d2, d3):_) = span (\(d, _) -> not $ valid grid (move d pos)) steps
+                  ((face', dir3d'), pos3d') =
+                      if d2 == D && (r + 1) `mod` cubeSize == 0 ||
+                         d2 == R && (c + 1) `mod` cubeSize == 0 ||
+                         d2 == U && r `mod` cubeSize == 0 ||
+                         d2 == L && c `mod` cubeSize == 0
+                      then (fallOff face d3, pos3d)
+                      else ((face, d3), pos3d + d3)
+                  edges' = foldr (\(d2', d3') -> M.insertWith (++) pos3d $
+                                                 [Edge pos d2' face (fst (fallOff face d3'))])
+                           edges edgs
+                  pos' = move d2 pos
+              in if pos' == topLeft then M.elems edges'
+                 else go edges' pos' d2 pos3d' dir3d' face'
           edgeMap :: [[Edge]] -> HashMap Vec Vec
           edgeMap edges = M.fromList $ concat
                           [ [ ((a.pos, a.dir), (b.pos, toEnum ((fromEnum (b.dir) + 2) `mod` 4)))
