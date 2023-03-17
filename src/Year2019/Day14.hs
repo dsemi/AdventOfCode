@@ -1,47 +1,47 @@
-{-# LANGUAGE FlexibleContexts, NumDecimals, TemplateHaskell #-}
+{-# LANGUAGE NoFieldSelectors, NumDecimals, OverloadedRecordDot #-}
 
 module Year2019.Day14
     ( part1
     , part2
     ) where
 
-import Control.Lens
-import Control.Monad.State
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
 import Data.Maybe
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Char.Lexer
 
+data Reactions = Reactions { graph :: HashMap String (Int, [(Int, String)])
+                           , topo :: [String]
+                           }
 
-data ReactState = ReactState { _surplus :: Map String Int
-                             , _ore :: Int
-                             }
-makeLenses ''ReactState
-
-parseReactions :: String -> [(String, (Int, [(Int, String)]))]
-parseReactions = map (fromJust . parseMaybe reaction) . lines
-    where chemical :: Parsec () String (Int, String)
+parseReactions :: String -> Reactions
+parseReactions input = Reactions graph (topo [] ["FUEL"] incoming)
+    where graph = M.fromList $ map (fromJust . parseMaybe reaction) $ lines input
+          chemical :: Parsec () String (Int, String)
           chemical = (,) <$> decimal <* spaceChar <*> some upperChar
           reaction :: Parsec () String (String, (Int, [(Int, String)]))
           reaction = do
             ins <- chemical `sepBy` string ", "
             (n, out) <- string " => " *> chemical
             pure (out, (n, ins))
+          incoming = M.fromListWith (+) $ concatMap (map ((,1) . snd) . snd) $ M.elems graph
+          topo sorted [] _ = sorted
+          topo sorted (x:xs) cnts = let srcs = snd $ M.findWithDefault (0, []) x graph
+                                        (cnts', xs') = foldr (\s (m, rest) ->
+                                                                  let m' = M.adjust pred s m
+                                                                  in (m', if m' M.! s == 0
+                                                                          then s : rest
+                                                                          else rest)) (cnts, xs)
+                                                       $ map snd srcs
+                                    in topo (if null srcs then sorted else x:sorted) xs' cnts'
 
-numOre :: [(String, (Int, [(Int, String)]))] -> Int -> Int
-numOre m = view ore . flip execState (ReactState M.empty 0) . go "FUEL"
-    where go k c = case lookup k m of
-                     Just (n, chems) -> do
-                       let (q, r) = c `quotRem` n
-                       forM_ chems $ \(a, chem) -> do
-                         let amt = a * (if r /= 0 then q + 1 else q)
-                         val <- M.findWithDefault 0 chem <$> use surplus
-                         surplus %= M.insert chem (max 0 (val - amt))
-                         when (amt > val) $ go chem (amt - val)
-                       when (r /= 0) $ surplus %= M.insertWith (+) k (n - r)
-                     Nothing -> ore += c
+numOre :: Reactions -> Int -> Int
+numOre reactions fuel = foldr go (M.singleton "FUEL" fuel) reactions.topo M.! "ORE"
+    where go e cnts = let (amt, srcs) = reactions.graph M.! e
+                          k = (cnts M.! e + amt - 1) `div` amt
+                      in foldr (\(n, m) -> M.insertWith (+) m (k * n)) cnts srcs
 
 part1 :: String -> Int
 part1 = flip numOre 1 . parseReactions
