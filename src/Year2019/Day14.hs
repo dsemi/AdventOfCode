@@ -28,20 +28,22 @@ parseReactions input = Reactions graph (topo [] ["FUEL"] incoming)
             pure (out, (n, ins))
           incoming = M.fromListWith (+) $ concatMap (map ((,1) . snd) . snd) $ M.elems graph
           topo sorted [] _ = sorted
-          topo sorted (x:xs) cnts = let srcs = snd $ M.findWithDefault (0, []) x graph
+          topo sorted (x:xs) cnts = let srcs = fromMaybe [] $ fmap snd $ graph M.!? x
                                         (cnts', xs') = foldr (\s (m, rest) ->
                                                                   let m' = M.adjust pred s m
                                                                   in (m', if m' M.! s == 0
                                                                           then s : rest
                                                                           else rest)) (cnts, xs)
                                                        $ map snd srcs
-                                    in topo (if null srcs then sorted else x:sorted) xs' cnts'
+                                    in topo (x:sorted) xs' cnts'
 
 numOre :: Reactions -> Int -> Int
 numOre reactions fuel = foldr go (M.singleton "FUEL" fuel) reactions.topo M.! "ORE"
-    where go e cnts = let (amt, srcs) = reactions.graph M.! e
-                          k = (cnts M.! e + amt - 1) `div` amt
-                      in foldr (\(n, m) -> M.insertWith (+) m (k * n)) cnts srcs
+    where go e cnts = case reactions.graph M.!? e of
+                        Nothing -> cnts
+                        Just (amt, srcs) -> let k = (cnts M.! e + amt - 1) `div` amt
+                                            in foldr (\(n, m) -> M.insertWith (+) m (k * n)) cnts srcs
+
 
 part1 :: String -> Int
 part1 = flip numOre 1 . parseReactions
