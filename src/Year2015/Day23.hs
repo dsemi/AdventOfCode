@@ -11,14 +11,14 @@ import Control.Monad.Extra
 import Control.Monad.Ref
 import Control.Monad.State
 import Control.Monad.ST
-import Data.Maybe
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import Data.STRef
-import Text.Megaparsec
-import Text.Megaparsec.Char (letterChar, space, string)
-import Text.Megaparsec.Char.Lexer (decimal, signed)
+import FlatParse.Basic
 
+import Utils
 
 data Instruction = Hlf Char
                  | Tpl Char
@@ -32,23 +32,24 @@ data Simulator = Simulator { _a :: Int
                            }
 makeLenses ''Simulator
 
-parseInstructions :: String -> [Instruction]
-parseInstructions = map (fromJust . parseMaybe parseInstruction) . lines
-    where parseInstruction :: Parsec () String Instruction
+parseInstructions :: ByteString -> [Instruction]
+parseInstructions = map parse . B.lines
+    where parse line = case runParser parseInstruction line of
+                         OK i _ -> i
+                         _ -> error "unreachable"
           parseInstruction = parseHlf
                              <|> parseTpl
                              <|> parseInc
                              <|> parseJmp
                              <|> parseJie
                              <|> parseJio
-          int = signed space $ fromInteger <$> decimal
-          parseHlf :: Parsec () String Instruction
-          parseHlf = string "hlf " >> Hlf <$> letterChar
-          parseTpl = string "tpl " >> Tpl <$> letterChar
-          parseInc = string "inc " >> Inc <$> letterChar
-          parseJmp = string "jmp " >> Jmp <$> int
-          parseJie = string "jie " >> Jie <$> letterChar <* string ", " <*> int
-          parseJio = string "jio " >> Jio <$> letterChar <* string ", " <*> int
+          letter = satisfy isLatinLetter
+          parseHlf = $(string "hlf ") >> Hlf <$> letter
+          parseTpl = $(string "tpl ") >> Tpl <$> letter
+          parseInc = $(string "inc ") >> Inc <$> letter
+          parseJmp = $(string "jmp ") >> Jmp <$> signedInt
+          parseJie = $(string "jie ") >> Jie <$> letter <* $(string ", ") <*> signedInt
+          parseJio = $(string "jio ") >> Jio <$> letter <* $(string ", ") <*> signedInt
 
 reg :: Functor f => Char -> (Int -> f Int) -> Simulator -> f Simulator
 reg 'a' = a
@@ -81,8 +82,8 @@ run a' instrs = runST $ do
   flip evalStateT (Simulator a' 0) $ flip runContT (const $ use b)
            $ callCC $ \k -> go labels k $ reverse $ zip [0..] instrs
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = run 0 . parseInstructions
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = run 1 . parseInstructions

@@ -6,15 +6,14 @@ module Year2015.Day22
     ) where
 
 import Control.Lens
+import Data.ByteString (ByteString)
 import Data.Graph.AStar
-import Data.Maybe
 import Data.Hashable
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
+import Data.Maybe
+import FlatParse.Basic
 import GHC.Generics (Generic)
-import Text.Megaparsec (Parsec, chunk, parseMaybe)
-import Text.Megaparsec.Char.Lexer (decimal)
-
 
 data GameState = Game { _pHealth :: Int
                       , _pMana :: Int
@@ -95,25 +94,25 @@ minCostToWin game = _spentMana . last <$> aStar neighbors dist (const 0) won (be
     where won g = g ^. bHealth <= 0
           dist g1 g2 = abs (g1 ^. spentMana - g2 ^. spentMana)
 
-parseBoss :: Bool -> String -> Maybe GameState
+parseBoss :: Bool -> ByteString -> Maybe GameState
 parseBoss hardMode input =
-    parseMaybe parser input <&> \(h, d) ->
-        Game { _pHealth = 50
-             , _pMana = 500
-             , _pArmor = 0
-             , _bHealth = h
-             , _bDamage = d
-             , _pTurn = True
-             , _hard = hardMode
-             , _effects = []
-             , _spentMana = 0
-             }
-    where int = fromInteger <$> decimal
-          parser :: Parsec () String (Int, Int)
-          parser = (,) <$> (chunk "Hit Points: " *> int) <*> (chunk "\n" *> chunk "Damage: " *> int)
+    case runParser parser input of
+      OK (h, d) _ -> Just $ Game { _pHealth = 50
+                                 , _pMana = 500
+                                 , _pArmor = 0
+                                 , _bHealth = h
+                                 , _bDamage = d
+                                 , _pTurn = True
+                                 , _hard = hardMode
+                                 , _effects = []
+                                 , _spentMana = 0
+                                 }
+      _ -> Nothing
+    where int = anyAsciiDecimalInt
+          parser = (,) <$> ($(string "Hit Points: ") *> int) <*> ($(string "\nDamage: ") *> int)
 
-part1 :: String -> Maybe Int
+part1 :: ByteString -> Maybe Int
 part1 = (>>= minCostToWin) . parseBoss False
 
-part2 :: String -> Maybe Int
+part2 :: ByteString -> Maybe Int
 part2 = (>>= minCostToWin) . parseBoss True

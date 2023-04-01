@@ -3,6 +3,7 @@ module Year2019.Day25
     , part2
     ) where
 
+import qualified Data.ByteString.Char8 as B
 import Data.Char
 
 import Utils
@@ -37,7 +38,7 @@ instrs = unlines
          , "south" ]
 
 part1 :: String -> Int
-part1 = last . findAllInts . map chr . runWithInput (map ord instrs) . parse
+part1 = last . findAllInts . B.pack . map chr . runWithInput (map ord instrs) . parse
 
 part2 :: String -> String
 part2 = const " "

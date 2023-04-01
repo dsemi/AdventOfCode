@@ -1,17 +1,17 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Year2015.Day16
     ( part1
     , part2
     ) where
 
-import Control.Monad
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.List (findIndex)
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char (digitChar, lowerChar, string)
-import Text.Megaparsec.Char.Lexer (decimal)
+import FlatParse.Basic
 
-
-tape :: [(String, (Int -> Bool))]
+tape :: [(ByteString, (Int -> Bool))]
 tape = [ ("children", (==3))
        , ("cats", (==7))
        , ("samoyeds", (==2))
@@ -24,24 +24,24 @@ tape = [ ("children", (==3))
        , ("perfumes", (==1))
        ]
 
-parseLines :: String -> [[(String, Int)]]
-parseLines = map (fromJust . parseMaybe parser) . lines
-    where int = fromInteger <$> decimal
-          parser :: Parsec () String [(String, Int)]
-          parser = do
-            void $ string "Sue " >> some digitChar >> string ": "
-            let counts = (,) <$> some lowerChar <* string ": " <*> int
-            counts `sepBy1` string ", "
+parseLines :: ByteString -> [[(ByteString, Int)]]
+parseLines = map parse . B.lines
+    where cnt = (,) <$> byteStringOf (some $ satisfy isLatinLetter) <* $(string ": ")
+                <*> anyAsciiDecimalInt <* optional_ $(string ", ")
+          parser = $(string "Sue ") >> skipSome (satisfy isDigit) >> $(string ": ") >> some cnt
+          parse line = case runParser parser line of
+                         OK c _ -> c
+                         _ -> error "unreachable"
 
 -- Sue 480: goldfish: 1, children: 9, vizslas: 3
-solve :: [(String, (Int -> Bool))] -> String -> Maybe Int
+solve :: [(ByteString, (Int -> Bool))] -> ByteString -> Maybe Int
 solve tape' = fmap succ . findIndex couldMatch . parseLines
     where couldMatch = all (uncurry (fromJust . (`lookup` tape')))
 
-part1 :: String -> Maybe Int
+part1 :: ByteString -> Maybe Int
 part1 = solve tape
 
-part2 :: String -> Maybe Int
+part2 :: ByteString -> Maybe Int
 part2 = solve $ [ ("cats", (>7))
                 , ("pomeranians", (<3))
                 , ("goldfish", (<5))

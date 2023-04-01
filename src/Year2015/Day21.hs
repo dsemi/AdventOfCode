@@ -5,10 +5,9 @@ module Year2015.Day21
 
 import Utils
 
+import Data.ByteString (ByteString)
 import Data.List (foldl1')
-import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char.Lexer (decimal)
+import FlatParse.Basic
 
 data Equip = Equip { cost :: Int, _damage :: Int, _armor :: Int}
 
@@ -44,14 +43,15 @@ rings = [ Equip 25 1 0 -- Damage +1
         , Equip 0 0 0 -- None
         ]
 
-parseBoss :: String -> Person
-parseBoss = fromJust . parseMaybe parser
-    where int = fromInteger <$> decimal
-          parser :: Parsec () String Person
+parseBoss :: ByteString -> Person
+parseBoss input = case runParser parser input of
+                    OK p _ -> p
+                    _ -> error "unreachable"
+    where int = anyAsciiDecimalInt
           parser = do
-            hp <- chunk "Hit Points: " *> int <* chunk "\n"
-            d <- chunk "Damage: " *> int <* chunk "\n"
-            a <- chunk "Armor: " *> int
+            hp <- $(string "Hit Points: ") *> int <* $(char '\n')
+            d <- $(string "Damage: ") *> int <* $(char '\n')
+            a <- $(string "Armor: ") *> int
             pure $ Person hp $ Equip 0 d a
 
 allEquipCombos :: [Person]
@@ -65,8 +65,8 @@ isWinning b p = ttd p b >= ttd b p
     where ttd (Person hp (Equip _ _ a)) (Person _ (Equip _ d _)) = if r == 0 then q else q + 1
               where (q, r) = hp `quotRem` max 1 (d - a)
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = minimum . map (cost . equip) . (`filter` allEquipCombos) . isWinning . parseBoss
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = maximum . map (cost . equip) . (`filter` allEquipCombos) . (not .) . isWinning . parseBoss

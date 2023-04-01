@@ -5,20 +5,17 @@ module Year2015.Day19
     , part2
     ) where
 
-import Utils
-
+import Data.Char
 import qualified Data.HashSet as S
 import Data.Maybe
-import Data.Char
 import Data.Text (Text)
 import qualified Data.Text as T
 import Text.Megaparsec
 
-
 parseMapping :: Text -> (Text, Text)
 parseMapping = fromJust . parseMaybe parser
     where parser :: Parsec () Text (Text, Text)
-          parser = (,) <$> someP isAlphaNum <* chunk " => " <*> someP isAlphaNum
+          parser = (,) <$> takeWhile1P Nothing isAlphaNum <* chunk " => " <*> takeWhile1P Nothing isAlphaNum
 
 singleReplacements :: Text -> Text -> Text -> [Text]
 singleReplacements src k v =

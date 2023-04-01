@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Year2016.Day11
     ( part1
     , part2
@@ -7,14 +9,13 @@ import Utils
 
 import Control.Comonad.Store (peeks)
 import Control.Lens (both, filtered, holesOf)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.List (delete, sort)
-import Data.List.Split (splitOn)
-import Text.Megaparsec (choice, noneOf, some)
-import Text.Megaparsec.Char (spaceChar, string)
-
+import FlatParse.Basic
 
 type Pair = (Int, Int) -- First number is floor of Microchip, second is floor of Generator
 type Floors = (Int, [Pair])
@@ -44,26 +45,26 @@ neighbors (e, flrs) =
       flrs' <- map sort $ allMoves e e' flrs
       pure (e', flrs')
 
-parseFloor :: Int -> String -> [(String, (Int, String))]
+parseFloor :: Int -> ByteString -> [(ByteString, (Int, ByteString))]
 parseFloor f =
     findAll $ do
-      name  <- spaceChar *> some (noneOf " ")
-      type' <- spaceChar *> choice (map string ["microchip", "generator"])
-      pure $ (head $ splitOn "-" name, (f, type'))
+      name  <- $(char ' ') *> byteStringOf (some $ satisfy (/= ' '))
+      type' <- $(char ' ') *> byteStringOf ($(string "microchip") <|> $(string "generator"))
+      pure $ (head $ B.split '-' name, (f, type'))
 
-makeFloors :: String -> Floors
-makeFloors = go [] . concatMap (uncurry parseFloor) . zip [0..] . lines
-    where go :: [Pair] -> [(String, (Int, String))] -> Floors
+makeFloors :: ByteString -> Floors
+makeFloors = go [] . concatMap (uncurry parseFloor) . zip [0..] . B.lines
+    where go :: [Pair] -> [(ByteString, (Int, ByteString))] -> Floors
           go fls []                 = (0, sort fls)
           go fls ((n, (f, t)) : xs) = let (Just x@(f', _)) = lookup n xs
                                       in if t == "microchip"
                                          then go ((f, f') : fls) $ delete (n, x) xs
                                          else go ((f', f) : fls) $ delete (n, x) xs
 
-part1 :: String -> Maybe Int
+part1 :: ByteString -> Maybe Int
 part1 = fmap length . aStar neighbors (\_ _ -> 1) heuristic isDone . makeFloors
 
-part2 :: String -> Maybe Int
+part2 :: ByteString -> Maybe Int
 part2 = fmap length . aStar neighbors (\_ _ -> 1) heuristic isDone . addExtras . makeFloors
     where addExtras (e, flrs) = ( e
                                 , (0, 0) : -- elerium

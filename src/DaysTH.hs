@@ -29,8 +29,8 @@ import Text.Megaparsec.Char
 
 
 class PType a where
-    un :: Text -> a
-    to :: a -> IO Text
+    un :: ByteString -> a
+    to :: a -> IO ByteString
 
 instance (Read a, Show a) => PType a where
     un = read . un
@@ -41,8 +41,8 @@ instance {-# OVERLAPPING #-} PType Cyclotomic where
     to = to . show
 
 instance {-# OVERLAPPING #-} (PType a) => PType [a] where
-    un = map un . T.lines
-    to = fmap T.unlines . mapM to
+    un = map un . B.lines
+    to = fmap B.unlines . mapM to
 
 instance {-# OVERLAPPING #-} (PType a, PType b) => PType (Either a b) where
     un = Right . un
@@ -54,17 +54,17 @@ instance {-# OVERLAPPING #-} (KnownNat n) => PType (Mod n) where
     un = fromInteger . un
     to = to . unMod
 
-instance {-# OVERLAPPING #-} PType Text where
+instance {-# OVERLAPPING #-} PType ByteString where
     un = id
     to = pure
 
-instance {-# OVERLAPPING #-} PType String where
-    un = T.unpack . un
-    to = to . T.pack
+instance {-# OVERLAPPING #-} PType Text where
+    un = T.pack . B.unpack . un
+    to = to . B.pack . T.unpack
 
-instance {-# OVERLAPPING #-} PType ByteString where
-    un = B.pack . T.unpack . un
-    to = to . T.pack . B.unpack
+instance {-# OVERLAPPING #-} PType String where
+    un = B.unpack . un
+    to = to . B.pack
 
 instance {-# OVERLAPPING #-} (PType a) => PType (IO a) where
     un = pure . un
@@ -80,21 +80,21 @@ instance {-# OVERLAPPING #-} (PType a) => PType (Maybe a) where
 
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a) where
     un = undefined
-    to (a, b) = T.intercalate "," <$> mapM to [a, b]
+    to (a, b) = B.intercalate "," <$> mapM to [a, b]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (V2 a) where
     un = undefined
-    to (V2 a b) = T.intercalate "," <$> mapM to [a, b]
+    to (V2 a b) = B.intercalate "," <$> mapM to [a, b]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (a, a, a) where
     un = undefined
-    to (a, b, c) = T.intercalate "," <$> mapM to [a, b, c]
+    to (a, b, c) = B.intercalate "," <$> mapM to [a, b, c]
 
 instance {-# OVERLAPPING #-} (PType a) => PType (V3 a) where
     un = undefined
-    to (V3 a b c) = T.intercalate "," <$> mapM to [a, b, c]
+    to (V3 a b c) = B.intercalate "," <$> mapM to [a, b, c]
 
-apply :: (PType a, PType b) => (a -> b) -> Text -> IO Text
+apply :: (PType a, PType b) => (a -> b) -> ByteString -> IO ByteString
 apply f = to . f . un
 
 buildProbs :: Q [Dec]
@@ -113,10 +113,10 @@ buildProbs = do
                 parser = (,) <$> (string "src/Year" *> some digitChar)
                          <*> (string "/Day" *> some digitChar <* string ".hs")
                 nm = varE . mkName
-  [d|problems :: [(Int, [(Int, (Text -> IO Text, Text -> IO Text))])]
+  [d|problems :: [(Int, [(Int, (ByteString -> IO ByteString, ByteString -> IO ByteString))])]
      problems = $(ListE . map toLit . M.toAscList . foldr accProbs M.empty <$> mapM parseP pFiles)
 
-     problem :: Int -> Int -> Maybe (Text -> IO Text, Text -> IO Text)
+     problem :: Int -> Int -> Maybe (ByteString -> IO ByteString, ByteString -> IO ByteString)
      problem year day = lookup year problems >>= lookup day|]
     where accProbs (year, prob) acc = M.insertWith (++) year [prob] acc
           toLit (a, b) = TupE [ Just (LitE (IntegerL a))

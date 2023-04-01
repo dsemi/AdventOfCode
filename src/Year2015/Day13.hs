@@ -1,36 +1,34 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, OverloadedStrings #-}
 
 module Year2015.Day13
     ( part1
     , part2
     ) where
 
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 import Data.List (permutations)
-import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char (alphaNumChar, char, spaceChar, string)
-import Text.Megaparsec.Char.Lexer (decimal)
-
+import FlatParse.Basic
 
 data Edge = Edge Char Char Int
 
-parseLine :: String -> Edge
-parseLine = fromJust . parseMaybe parser
-    where int = fromInteger <$> decimal
-          parseValue :: Parsec () String Int
+parseLine :: ByteString -> Edge
+parseLine line = case runParser parser line of
+                   OK edge _ -> edge
+                   _ -> error "unreachable"
+    where letter = byteStringOf (some $ satisfy (\x -> isDigit x || isLatinLetter x))
           parseValue = do
-            op <- (try (string "lose") <|> (string "gain")) <* spaceChar
-            i <- int
-            let op' = if op == "lose" then negate else id
-            return $ op' i
-          parser :: Parsec () String Edge
+            op <- ($(string "lose ") *> pure negate)
+                  <|> ($(string "gain ") *> pure id)
+            i <- anyAsciiDecimalInt
+            return $ op i
           parser = do
-            p1 <- some alphaNumChar <* string " would "
-            hap <- parseValue <* string " happiness units by sitting next to "
-            p2 <- some alphaNumChar <* char '.'
-            return $ Edge (head p1) (head p2) hap
+            p1 <- letter <* $(string " would ")
+            hap <- parseValue <* $(string " happiness units by sitting next to ")
+            p2 <- letter <* $(char '.')
+            return $ Edge (B.head p1) (B.head p2) hap
 
 
 constructMap :: [Edge] -> HashMap Char (HashMap Char Int)
@@ -49,8 +47,8 @@ maxHappinessOrdering p1 m = maximum $ map happinessDiff $ permutations $ M.keys 
                     go !c (a:b:xs) = go (c + hd a b) (b:xs)
           hd a b = m ! a ! b
 
-part1 :: String -> Int
-part1 = maxHappinessOrdering True . constructMap . map parseLine . lines
+part1 :: ByteString -> Int
+part1 = maxHappinessOrdering True . constructMap . map parseLine . B.lines
 
-part2 :: String -> Int
-part2 = maxHappinessOrdering False . constructMap . map parseLine . lines
+part2 :: ByteString -> Int
+part2 = maxHappinessOrdering False . constructMap . map parseLine . B.lines

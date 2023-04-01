@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, NamedFieldPuns, TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts, NamedFieldPuns, OverloadedStrings, TemplateHaskell #-}
 
 module Year2017.Day23
     ( part1
@@ -8,8 +8,11 @@ module Year2017.Day23
 import Control.Lens
 import Control.Monad.Writer
 import Data.Array.Unboxed
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Vector (Vector)
 import qualified Data.Vector as V
+import FlatParse.Basic
 import Math.NumberTheory.Primes.Testing
 
 import Utils
@@ -27,17 +30,19 @@ data Sim = Sim { _regs :: UArray Register Int
                } deriving (Show)
 makeLenses ''Sim
 
-parseInstrs :: String -> Sim
-parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLine . lines
+parseInstrs :: ByteString -> Sim
+parseInstrs = Sim (listArray ('a', 'h') $ repeat 0) 0 . V.fromList . map parseLine . B.lines
     where parseLine ln =
-              case words ln of
-                ["set",  head -> r, parse -> v] -> Set r v
-                ["sub",  head -> r, parse -> v] -> Sub r v
-                ["mul",  head -> r, parse -> v] -> Mul r v
+              case B.words ln of
+                ["set",  B.head -> r, parse -> v] -> Set r v
+                ["sub",  B.head -> r, parse -> v] -> Sub r v
+                ["mul",  B.head -> r, parse -> v] -> Mul r v
                 ["jnz", parse -> a, parse -> b] -> Jnz a b
                 _ -> error "Invalid instruction"
-          parse :: String -> Value
-          parse x = maybe (Left $ head x) Right $ maybeRead x
+          parse :: ByteString -> Value
+          parse x = case runParser signedInt x of
+                      OK n _ -> Right n
+                      _ -> Left $ B.head x
 
 step :: (MonadWriter [String] m) => Sim -> m (Maybe Sim)
 step sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
@@ -54,7 +59,7 @@ run :: (Monad m) => (Sim -> m (Maybe Sim)) -> Sim -> m Sim
 run next = go
     where go sim = next sim >>= maybe (pure sim) go
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = length . filter (=="mul") . execWriter . run step . parseInstrs
 
 data PrimalityCheck = PCheck { toCheck :: Register
@@ -97,6 +102,6 @@ step' sim =
           in pure $ Just sim'
       Nothing -> step sim
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = (^?! (regs . ix 'h')) . fst . runWriter
         . run step' . ((regs . ix 'a') .~ 1) . parseInstrs

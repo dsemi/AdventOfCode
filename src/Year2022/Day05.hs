@@ -3,6 +3,7 @@ module Year2022.Day05
     , part2
     ) where
 
+import qualified Data.ByteString.Char8 as B
 import Data.Char
 import Data.List (foldl')
 import Data.List.Split
@@ -23,7 +24,7 @@ moveStacks inOrder input = map head . M.elems . foldl' move (makeStacks crates) 
           go [] = []
           go (x:xs) = (if isUpper x then Just x else Nothing) : go (drop 3 xs)
           move stacks instr = M.adjust (toMove ++) b $ M.insert a newStack stacks
-              where [n, a, b] = findAllInts instr
+              where [n, a, b] = findAllInts $ B.pack instr
                     (tm, newStack) = splitAt n $ stacks ! a
                     toMove = if inOrder then tm else reverse tm
 

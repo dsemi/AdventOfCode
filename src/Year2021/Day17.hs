@@ -3,12 +3,13 @@ module Year2021.Day17
     , part2
     ) where
 
-import Linear.V2
+import Data.ByteString (ByteString)
 import Data.Ix
+import Linear.V2
 
 import Utils
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 input = let [_, _, y0, _] = findAllInts input
               in y0 * (y0 + 1) `div` 2
 
@@ -19,7 +20,7 @@ hitsTarget lo@(V2 _ y0) hi@(V2 x1 _) =
 
 -- First triangular number > x0 is lower bound.
 -- n^2 + n - 2x0 = 0
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = let [x0, x1, y0, y1] = findAllInts input
                   mx = ceiling $ sqrt (1.0 + 8.0 * fromIntegral x0) / 2.0 - 0.5
               in length [ () | x <- [mx .. x1]

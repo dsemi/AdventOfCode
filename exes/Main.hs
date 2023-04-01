@@ -8,12 +8,12 @@ import Utils (getProblemInput, submitAnswer)
 import Control.DeepSeq
 import Control.Monad.Extra
 import Control.Monad.IO.Class
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.List (maximumBy)
 import Data.List.Split
 import Data.Ord
-import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import System.Console.ANSI
 import System.Clock
 import System.Environment
@@ -52,24 +52,25 @@ timeFunc f = do
   let elapsedTime = fromIntegral (end - start) / 10^9
   pure (result, elapsedTime)
 
-printOutput :: Int -> Text -> Double -> IO ()
+printOutput :: Int -> ByteString -> Double -> IO ()
 printOutput part output t = do
   putStr $ printf "Part %d: " part
-  let lns = T.lines output
+  let lns = B.lines output
       len = length lns
   forM_ (zip [0..] lns) $ \(i, ln) -> do
     if i == len - 1
     then if i == 0
-         then printf "%54s  Elapsed time %s seconds\n" ln (colorizeTime t)
-         else printf "%-62s  Elapsed time %s seconds\n" ln (colorizeTime t)
-    else T.putStrLn ln
+         then printf "%54s  Elapsed time %s seconds\n" (T.pack $ B.unpack ln) (colorizeTime t)
+         else printf "%-62s  Elapsed time %s seconds\n" (T.pack $ B.unpack ln) (colorizeTime t)
+    else B.putStrLn ln
 
-maybeRun :: Int -> Int -> IO (Maybe (Double, Text, Text))
+maybeRun :: Int -> Int -> IO (Maybe (Double, ByteString, ByteString))
 maybeRun y n = maybe notfound run $ problem y n
     where notfound = do
             putStrLn $ show y ++ " Day " ++ show n ++ " not implemented"
             pure Nothing
-          run :: (Text -> IO Text, Text -> IO Text) -> IO (Maybe (Double, Text, Text))
+          run :: (ByteString -> IO ByteString, ByteString -> IO ByteString)
+              -> IO (Maybe (Double, ByteString, ByteString))
           run (p1, p2) = do
             input <- getProblemInput y n True
             putStrLn $ "Day " ++ show n
@@ -86,7 +87,7 @@ main = do
   case args of
     Submit{..} -> do
      maybeRun year day >>= \case
-              Just (_, a1, a2) -> if T.null a2 || a2 == T.pack "0"
+              Just (_, a1, a2) -> if B.null a2 || a2 == B.pack "0"
                                   then submitAnswer year day 1 a1
                                   else submitAnswer year day 2 a2
               Nothing -> error "Day not implemented"

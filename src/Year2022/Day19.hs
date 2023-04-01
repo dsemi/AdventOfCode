@@ -4,6 +4,8 @@ module Year2022.Day19
     ) where
 
 import Data.Bits
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Int
 import Data.List (foldl', foldl1')
 import Data.Vector.Unboxed (Vector, (!))
@@ -14,8 +16,8 @@ import Utils
 
 data Blueprint = Blueprint Int32 [Vector Int32] (Vector Int32)
 
-blueprints :: String -> [Blueprint]
-blueprints = map bp . lines
+blueprints :: ByteString -> [Blueprint]
+blueprints = map bp . B.lines
     where bp line =
               case findAllInts line of
                 [num, oreBotOre, clayBotOre, obsBotOre, obsBotClay, geodeBotOre, geodeBotObs] ->
@@ -51,8 +53,8 @@ sim time (Blueprint _ costs maxCosts) = dfs 0 time (V.fromList [0, 0, 0, 0]) (V.
                               , bns .|. shiftL 1 i )
                         | otherwise = (res, bns)
 
-part1 :: String -> Int32
+part1 :: ByteString -> Int32
 part1 = sum . map (\b@(Blueprint n _ _) -> n * sim 24 b) . blueprints
 
-part2 :: String -> Int32
+part2 :: ByteString -> Int32
 part2 = product . map (sim 32) . take 3 . blueprints

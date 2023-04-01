@@ -2,11 +2,12 @@
 
 module Utils where
 
+import Conduit
 import Control.DeepSeq
 import Control.Monad
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import Conduit
-import Data.Either (fromRight)
+import Data.Char
 import Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashPSQ as Q
@@ -14,13 +15,12 @@ import Data.IORef
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as I
 import Data.List (foldl', tails)
-import Data.Maybe
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.String.Interpolate
 import Data.Text (Text)
 import qualified Data.Text as T
-import qualified Data.Text.IO as TIO
+import FlatParse.Basic
 import GHC.Conc
 import Linear.V2
 import Math.NumberTheory.Moduli.Chinese
@@ -30,8 +30,6 @@ import System.Directory
 import System.Environment
 import System.FilePath.Posix
 import System.IO.Unsafe
-import Text.Megaparsec
-import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 addCookie :: Request -> IO Request
 addCookie req = do
@@ -43,9 +41,9 @@ downloadFn url outFile = do
   req <- parseRequestThrow url >>= addCookie
   runResourceT $ runConduit $ httpSource req getResponseBody .| sinkFileCautious outFile
 
-submitAnswer :: Int -> Int -> Int -> Text -> IO ()
+submitAnswer :: Int -> Int -> Int -> ByteString -> IO ()
 submitAnswer year day part ans = do
-  let body = [("level", B.pack (show part)), ("answer", B.pack (T.unpack ans))]
+  let body = [("level", B.pack (show part)), ("answer", ans)]
   req <- setRequestBodyURLEncoded body <$> parseRequestThrow url >>= addCookie
   runResourceT $ runConduit $ httpSource req getResponseBody .| stdoutC
     where url = [i|https://adventofcode.com/#{year}/day/#{day}/answer|]
@@ -56,7 +54,7 @@ prevRef = unsafePerformIO $ getTime Monotonic >>= (\t -> newIORef $ toNanoSecs t
 rateUs :: Integer
 rateUs = 5_000_000
 
-getProblemInput :: Int -> Int -> Bool -> IO Text
+getProblemInput :: Int -> Int -> Bool -> IO ByteString
 getProblemInput year day download = do
   exists <- doesFileExist inputFile
   when (not exists && download) $ do
@@ -68,19 +66,31 @@ getProblemInput year day download = do
     getTime Monotonic >>= writeIORef prevRef . (`div` 1000) . toNanoSecs
     createDirectoryIfMissing True $ takeDirectory inputFile
     downloadFn url inputFile
-  T.stripEnd <$> TIO.readFile inputFile
+  B.dropWhileEnd isSpace <$> B.readFile inputFile
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]
 
-findAllInts :: (Num a) => String -> [a]
-findAllInts = findAll (signed (pure ()) decimal)
+searchAll :: Parser () a -> Parser () a
+searchAll p = let parser = try p <|> (skipAnyChar *> parser) in parser
 
-searchAll :: (Stream s) => Parsec () s a -> Parsec () s a
-searchAll p = let parser = try p <|> (anySingle *> parser) in parser
-
-findAll :: (Stream s) => Parsec () s a -> s -> [a]
-findAll p = fromRight [] . parse parser ""
+findAll :: Parser () a -> ByteString -> [a]
+findAll p inp = case runParser parser inp of
+                   OK as _ -> as
+                   _ -> []
     where parser = many $ try $ searchAll p
+
+findAllInts :: (Num a) => ByteString -> [a]
+findAllInts = findAll (fromInteger <$> signedInteger)
+
+signedInt :: Parser () Int
+signedInt = withOption (satisfy (\c -> c == '+' || c == '-'))
+            (\x -> if x == '-' then negate <$> anyAsciiDecimalInt else anyAsciiDecimalInt)
+            anyAsciiDecimalInt
+
+signedInteger :: Parser () Integer
+signedInteger = withOption (satisfy (\c -> c == '+' || c == '-'))
+                (\x -> if x == '-' then negate <$> anyAsciiDecimalInteger else anyAsciiDecimalInteger)
+                anyAsciiDecimalInteger
 
 replace1 :: Text -> Text -> Text -> Text
 replace1 needle rep haystack =
@@ -140,15 +150,6 @@ move 'v' = V2 0 1
 move '<' = V2 (-1) 0
 move '>' = V2 1 0
 move  _  = error "Invalid direction"
-
-maybeRead :: (Read a) => String -> Maybe a
-maybeRead = fmap fst . listToMaybe . reads
-
-manyP :: (MonadParsec e s m) => (Token s -> Bool) -> m (Tokens s)
-manyP = takeWhileP Nothing
-
-someP :: (MonadParsec e s m) => (Token s -> Bool) -> m (Tokens s)
-someP = takeWhile1P Nothing
 
 combinations :: [a] -> Int -> [[a]]
 combinations  _ 0 = [[]]

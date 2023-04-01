@@ -12,6 +12,13 @@ packages:
   original:
     hackage: astar-0.3.0.0
 - completed:
+    hackage: flatparse-0.4.0.2@sha256:75ddfb43ce2c4f889b2a9eae70af5060bb52bccda033db211caed101b71c81c6,4537
+    pantry-tree:
+      sha256: 4e8094a377c80ed17c603ae3312f10a2de282047c2ebb792836af254afaad87f
+      size: 2341
+  original:
+    hackage: flatparse-0.4.0.2
+- completed:
     hackage: memoize-1.1.1@sha256:d902fc631020d04689aa66e804e13480c0b5ad01a29c12d31a22e2bdb767aba4,2007
     pantry-tree:
       sha256: e31720ad0cdc3a6e7e7f89dd28e39041e737532a9b68ff14cc0038aba451830b

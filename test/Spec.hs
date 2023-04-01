@@ -11,14 +11,15 @@ import Control.Monad
 import Data.Aeson
 import Data.Aeson.Key
 import Data.Aeson.Lens
+import Data.ByteString (ByteString)
 import Data.String.Interpolate
 import Days (problems)
-import Data.Text (Text)
+import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as T
 import Test.Hspec
 import Text.Toml
 
-validatePart :: Int -> Int -> Int -> Text -> (Text -> IO Text) -> Text -> Spec
+validatePart :: Int -> Int -> Int -> ByteString -> (ByteString -> IO ByteString) -> ByteString -> Spec
 validatePart year day p expected part input =
     describe [i|#{year} Day #{day} part #{p}|] $
              it "returns the correct answer for the problem input" $
@@ -27,15 +28,15 @@ validatePart year day p expected part input =
 tkey :: (Show a) => a -> Key
 tkey = fromString . show
 
-validateDay :: Value -> Int -> Int -> (Text -> IO Text, Text -> IO Text) -> Spec
+validateDay :: Value -> Int -> Int -> (ByteString -> IO ByteString, ByteString -> IO ByteString) -> Spec
 validateDay solns year day (part1, part2) = do
   let expect y d = (,) <$> (solns ^? key (tkey y) . key (tkey d) . key "part1" . _String) <*>
                      (solns ^? key (tkey y) . key (tkey d) . key "part2" . _String)
   case expect year day of
     Just (expected1, expected2) -> do
       input <- runIO $ getProblemInput year day False
-      validatePart year day 1 expected1 part1 input
-      validatePart year day 2 expected2 part2 input
+      validatePart year day 1 (T.encodeUtf8 expected1) part1 input
+      validatePart year day 2 (T.encodeUtf8 expected2) part2 input
     _ -> pure ()
 
 readSolns :: IO Value

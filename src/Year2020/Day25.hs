@@ -5,14 +5,14 @@ module Year2020.Day25
     , part2
     ) where
 
-import Utils
-
+import Data.ByteString (ByteString)
 import Data.Mod
 import Math.NumberTheory.Moduli.Multiplicative
 import Math.NumberTheory.Moduli.Singleton
 
+import Utils
 
-part1 :: String -> Maybe (Mod 20201227)
+part1 :: ByteString -> Maybe (Mod 20201227)
 part1 input = fmap (door ^%) $ do
   cg <- cyclicGroup
   discreteLogarithm cg <$> isPrimitiveRoot cg 7 <*> isMultElement card
