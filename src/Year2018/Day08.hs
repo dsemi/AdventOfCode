@@ -3,26 +3,28 @@ module Year2018.Day08
     , part2
     ) where
 
+import Control.Monad
+import Data.ByteString (ByteString)
+import Data.Char
 import Data.List.Extra ((!?))
-import Data.Maybe (fromJust, mapMaybe)
+import Data.Maybe (mapMaybe)
 import Data.Tree
-import Text.Megaparsec
-import Text.Megaparsec.Char (space)
-import Text.Megaparsec.Char.Lexer (decimal)
+import FlatParse.Basic
 
-
-parseNodes :: String -> Tree [Int]
-parseNodes = fromJust . parseMaybe parseNode
-    where parseNode :: Parsec () String (Tree [Int])
+parseNodes :: ByteString -> Tree [Int]
+parseNodes input = case runParser parseNode input of
+                     OK res _ -> res
+                     _ -> error "unreachable"
+    where space = optional_ $ satisfy isSpace
           parseNode = do
-            n <- space *> decimal
-            m <- space *> decimal
-            flip Node <$> count n parseNode <*> count m (space *> decimal)
+            n <- space *> anyAsciiDecimalInt
+            m <- space *> anyAsciiDecimalInt
+            flip Node <$> replicateM n parseNode <*> replicateM m (space *> anyAsciiDecimalInt)
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = sum . fmap sum . parseNodes
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = go . parseNodes
     where go :: Tree [Int] -> Int
           go (Node metadata []) = sum metadata

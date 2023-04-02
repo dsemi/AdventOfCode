@@ -7,32 +7,35 @@ module Year2017.Day20
 
 import Control.Monad (void)
 import qualified Data.HashSet as S
-import Data.Maybe (fromJust)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Ord (comparing)
 import Data.List (foldl', minimumBy)
+import FlatParse.Basic
 import Linear.V3
-import Text.Megaparsec
-import Text.Megaparsec.Char (char, letterChar, string)
-import Text.Megaparsec.Char.Lexer (decimal, signed)
+
+import Utils
 
 data Particle = Particle { position :: V3 Int
                          , velocity :: V3 Int
                          , acceleration :: V3 Int
                          }
 
-parseParticles :: String -> [Particle]
-parseParticles = map (fromJust . parseMaybe parseParticle) . lines
-    where int = signed (pure ()) decimal
-          parseVector = do
-            void $ letterChar
-            [x, y, z] <- between (string "=<") (char '>') $ int `sepBy` char ','
-            pure $ V3 x y z
-          parseParticle :: Parsec () String Particle
-          parseParticle = do
-            [p, v, a] <- parseVector `sepBy` string ", "
-            pure $ Particle p v a
+parseParticles :: ByteString -> [Particle]
+parseParticles = map parse . B.lines
+    where parseVector = do
+            void $ anyAsciiChar >> $(string "=<")
+            V3 <$> signedInt <* $(char ',') <*>
+               signedInt <* $(char ',') <*>
+               signedInt <* $(char '>')
+          parseParticle = Particle <$> parseVector <* $(string ", ") <*>
+                          parseVector <* $(string ", ") <*>
+                          parseVector
+          parse line = case runParser parseParticle line of
+                         OK res _ -> res
+                         _ -> error "unreachable"
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = fst . minimumBy (comparing (sum . abs . acceleration . snd)) . zip [0..] . parseParticles
 
 step :: Particle -> Particle
@@ -47,5 +50,5 @@ removeCollisions particles = filter (not . (`S.member` collided) . position) par
               | S.member p seen = (seen, S.insert p toRemove)
               | otherwise = (S.insert p seen, toRemove)
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = length . (!! 99) . iterate (removeCollisions . map step) . parseParticles

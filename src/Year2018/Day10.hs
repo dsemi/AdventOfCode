@@ -4,25 +4,29 @@ module Year2018.Day10
     ) where
 
 import Control.Lens (view)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Data.Char (isSpace)
 import Data.Maybe
+import FlatParse.Basic
 import Linear.V2
-import Text.Megaparsec (Parsec, between, optional, parseMaybe)
-import Text.Megaparsec.Char (char, space, string)
-import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 import Ocr
+import Utils
 
 data Obj = Obj { pos :: V2 Int
                , vel :: V2 Int
                } deriving (Show)
 
-parse :: String -> [Obj]
-parse = mapMaybe (parseMaybe parser) . lines
-    where parser :: Parsec () String Obj
-          parser = Obj <$> (string "position=" *> point <* space)
-                   <*> (string "velocity=" *> point)
-          point = between (char '<') (char '>') (V2 <$> int <* string ", " <*> int)
-          int = optional space >> signed (pure ()) decimal
+parse :: ByteString -> [Obj]
+parse = map parseLine . B.lines
+    where parser = Obj <$> ($(string "position=") *> point <* $(char ' '))
+                   <*> ($(string "velocity=") *> point)
+          point = $(char '<') *> (V2 <$> int <* $(string ", ") <*> int) <* $(char '>')
+          int = skipMany (satisfy isSpace) >> signedInt
+          parseLine line = case runParser parser line of
+                             OK res _ -> res
+                             _ -> error "unreachable"
 
 showObjs :: [Obj] -> String
 showObjs objs = '\n' : init (unlines (map (\y -> map (f . (\x -> V2 x y)) [x0..x1]) [y0..y1]))
@@ -42,8 +46,8 @@ findMessage = go 0
               | otherwise = go (c+1) $ map (\(Obj p v) -> Obj (p + v) v) objs
               where ((_, y0), (_, y1)) = boundingBox objs
 
-part1 :: String -> String
+part1 :: ByteString -> String
 part1 = parseLetters . showObjs . snd . findMessage . parse
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = fst . findMessage . parse

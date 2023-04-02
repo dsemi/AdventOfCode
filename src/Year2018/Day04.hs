@@ -5,26 +5,28 @@ module Year2018.Day04
     , part2
     ) where
 
-import Data.Either
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Data.Char
 import Data.List (maximumBy, sort)
 import Data.IntMap.Strict (IntMap, (!))
 import qualified Data.IntMap.Strict as M
 import Data.Ord
-import Text.Megaparsec (Parsec, optional, parse)
-import Text.Megaparsec.Char (char, space, string)
-import Text.Megaparsec.Char.Lexer (decimal)
-
+import FlatParse.Basic
 
 data Record = GuardChange { guardNum :: Int }
             | SleepToggle { minute :: Int }
 
-parseRecords :: String -> [Record]
-parseRecords = rights . map (parse parser "") . sort . lines
-    where parser :: Parsec () String Record
+parseRecords :: ByteString -> [Record]
+parseRecords = map parse . sort . B.lines
+    where int = anyAsciiDecimalInt
           parser = do
-            m <- char '[' *> decimal *> char '-' *> decimal *> char '-' *> decimal *>
-                 space *> decimal *> char ':' *> decimal <* char ']'
-            maybe (SleepToggle m) GuardChange <$> (space >> optional (string "Guard #" *> decimal))
+            m <- $(char '[') *> int *> $(char '-') *> int *> $(char '-') *> int *>
+                 skipSatisfy isSpace *> int *> $(char ':') *> int <* $(char ']')
+            maybe (SleepToggle m) GuardChange <$> (skipSatisfy isSpace >> optional ($(string "Guard #") *> int))
+          parse line = case runParser parser line of
+                         OK res _ -> res
+                         _ -> error "unreachable"
 
 guardSleepFreqs :: [Record] -> IntMap [Int]
 guardSleepFreqs = M.fromListWith (zipWith (+)) . projectShifts
@@ -36,13 +38,13 @@ guardSleepFreqs = M.fromListWith (zipWith (+)) . projectShifts
           hourStates rs = concat $ zipWith replicate (zipWith subtract xs $ tail xs) $ cycle [0, 1]
               where xs = 0 : map minute rs ++ [60]
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 input = let sleepFreqs = guardSleepFreqs $ parseRecords input
                   n = fst $ maximumBy (comparing snd) $ M.toList $ M.map sum sleepFreqs
                   m = fst $ maximumBy (comparing snd) $ zip [0..] $ sleepFreqs ! n
               in n * m
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = let sleepFreqs = guardSleepFreqs $ parseRecords input
                   (n, (m, _)) = maximumBy (comparing (snd . snd)) $ M.toList
                                 $ M.map (maximumBy (comparing snd) . zip [0..]) sleepFreqs

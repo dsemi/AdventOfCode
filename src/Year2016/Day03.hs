@@ -3,28 +3,28 @@ module Year2016.Day03
     , part2
     ) where
 
-import Data.Maybe (mapMaybe)
-import Text.Megaparsec
-import Text.Megaparsec.Char (space)
-import Text.Megaparsec.Char.Lexer (decimal)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Data.Char
+import FlatParse.Basic
 
+type Triangle = (Int, Int, Int)
 
-type Triangle = (Integer, Integer, Integer)
-
-parseTriangles :: String -> [Triangle]
-parseTriangles = mapMaybe (parseMaybe parseNums) . lines
-    where parseNums :: Parsec () String Triangle
-          parseNums = do
-            n1 <- space *> decimal
-            n2 <- space *> decimal
-            n3 <- space *> decimal
-            return (n1, n2, n3)
+parseTriangles :: ByteString -> [Triangle]
+parseTriangles = map (\line -> case runParser parseNums line of
+                                 OK res _ -> res
+                                 _ -> error "unreachable") . B.lines
+    where parseNums = do
+            n1 <- skipSome (satisfy isSpace) *> anyAsciiDecimalInt
+            n2 <- skipSome (satisfy isSpace) *> anyAsciiDecimalInt
+            n3 <- skipSome (satisfy isSpace) *> anyAsciiDecimalInt
+            pure (n1, n2, n3)
 
 numValidTriangles :: [Triangle] -> Int
 numValidTriangles = length . filter isValidTriangle
     where isValidTriangle (a, b, c) = a + b > c && a + c > b && b + c > a
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = numValidTriangles . parseTriangles
 
 byCols :: [Triangle] -> [Triangle]
@@ -32,5 +32,5 @@ byCols ((a, b, c):(d, e, f):(g, h, i):rest) = (a, d, g) : (b, e, h) : (c, f, i) 
 byCols [] = []
 byCols _ = error "Bad state"
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = numValidTriangles . byCols . parseTriangles

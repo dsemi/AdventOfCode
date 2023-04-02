@@ -3,6 +3,7 @@
 module Utils where
 
 import Conduit
+import Control.Applicative (liftA2)
 import Control.DeepSeq
 import Control.Monad
 import Data.ByteString (ByteString)
@@ -70,10 +71,10 @@ getProblemInput year day download = do
     where inputFile = [i|inputs/#{year}/input#{day}.txt|]
           url = [i|https://adventofcode.com/#{year}/day/#{day}/input|]
 
-searchAll :: Parser () a -> Parser () a
+searchAll :: Parser e a -> Parser e a
 searchAll p = let parser = try p <|> (skipAnyChar *> parser) in parser
 
-findAll :: Parser () a -> ByteString -> [a]
+findAll :: Parser e a -> ByteString -> [a]
 findAll p inp = case runParser parser inp of
                    OK as _ -> as
                    _ -> []
@@ -163,3 +164,10 @@ chineseRemainder [] = error "empty list"
 splitOn :: ByteString -> ByteString -> [ByteString]
 splitOn delim src = h : if B.null t then [] else splitOn delim (B.drop (B.length delim) t)
     where (h, t) = B.breakSubstring delim src
+
+manyTill :: Parser e a -> Parser e b -> Parser e [a]
+manyTill p o = scan
+    where scan = branch o (pure []) (liftA2 (:) p scan)
+
+someTill :: Parser e a -> Parser e b -> Parser e [a]
+someTill p o = liftA2 (:) p $ manyTill p o

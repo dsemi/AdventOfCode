@@ -5,17 +5,16 @@ module Year2016.Day22
 
 import Control.Lens (view)
 import Data.Array
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Data.Char
 import Data.Graph.AStar
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
-import Data.Maybe (mapMaybe)
 import Data.List (tails)
 import Data.List.Split (splitOn)
+import FlatParse.Basic
 import Linear.V2
-import Text.Megaparsec
-import Text.Megaparsec.Char (char, space)
-import Text.Megaparsec.Char.Lexer (decimal)
-
 
 type Coord = V2 Int
 data Node = Node { coords :: Coord
@@ -23,16 +22,20 @@ data Node = Node { coords :: Coord
                  , avail :: Int
                  } deriving (Eq, Show)
 
-parseNode :: Parsec () String Node
-parseNode = do
-  p <- some $ noneOf " "
-  let [_,'x':x,'y':y] = splitOn "-" p
-  _ <- space *> int <* char 'T'
-  u <- space *> int <* char 'T'
-  a <- space *> int <* char 'T'
-  _ <- space *> int <* char '%'
-  return $ Node (V2 (read x) (read y)) u a
-    where int = fromInteger <$> decimal
+parse :: ByteString -> Node
+parse line = case runParser parseNode line of
+               OK res _ -> res
+               _ -> error "unreachable"
+    where parseNode = do
+            p <- some $ satisfy (not . isSpace)
+            let [_,'x':x,'y':y] = splitOn "-" p
+            _ <- space *> int <* $(char 'T')
+            u <- space *> int <* $(char 'T')
+            a <- space *> int <* $(char 'T')
+            _ <- space *> int <* $(char '%')
+            pure $ Node (V2 (read x) (read y)) u a
+          int = anyAsciiDecimalInt
+          space = skipMany $ satisfy isSpace
 
 viablePairs :: [Node] -> [(Node, Node)]
 viablePairs nodes = [ (a, b) | (a:ns) <- init $ tails nodes
@@ -40,8 +43,8 @@ viablePairs nodes = [ (a, b) | (a:ns) <- init $ tails nodes
                     , used a > 0 && used a < avail b || used b > 0 && used b < avail a
                     ]
 
-part1 :: String -> Int
-part1 = length . viablePairs . mapMaybe (parseMaybe parseNode) . drop 2 . lines
+part1 :: ByteString -> Int
+part1 = length . viablePairs . map parse . drop 2 . B.lines
 
 type Grid = Array Coord Node
 
@@ -64,8 +67,8 @@ neighbors g (o, t) = S.fromList [ (o', if o' == t then o else t)
                                 ]
     where isBlocked c = used (g ! c) > 100
 
-part2 :: String -> Maybe Int
-part2 s = let g = buildGrid . mapMaybe (parseMaybe parseNode) . drop 2 $ lines s
+part2 :: ByteString -> Maybe Int
+part2 s = let g = buildGrid . map parse . drop 2 $ B.lines s
               open = fst . head . filter ((==0) . used . snd) $ assocs g
               target = V2 (view _x . snd $ bounds g) 0
           in length <$> aStar (neighbors g) (\_ -> const 1) heuristic ((==V2 0 0) . snd) (open, target)

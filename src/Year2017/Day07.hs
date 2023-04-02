@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns, OverloadedStrings #-}
 
 module Year2017.Day07
     ( part1
@@ -7,35 +7,38 @@ module Year2017.Day07
 
 import Control.Arrow ((&&&))
 import Control.Monad (liftM2)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Either (fromLeft)
 import Data.Function (on)
 import qualified Data.HashSet as S
 import Data.List (groupBy, sortBy, transpose)
-import Data.List.Split (splitOn)
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Tree (Tree(..), unfoldTreeM)
-import Text.Megaparsec
-import Text.Megaparsec.Char (letterChar, string)
-import Text.Megaparsec.Char.Lexer (decimal)
+import FlatParse.Basic
 
+import Utils
 
-part1 :: String -> String
-part1 input = let [as, bs] = transpose $ map (splitOn " -> ") $ lines input
-              in foldr1 const $ S.fromList (map (head . words) as)
+part1 :: ByteString -> ByteString
+part1 input = let [as, bs] = transpose $ map (splitOn " -> ") $ B.lines input
+              in foldr1 const $ S.fromList (map (head . B.words) as)
                      `S.difference` S.fromList (concatMap (splitOn ", ") bs)
 
-data Program = Program { name :: String
+data Program = Program { name :: ByteString
                        , weight :: Int
                        } deriving (Show)
 
-parsePrograms :: String -> [(Program, [String])]
-parsePrograms = map (fromJust . parseMaybe parser) . lines
-    where parser :: Parsec () String (Program, [String])
+parsePrograms :: ByteString -> [(Program, [ByteString])]
+parsePrograms = map parse . B.lines
+    where word = byteStringOf $ some $ satisfy isLatinLetter
           parser = do
-            name' <- many letterChar
-            weight' <- string " (" *> decimal <* string ")"
-            children <- optional $ string " -> " *> many letterChar `sepBy` string ", "
+            name' <- word <* $(char ' ')
+            weight' <- $(char '(') *> anyAsciiDecimalInt <* $(char ')')
+            children <- optional $ $(string " -> ") *> some (word <* optional_ $(string ", "))
             return (Program name' weight', fromMaybe [] children)
+          parse line = case runParser parser line of
+                         OK res _ -> res
+                         _ -> error "unreachable"
 
 findImbalance :: Tree Program -> Either Int (Int, Int)
 findImbalance (Node (Program {weight}) []) = return (weight, 0)
@@ -55,7 +58,7 @@ findImbalance (Node (Program {weight}) children) = do
                         . groupBy ((==) `on` add)
                         . sortBy (compare `on` add)
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = let programs = map (name . fst &&& id) $ parsePrograms input
                   root = part1 input
                   Just tree = unfoldTreeM (`lookup` programs) root

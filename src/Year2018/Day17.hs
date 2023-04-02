@@ -12,26 +12,28 @@ import Control.Monad.ST
 import Control.Lens
 import Data.Array.ST
 import Data.Array.Unboxed
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
-
+import FlatParse.Basic
 
 type Coord = (Int, Int)
 
-parseScans :: String -> UArray Coord Char
-parseScans s = let clay = concatMap (fromJust . parseMaybe @() parseScan) $ lines s
+parseScans :: ByteString -> UArray Coord Char
+parseScans s = let clay = concatMap parse $ B.lines s
                    minCoord = (minimum (map fst clay) - 1, minimum (map snd clay))
                    maxCoord = (maximum (map fst clay) + 1, maximum (map snd clay))
                in accumArray (flip const) '.' (minCoord, maxCoord) $ map (,'#') clay
-    where parseRange = try (range <$> ((,) <$> decimal <*> (string ".." *> decimal)))
-                       <|> ((:[]) <$> decimal)
-          parseCoord = (,) <$> anySingle <*> (char '=' *> parseRange)
+    where parseRange = (range <$> ((,) <$> anyAsciiDecimalInt <*> ($(string "..") *> anyAsciiDecimalInt)))
+                       <|> ((:[]) <$> anyAsciiDecimalInt)
+          parseCoord = (,) <$> anyAsciiChar <*> ($(char '=') *> parseRange)
           parseScan = do
-            ranges <- parseCoord `sepBy` string ", "
+            ranges <- some $ parseCoord <* optional_ $(string ", ")
             pure [ (x, y) | x <- fromJust $ lookup 'x' ranges
                  , y <- fromJust $ lookup 'y' ranges ]
+          parse line = case runParser parseScan line of
+                         OK res _ -> res
+                         _ -> error "unreachable"
 
 flood :: forall s. STUArray s Coord Char -> ST s (STUArray s Coord Char)
 flood grid = go (500, 0) >> pure grid
@@ -71,11 +73,11 @@ flood grid = go (500, 0) >> pure grid
                           liftM2 (&&) (go (over _1 pred (last lefts)))
                                      $ go (over _1 succ (last rights))
 
-runWater :: String -> UArray Coord Char
+runWater :: ByteString -> UArray Coord Char
 runWater input = runSTUArray $ thaw (parseScans input) >>= flood
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = length . filter (`elem` "~|") . elems . runWater
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = length . filter (== '~') . elems . runWater

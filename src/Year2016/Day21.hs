@@ -3,16 +3,16 @@ module Year2016.Day21
     , part2
     ) where
 
+import Control.Applicative (asum)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.List (foldl')
 import Data.Maybe (fromJust)
 import Data.Vector (Vector)
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Mutable as MV
-import Text.Megaparsec
-import Text.Megaparsec.Char (char)
-import Text.Megaparsec.Char.Lexer (decimal)
-
+import FlatParse.Basic hiding (take)
 
 data Dir = L | R
 
@@ -24,17 +24,25 @@ data Action = SwapPos Int Int
             | Reverse Int Int
             | Move Int Int
 
-parseActions :: String -> [Action]
-parseActions = map (fromJust . parseMaybe (choice actions)) . lines
+parseActions :: ByteString -> [Action]
+parseActions = map (\line -> case runParser (asum actions) line of
+                               OK res _ -> res
+                               _ -> error "unreachable") . B.lines
 
-actions :: [Parsec () String Action]
-actions = [ SwapPos <$> (chunk "swap position " *> decimal <* chunk " with position ") <*> decimal
-          , SwapChr <$> (chunk "swap letter " *> anySingle) <*> (chunk " with letter " *> anySingle)
-          , Rotate R <$> (chunk "rotate right " *> decimal <* chunk " step" <* optional (char 's'))
-          , Rotate L <$> (chunk "rotate left " *> decimal <* chunk " step" <* optional (char 's'))
-          , RotateByChr <$> (chunk "rotate based on position of letter " *> anySingle)
-          , Reverse <$> (chunk "reverse positions " *> decimal) <*> (chunk " through " *> decimal)
-          , Move <$> (chunk "move position " *> decimal) <*> (chunk " to position " *> decimal) ]
+actions :: [Parser () Action]
+actions = [ SwapPos <$> ($(string "swap position ") *> anyAsciiDecimalInt) <*>
+                        ($(string " with position ") *> anyAsciiDecimalInt)
+          , SwapChr <$> ($(string "swap letter ") *> anyAsciiChar) <*>
+                        ($(string " with letter ") *> anyAsciiChar)
+          , Rotate R <$> ($(string "rotate right ") *> anyAsciiDecimalInt <*
+                         $(string " step") <* optional_ $(char 's'))
+          , Rotate L <$> ($(string "rotate left ") *> anyAsciiDecimalInt <*
+                         $(string " step") <* optional_ $(char 's'))
+          , RotateByChr <$> ($(string "rotate based on position of letter ") *> anyAsciiChar)
+          , Reverse <$> ($(string "reverse positions ") *> anyAsciiDecimalInt) <*>
+                        ($(string " through ") *> anyAsciiDecimalInt)
+          , Move <$> ($(string "move position ") *> anyAsciiDecimalInt) <*>
+                     ($(string " to position ") *> anyAsciiDecimalInt) ]
 
 elemIndex :: Char -> Vector Char -> Int
 elemIndex a = fromJust . V.elemIndex a
@@ -57,7 +65,7 @@ eval input as = V.toList $ foldl' go (V.fromList input) as
           rotateByCharIndex i = if i >= 4 then i + 2 else i + 1
 
 
-part1 :: String -> String
+part1 :: ByteString -> String
 part1 = eval "abcdefgh" . parseActions
 
 invert :: Action -> Action
@@ -67,5 +75,5 @@ invert (RotateByChr c) = RotateByChrInv c
 invert (Move a b) = Move b a
 invert x = x
 
-part2 :: String -> String
+part2 :: ByteString -> String
 part2 = eval "fbgdceah" . map invert . reverse . parseActions

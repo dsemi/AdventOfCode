@@ -4,19 +4,18 @@ module Year2018.Day09
     ) where
 
 import Control.Lens
+import Data.ByteString (ByteString)
 import Data.List.PointedList.Circular
 import qualified Data.IntMap.Strict as M
-import Text.Megaparsec (Parsec, parseMaybe)
-import Text.Megaparsec.Char (string)
-import Text.Megaparsec.Char.Lexer (decimal)
+import FlatParse.Basic
 
-
-parse :: String -> Maybe (Int, Int)
-parse = parseMaybe parser
-    where parser :: Parsec () String (Int, Int)
-          parser = do
-            a <- decimal <* string " players; last marble is worth "
-            b <- decimal <* string " points"
+parse :: ByteString -> Maybe (Int, Int)
+parse input = case runParser parser input of
+                OK res _ -> Just res
+                _ -> Nothing
+    where parser = do
+            a <- anyAsciiDecimalInt <* $(string " players; last marble is worth ")
+            b <- anyAsciiDecimalInt <* $(string " points")
             pure (a, b)
 
 play :: (Int, Int) -> Maybe Int
@@ -28,8 +27,8 @@ play (n, s) = go 1 M.empty (singleton 0)
                                 m' = M.insertWith (+) (p `rem` n) (p + c' ^. focus) m
                             in delete c' >>= go (p+1) m'
 
-part1 :: String -> Maybe Int
+part1 :: ByteString -> Maybe Int
 part1 x = parse x >>= play
 
-part2 :: String -> Maybe Int
+part2 :: ByteString -> Maybe Int
 part2 x = parse x >>= play . (_2 *~ 100)

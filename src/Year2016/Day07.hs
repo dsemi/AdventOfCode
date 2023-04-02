@@ -3,41 +3,45 @@ module Year2016.Day07
     , part2
     ) where
 
-import Data.Either (rights)
-import Data.List (isInfixOf, tails)
-import Text.Megaparsec
-import Text.Megaparsec.Char (char)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import FlatParse.Basic
 
-
-splitSupernetsAndHypernets :: String -> ([String], [String])
+splitSupernetsAndHypernets :: ByteString -> ([ByteString], [ByteString])
 splitSupernetsAndHypernets = go ([], [])
-    where go (sns, hns) input = let (segment, rest) = break (`elem` "[]") input
-                                in case rest of
-                                     ('[': xs) -> go (segment : sns, hns) xs
-                                     (']': xs) -> go (sns, segment : hns) xs
-                                     _         -> (segment : sns, hns)
+    where go (sns, hns) input = let (segment, rest) = B.break (`elem` "[]") input
+                                in case B.uncons rest of
+                                     Just ('[', xs) -> go (segment : sns, hns) xs
+                                     Just (']', xs) -> go (sns, segment : hns) xs
+                                     _              -> (segment : sns, hns)
 
-parseAbba :: Parsec () String String
+parseAbba :: Parser () ByteString
 parseAbba = do
-  a <- anySingle
-  b <- noneOf [a]
-  char b >> char a >> return [a, b, b, a]
+  a <- anyAsciiChar
+  b <- satisfy (/= a)
+  skipSatisfy (== b) >> skipSatisfy (== a)
+  pure $ B.pack [a, b, b, a]
 
-findAll :: Parsec () String a -> String -> [a]
-findAll parser = rights . map (parse parser "") . init . tails
+findAll :: Parser () a -> ByteString -> [a]
+findAll parser = parse . B.tails
+    where parse [] = []
+          parse (x:xs) = case runParser parser x of
+                           OK res _ -> res : parse xs
+                           _ -> parse xs
 
-part1 :: String -> Int
-part1 = length . filter (valid . splitSupernetsAndHypernets) . lines
+part1 :: ByteString -> Int
+part1 = length . filter (valid . splitSupernetsAndHypernets) . B.lines
     where hasAbba = not . null . findAll parseAbba
           valid (sns, hns) = any hasAbba sns && all (not . hasAbba) hns
 
-expectedBab :: Parsec () String String
+expectedBab :: Parser () ByteString
 expectedBab = do
-  a <- anySingle
-  b <- noneOf [a]
-  char a >> return [b, a, b]
+  a <- anyAsciiChar
+  b <- satisfy (/= a)
+  skipSatisfy (== a)
+  pure $ B.pack [b, a, b]
 
-part2 :: String -> Int
-part2 = length . filter (valid . splitSupernetsAndHypernets) . lines
+part2 :: ByteString -> Int
+part2 = length . filter (valid . splitSupernetsAndHypernets) . B.lines
     where valid (sns, hns) = let babs = concatMap (findAll expectedBab) sns
-                             in or $ isInfixOf <$> babs <*> hns
+                             in or $ B.isInfixOf <$> babs <*> hns

@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, TemplateHaskell #-}
+{-# LANGUAGE FlexibleContexts, OverloadedStrings #-}
 
 module Year2018.Day24
     ( part1
@@ -9,27 +9,27 @@ import Control.Arrow
 import Control.Lens
 import Control.Monad.Extra
 import Control.Monad.State
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.List (maximumBy, sortBy)
-import Data.List.Split (splitOn)
 import Data.Maybe
 import Data.IntMap.Strict (IntMap)
 import qualified Data.IntMap.Strict as M
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as S
 import Data.Ord
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
+import FlatParse.Basic
 
+import Utils
 
-data Group = Group { _name :: String
+data Group = Group { _name :: ByteString
                    , _numUnits :: Int
                    , _hitpts :: Int
                    , _dmg :: Int
-                   , _type' :: String
+                   , _type' :: ByteString
                    , _initiative :: Int
-                   , _weaknesses :: [String]
-                   , _immunities :: [String]
+                   , _weaknesses :: [ByteString]
+                   , _immunities :: [ByteString]
                    } deriving (Eq, Ord, Show)
 makeLenses ''Group
 
@@ -38,25 +38,27 @@ type Battle = IntMap Group
 effPwr :: Group -> Int
 effPwr g = g^.numUnits * g^.dmg
 
-parseGroups :: String -> Battle
-parseGroups = M.fromList . zip [0..]
-              . concatMap (fromJust . parseMaybe army) . splitOn "\n\n"
-    where army = do
-            n <- someTill anySingle (char ':') <* newline
-            group n `sepBy` newline
-          group :: String -> Parsec () String Group
+parseGroups :: ByteString -> Battle
+parseGroups = M.fromList . zip [0..] . concatMap parse . splitOn "\n\n"
+    where parse a = case runParser army a of
+                      OK res _ -> res
+                      _ -> error "unreachable"
+          army = do
+            n <- B.pack <$> someTill anyAsciiChar $(char ':')
+            some $ $(char '\n') *> group n
           group n = do
-            u <- decimal <* string " units each with "
-            hp <- decimal <* string " hit points "
+            u <- anyAsciiDecimalInt <* $(string " units each with ")
+            hp <- anyAsciiDecimalInt <* $(string " hit points ")
             ms <- fromMaybe []
-                  <$> optional (between (char '(') (string ") ") (modifiers `sepBy` string "; "))
-            d <- string "with an attack that does " *> decimal <* spaceChar
-            t <- many letterChar <* string " damage at initiative "
-            i <- decimal
+                  <$> optional ($(char '(') *> (some (modifiers <* optional_ $(string "; "))) <* $(string ") "))
+            d <- $(string "with an attack that does ") *> anyAsciiDecimalInt <* $(char ' ')
+            t <- word <* $(string " damage at initiative ")
+            i <- anyAsciiDecimalInt
             pure $ Group n u hp d t i (find "weak" ms) (find "immune" ms)
           find k = fromMaybe [] . lookup k
-          modifiers = (,) <$> (some letterChar <* string " to ")
-                      <*> (some letterChar `sepBy` string ", ")
+          word = byteStringOf $ some $ satisfy isLatinLetter
+          modifiers = (,) <$> (word <* $(string " to "))
+                      <*> (some (word <* optional_ $(string ", ")))
 
 calcDmg :: Group -> Group -> Int
 calcDmg g1 g2
@@ -106,13 +108,13 @@ battle = do
     ifM ((s /=) <$> get) battle (pure False)
   else pure True
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = sum . map _numUnits . M.elems . execState battle . parseGroups
 
 boostImmune :: Int -> Battle -> Battle
 boostImmune n = M.map (\g -> if g^.name == "Immune System" then g & dmg +~ n else g)
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = let groups = parseGroups input
               in head $ [ sum' | n <- [0..]
                         , let (b, s) = runState battle $ boostImmune n groups

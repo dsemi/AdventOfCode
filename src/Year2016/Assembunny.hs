@@ -8,15 +8,17 @@ module Year2016.Assembunny
     , parseInstructions
     ) where
 
+import Control.Applicative (asum)
 import Control.Lens
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.List (tails)
 import Data.Maybe
 import Data.Vector (Vector)
 import qualified Data.Vector as V
-import Text.Megaparsec
-import Text.Megaparsec.Char (space, spaceChar, string)
-import Text.Megaparsec.Char.Lexer (decimal, signed)
+import FlatParse.Basic hiding (take)
 
+import Utils
 
 type Value = Either Char Int
 
@@ -79,21 +81,22 @@ optimize (f:fs) v = optimize fs $ collapse [] opt
           collapse (i:is) (_:xs) = i : collapse is xs
           collapse _ _ = error "Bad collapse"
 
-parseInstructions :: String -> Simulator
+parseInstructions :: ByteString -> Simulator
 parseInstructions = Sim 0 0 0 0 0
                     . V.fromList . optimize [multiplication, plusEquals]
-                    . map (fromJust . parseMaybe parseInstruction) . lines
-    where parseInstruction :: Parsec () String Instruction
+                    . map parse . B.lines
+    where parse ln = case runParser parseInstruction ln of
+                       OK res _ -> res
+                       _ -> error "unreachable"
           parseInstruction =
-              choice [ string "cpy " >> Cpy <$> value <* spaceChar <*> value
-                     , string "inc " >> Inc <$> register
-                     , string "dec " >> Dec <$> register
-                     , string "tgl " >> Tgl <$> register
-                     , string "out " >> Out <$> value
-                     , string "jnz " >> Jnz <$> value <* spaceChar <*> value ]
-          int = signed space decimal
-          register = oneOf "abcd"
-          value = eitherP register int
+              asum [ $(string "cpy ") >> Cpy <$> value <* $(char ' ') <*> value
+                   , $(string "inc ") >> Inc <$> register
+                   , $(string "dec ") >> Dec <$> register
+                   , $(string "tgl ") >> Tgl <$> register
+                   , $(string "out ") >> Out <$> value
+                   , $(string "jnz ") >> Jnz <$> value <* $(char ' ') <*> value ]
+          register = satisfy (`elem` "abcd")
+          value = (Left <$> register) <|> (Right <$> signedInt)
 
 val :: Simulator -> Value -> Int
 val sim = either ((sim ^.) . reg) id
