@@ -7,7 +7,7 @@ import Data.List (minimumBy)
 import Data.List.Split (splitOn)
 import Data.Ord (comparing)
 
-import Utils
+import Utils hiding (splitOn)
 
 parse :: String -> (Integer, [(Integer, Integer)])
 parse input = (read time, buses)

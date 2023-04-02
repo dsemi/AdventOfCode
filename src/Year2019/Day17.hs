@@ -12,7 +12,7 @@ import qualified Data.IntMap.Strict as M
 import Linear.V2
 
 import Year2019.IntCode
-import Utils
+import Utils hiding (splitOn)
 
 
 parseGrid :: [Int] -> UArray (V2 Int) Char

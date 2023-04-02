@@ -159,3 +159,7 @@ combinations xs n = [ y:ys | y:xs' <- tails xs
 chineseRemainder :: [(Integer, Integer)] -> Maybe Integer
 chineseRemainder (x:xs) = uncurry mod <$> foldM chinese x xs
 chineseRemainder [] = error "empty list"
+
+splitOn :: ByteString -> ByteString -> [ByteString]
+splitOn delim src = h : if B.null t then [] else splitOn delim (B.drop (B.length delim) t)
+    where (h, t) = B.breakSubstring delim src

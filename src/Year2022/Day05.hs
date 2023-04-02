@@ -10,7 +10,7 @@ import Data.List.Split
 import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
 
-import Utils
+import Utils hiding (splitOn)
 
 moveStacks :: Bool -> String -> String
 moveStacks inOrder input = map head . M.elems . foldl' move (makeStacks crates) $ lines instrs

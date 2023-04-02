@@ -9,7 +9,7 @@ import Data.Ix
 import Data.List.Split
 import Linear.V3
 
-import Utils
+import Utils hiding (splitOn)
 
 adj :: V3 Int -> [V3 Int]
 adj c = [ c + d | d <- [V3 1 0 0, V3 (-1) 0 0, V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1)] ]
