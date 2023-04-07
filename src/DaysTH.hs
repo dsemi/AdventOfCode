@@ -9,7 +9,7 @@ module DaysTH
     , PType
     ) where
 
-import Data.ByteString.Char8 (ByteString)
+import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.Complex.Cyclotomic
 import Data.Functor.Identity
@@ -19,14 +19,12 @@ import Data.Mod
 import Data.List (sort)
 import Data.Text (Text)
 import qualified Data.Text as T
+import FlatParse.Basic
 import GHC.TypeLits (KnownNat)
 import Language.Haskell.TH
 import Linear.V2
 import Linear.V3
 import System.FilePath.Glob
-import Text.Megaparsec
-import Text.Megaparsec.Char
-
 
 class PType a where
     un :: ByteString -> a
@@ -99,19 +97,21 @@ apply f = to . f . un
 
 buildProbs :: Q [Dec]
 buildProbs = do
-  pFiles <- fmap sort $ runIO $ glob "src/Year????/Day??.hs"
-  let parseP :: String -> Q (Integer, Exp)
+  pFiles <- fmap (sort . map B.pack) $ runIO $ glob "src/Year????/Day??.hs"
+  let parseP :: ByteString -> Q (Integer, Exp)
       parseP x = do
-        let (year, day) = fromJust $ parseMaybe parser x
+        let (year, day) = parse x
             moduleName  = "Year" ++ year ++ ".Day" ++ day
             part1       = moduleName ++ ".part1"
             part2       = moduleName ++ ".part2"
         entry <- [e|(read day , ( apply $(nm part1)
                                 , apply $(nm part2)))|]
         pure (read year, entry)
-          where parser :: Parsec () String (String, String)
-                parser = (,) <$> (string "src/Year" *> some digitChar)
-                         <*> (string "/Day" *> some digitChar <* string ".hs")
+          where parser = (,) <$> ($(string "src/Year") *> some (satisfy isDigit))
+                         <*> ($(string "/Day") *> some (satisfy isDigit) <* $(string ".hs"))
+                parse inp = case runParser parser inp of
+                              OK res _ -> res
+                              _ -> error "unreachable"
                 nm = varE . mkName
   [d|problems :: [(Int, [(Int, (ByteString -> IO ByteString, ByteString -> IO ByteString))])]
      problems = $(ListE . map toLit . M.toAscList . foldr accProbs M.empty <$> mapM parseP pFiles)

@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveGeneric, NoFieldSelectors, OverloadedRecordDot #-}
+{-# LANGUAGE DeriveGeneric, NoFieldSelectors, OverloadedRecordDot, OverloadedStrings #-}
 
 module Year2022.Day22
     ( part1
@@ -7,18 +7,19 @@ module Year2022.Day22
 
 import Control.Applicative (liftA2)
 import Data.Array.Unboxed
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import Data.Hashable
 import Data.List (foldl', tails)
-import Data.List.Split (splitOn)
-import Data.Maybe
+import FlatParse.Basic
 import GHC.Generics (Generic)
 import Linear.V2
 import Linear.V3
 import Linear.Vector
-import Text.Megaparsec
-import Text.Megaparsec.Char.Lexer
+
+import Utils (splitOn)
 
 data Face = Top | Bottom | Back | Front | Starboard | Port deriving (Eq)
 
@@ -64,15 +65,17 @@ data Instr = Turn Bool | Step Int
 
 data Board = Board (UArray (V2 Int) Char) [Instr] (V2 Int)
 
-newBoard :: String -> Board
+newBoard :: ByteString -> Board
 newBoard input = Board grid instrs $ head $ filter ((/= ' ') . (grid !)) $ iterate (+ V2 0 1) (V2 0 0)
     where pts = splitOn "\n\n" input
-          rows = lines $ head pts
-          grid = accumArray (flip const) ' ' (V2 0 0, V2 (length rows - 1) (maximum (map length rows) - 1))
+          rows = B.lines $ head pts
+          grid = accumArray (flip const) ' ' (V2 0 0, V2 (length rows - 1) (maximum (map B.length rows) - 1))
                  [ (V2 r c, v) | (r, row) <- zip [0..] rows
-                 , (c, v) <- zip [0..] row ]
-          instrs = fromJust $ parseMaybe @() (some parseInstr) $ pts !! 1
-          parseInstr = (Step <$> decimal) <|> (Turn . (== 'R') <$> oneOf "LR")
+                 , (c, v) <- zip [0..] $ B.unpack row ]
+          instrs = case runParser (some parseInstr) $ pts !! 1 of
+                     OK res _ -> res
+                     _ -> error "unreachable"
+          parseInstr = (Step <$> anyAsciiDecimalInt) <|> (Turn . (== 'R') <$> satisfy (`B.elem` "LR"))
 
 valid :: UArray (V2 Int) Char -> V2 Int -> Bool
 valid grid idx = inRange (bounds grid) idx && grid ! idx /= ' '
@@ -128,7 +131,7 @@ cubeEdges (Board grid _ topLeft) =
                           , b <- bs
                           , a.src == b.dest && b.src == a.dest ]
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 input = walk board f
     where board@(Board grid _ _) = newBoard input
           lims = fmap (+1) $ snd $ bounds grid
@@ -136,7 +139,7 @@ part1 input = walk board f
           f pos dir = (pos', dir)
               where pos' = head $ filter (valid grid) $ tail $ iterate (wrap . move dir) pos
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = walk board f
     where board@(Board grid _ _) = newBoard input
           edges = cubeEdges board

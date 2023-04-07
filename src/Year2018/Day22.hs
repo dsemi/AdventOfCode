@@ -7,17 +7,15 @@ module Year2018.Day22
 
 import Control.Lens
 import Data.Array
+import Data.ByteString (ByteString)
 import Data.Graph.AStar
 import Data.Hashable
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.Maybe
+import FlatParse.Basic
 import GHC.Generics
 import Linear.V2
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
-
 
 type Coord = V2 Int
 
@@ -28,13 +26,15 @@ next :: Tool -> Tool
 next ClimbingGear = Neither
 next x = succ x
 
-parseInput :: String -> (Int, Coord)
-parseInput = fromJust . parseMaybe parser
-    where parser :: Parsec () String (Int, Coord)
-          parser = do
-            d <- string "depth: " *> decimal <* newline
-            [x, y] <- string "target: " *> (decimal `sepBy` char ',')
-            pure (d, V2 x y)
+parseInput :: ByteString -> (Int, Coord)
+parseInput input = case runParser parser input of
+                     OK res _ -> res
+                     _ -> error "unreachable"
+    where parser = do
+            d <- $(string "depth: ") *> anyAsciiDecimalInt <* $(char '\n')
+            pt <- V2 <$> ($(string "target: ") *> anyAsciiDecimalInt) <*>
+                  ($(char ',') *> anyAsciiDecimalInt)
+            pure (d, pt)
 
 erosionLevels :: Int -> Coord -> Array Coord Tool
 erosionLevels depth target = fmap (toEnum . (`mod` 3)) arr
@@ -48,7 +48,7 @@ erosionLevels depth target = fmap (toEnum . (`mod` 3)) arr
                     geologicIndex (V2 0 y) = y * 48271
                     geologicIndex (V2 x y) = arr ! V2 (x - 1) y * arr ! V2 x (y - 1)
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 input = sum $ map (fromEnum . snd) $ filter (inRange (V2 0 0, target) . fst)
               $ assocs $ erosionLevels depth target
     where (depth, target) = parseInput input
@@ -71,7 +71,7 @@ time (_, t1) (_, t2)
 heur :: Coord -> Node -> Int
 heur target (xy, _) = sum $ abs $ target - xy
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = sum $ zipWith time path $ tail path
     where (depth, target) = parseInput input
           path = (V2 0 0, Torch) :

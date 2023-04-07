@@ -1,6 +1,7 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE QuasiQuotes, TemplateHaskell #-}
 
 import Control.Monad (when)
+import qualified Data.ByteString.Char8 as B
 import Data.List (intercalate, sort)
 import Data.String.Interpolate
 import Data.String.Interpolate.Util
@@ -9,13 +10,12 @@ import qualified Data.Text.IO as T
 import Distribution.PackageDescription (emptyHookedBuildInfo)
 import Distribution.Simple
 import Distribution.Simple.Command (noExtraFlags)
+import FlatParse.Basic
 import System.FilePath.Glob
-import Text.Megaparsec
-import Text.Megaparsec.Char
 import Text.Printf
 
 buildImportFile = do
-  files <- sort <$> glob "src/Year????/Day??.hs"
+  files <- sort . map B.pack <$> glob "src/Year????/Day??.hs"
   let importedModules = foldr fn [] files
       output = pack $ unindent [i|
         {-# LANGUAGE TemplateHaskell #-}
@@ -35,11 +35,13 @@ buildImportFile = do
   when (contents /= output) $
        T.writeFile "src/Days.hs" output
     where fn f imp = ("import " ++ module') : imp
-              where module' = let Just (year, day) = parseMaybe parser f
+              where module' = let (year, day) = parse f
                               in "Year" ++ year ++ ".Day" ++ day
-                    parser :: Parsec () String (String, String)
-                    parser = (,) <$> (string "src/Year" *> some digitChar)
-                             <*> (string "/Day" *> some digitChar <* string ".hs")
+                    parser = (,) <$> ($(string "src/Year") *> some (satisfy isDigit))
+                             <*> ($(string "/Day") *> some (satisfy isDigit) <* $(string ".hs"))
+                    parse inp = case runParser parser inp of
+                                  OK res _ -> res
+                                  _ -> error "unreachable"
 
 myUserHooks = simpleUserHooks {
                 preBuild = fn

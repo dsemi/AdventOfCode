@@ -35,11 +35,9 @@ parseMachine input = case runParser parse input of
                      $(string " steps.")
             rules <- M.fromList . concat <$> some ($(string "\n\n") >> parseState)
             pure (steps, Machine (PointedList [] 0 []) start rules)
-          --parseState :: Parsec () String [((Char, Int), Rule)]
           parseState = do
             c <- $(string "In state ") *> anyAsciiChar <* $(string ":\n")
             sequence [parseRule c <* $(char '\n'), parseRule c]
-          --parseRule :: Char -> Parsec () String ((Char, Int), Rule)
           parseRule c = do
             i <- $(string "  If the current value is ") *> anyAsciiDecimalInt <* $(string ":\n")
             v <- $(string "    - Write the value ") *> anyAsciiDecimalInt <* $(string ".\n")

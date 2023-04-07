@@ -1,30 +1,32 @@
-{-# LANGUAGE NoFieldSelectors, NumDecimals, OverloadedRecordDot #-}
+{-# LANGUAGE NoFieldSelectors, NumDecimals, OverloadedRecordDot, OverloadedStrings #-}
 
 module Year2019.Day14
     ( part1
     , part2
     ) where
 
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import Data.Char
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
+import FlatParse.Basic
 
-data Reactions = Reactions { graph :: HashMap String (Int, [(Int, String)])
-                           , topo :: [String]
+data Reactions = Reactions { graph :: HashMap ByteString (Int, [(Int, ByteString)])
+                           , topo :: [ByteString]
                            }
 
-parseReactions :: String -> Reactions
+parseReactions :: ByteString -> Reactions
 parseReactions input = Reactions graph (topo [] ["FUEL"] incoming)
-    where graph = M.fromList $ map (fromJust . parseMaybe reaction) $ lines input
-          chemical :: Parsec () String (Int, String)
-          chemical = (,) <$> decimal <* spaceChar <*> some upperChar
-          reaction :: Parsec () String (String, (Int, [(Int, String)]))
+    where graph = M.fromList $ map parse $ B.lines input
+          parse line = case runParser reaction line of
+                         OK res _ -> res
+                         _ -> error "unreachable"
+          chemical = (,) <$> anyAsciiDecimalInt <* $(char ' ') <*> byteStringOf (some $ satisfy isUpper)
           reaction = do
-            ins <- chemical `sepBy` string ", "
-            (n, out) <- string " => " *> chemical
+            ins <- some (chemical <* optional_ $(string ", "))
+            (n, out) <- $(string " => ") *> chemical
             pure (out, (n, ins))
           incoming = M.fromListWith (+) $ concatMap (map ((,1) . snd) . snd) $ M.elems graph
           topo sorted [] _ = sorted
@@ -45,7 +47,7 @@ numOre reactions fuel = foldr go (M.singleton "FUEL" fuel) reactions.topo M.! "O
                                             in foldr (\(n, m) -> M.insertWith (+) m (k * n)) cnts srcs
 
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = flip numOre 1 . parseReactions
 
 search :: Int -> Int -> (Int -> Int) -> Int
@@ -55,5 +57,5 @@ search a b f
     | otherwise = search (mid + 1) b f
     where mid = (a + b) `div` 2
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = search 0 1e12 . numOre . parseReactions

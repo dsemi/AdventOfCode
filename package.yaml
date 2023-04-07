@@ -75,7 +75,6 @@ library:
     - hashable
     - hip
     - linear
-    - megaparsec
     - memoize
     - mod
     - monad-loops
@@ -118,8 +117,9 @@ build-type: Custom
 custom-setup:
   dependencies:
     - base >=4.9 && <5
+    - bytestring
+    - flatparse
     - Glob
     - interpolate
     - text
     - Cabal
-    - megaparsec

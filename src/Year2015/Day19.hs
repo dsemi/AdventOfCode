@@ -7,15 +7,12 @@ module Year2015.Day19
 
 import Data.Char
 import qualified Data.HashSet as S
-import Data.Maybe
 import Data.Text (Text)
 import qualified Data.Text as T
-import Text.Megaparsec
 
 parseMapping :: Text -> (Text, Text)
-parseMapping = fromJust . parseMaybe parser
-    where parser :: Parsec () Text (Text, Text)
-          parser = (,) <$> takeWhile1P Nothing isAlphaNum <* chunk " => " <*> takeWhile1P Nothing isAlphaNum
+parseMapping input = let [a, b] = T.splitOn " => " input
+                     in (a, b)
 
 singleReplacements :: Text -> Text -> Text -> [Text]
 singleReplacements src k v =

@@ -1,61 +1,36 @@
+{-# LANGUAGE BangPatterns, NegativeLiterals #-}
+
 module Year2018.Day20
     ( part1
     , part2
     ) where
 
-import Control.Monad.State
-import Data.HashMap.Strict (HashMap)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
-import qualified Data.HashPSQ as Q
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as S
-import Data.Maybe
-import Data.List (foldl')
 import Linear.V2
-import Text.Megaparsec (between, many, parseMaybe, sepBy, try, (<|>))
-import Text.Megaparsec.Char
 
+parseEdges :: ByteString -> [Int]
+parseEdges = M.elems . (\(_, _, x) -> x) . B.foldl' go ([], V2 (0 :: Int) 0, M.empty)
+    where go (stack, !pos, !m) c =
+              case c of
+                '(' -> (pos : stack, pos, m)
+                ')' -> (tail stack, head stack, m)
+                '|' -> (stack, head stack, m)
+                'N' -> move $ V2  0 -1
+                'E' -> move $ V2  1  0
+                'S' -> move $ V2  0  1
+                'W' -> move $ V2 -1  0
+                '^' -> (stack, pos, m)
+                '$' -> (stack, pos, m)
+                _ -> error "unreachable"
+              where move dir = let v = M.findWithDefault 0 pos m + 1
+                                   pos' = pos + dir
+                                   m' = M.insertWith min pos' v m
+                               in (stack, pos', m')
 
-type Coord = V2 Int
+part1 :: ByteString -> Int
+part1 = maximum . parseEdges
 
-parseEdges :: String -> HashSet (Coord, Coord)
-parseEdges = fromJust . parseMaybe @() (evalStateT (between (char '^') (char '$') edges) (V2 0 0))
-    where edges = fmap S.unions . many $ try step <|> branch
-          step = do
-            pos <- get
-            d <- (char 'N' >> pure (V2 0 (-1))) <|>
-                 (char 'E' >> pure (V2 1 0)) <|>
-                 (char 'S' >> pure (V2 0 1)) <|>
-                 (char 'W' >> pure (V2 (-1) 0))
-            let pos' = pos + d
-            put pos'
-            S.insert (if pos <= pos' then (pos, pos') else (pos', pos)) <$> edges
-          branch = between (char '(') (char ')') $ do
-                     pos <- get
-                     fmap S.unions . (`sepBy` char '|') $ do
-                       put pos
-                       edges
-
-edgeMap :: HashSet (Coord, Coord) -> HashMap Coord (HashSet Coord)
-edgeMap = M.fromListWith S.union . concatMap (\(a, b) -> [(a, S.singleton b), (b, S.singleton a)])
-
-distsFrom :: Coord -> HashMap Coord (HashSet Coord) -> HashMap Coord Int
-distsFrom pos m = go M.empty S.empty $ Q.minView $ Q.singleton pos 0 ()
-    where go dists closed = \case
-              Nothing -> dists
-              Just (coord, succ -> c, _, frontier) ->
-                  let neighbs = filter (\x -> not (S.member x closed) && not (Q.member x frontier))
-                                $ S.toList $ m M.! coord
-                      dists' = M.union dists $ M.fromList $ map (,c) neighbs
-                      closed' = S.insert coord closed
-                      frontier' = foldl' (\q n -> Q.insert n c () q) frontier neighbs
-                  in go dists' closed' $ Q.minView frontier'
-
-getDists :: String -> [Int]
-getDists = M.elems . distsFrom (V2 0 0) . edgeMap . parseEdges
-
-part1 :: String -> Int
-part1 = maximum . getDists
-
-part2 :: String -> Int
-part2 = length . filter (>=1000) . getDists
+part2 :: ByteString -> Int
+part2 = length . filter (>=1000) . parseEdges

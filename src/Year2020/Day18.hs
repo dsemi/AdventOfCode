@@ -3,29 +3,25 @@ module Year2020.Day18
     , part2
     ) where
 
-import Control.Monad.Combinators.Expr
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Char
+import Data.Maybe
+import Text.ParserCombinators.ReadP
 
+add :: ReadP (Int -> Int -> Int)
+add = (+) <$ (string " + ")
 
-sc :: Parsec () String ()
-sc = L.space space1 empty empty
+mul :: ReadP (Int -> Int -> Int)
+mul = (*) <$ (string " * ")
 
-add :: Operator (Parsec () String) Int
-add = InfixL ((+) <$ L.symbol sc "+")
-
-mul :: Operator (Parsec () String) Int
-mul = InfixL ((*) <$ L.symbol sc "*")
-
-parseExprs :: [[Operator (Parsec () String) Int]] -> String -> Maybe [Int]
-parseExprs ops = traverse (parseMaybe pExpr) . lines
-    where pExpr = makeExprParser pTerm ops
-          pTerm = choice [ between (L.symbol sc "(") (L.symbol sc ")") pExpr
-                         , L.lexeme sc L.decimal ]
+parseExprs :: ReadP (Int -> Int -> Int) -> ReadP (Int -> Int -> Int) -> String -> Maybe [Int]
+parseExprs a b = traverse parse . lines
+    where parse line = fmap fst . listToMaybe $ readP_to_S (expr <* eof) line
+          int = digitToInt <$> satisfy isDigit
+          term ex = int +++ between (char '(') (char ')') ex
+          expr = chainl1 (chainl1 (term expr) a) b
 
 part1 :: String -> Maybe Int
-part1 = fmap sum . parseExprs [[add, mul]]
+part1 = fmap sum . parseExprs (add +++ mul) (pure $ error "should be simplified")
 
 part2 :: String -> Maybe Int
-part2 = fmap sum . parseExprs [[add], [mul]]
+part2 = fmap sum . parseExprs add mul

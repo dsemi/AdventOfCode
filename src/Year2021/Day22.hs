@@ -8,23 +8,24 @@ module Year2021.Day22
 import Control.Arrow
 import Control.Monad
 import Control.Monad.ST
-import Data.Maybe
+import Data.ByteString (ByteString)
+import qualified Data.IntSet as S
 import Data.Vector ((!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-import qualified Data.IntSet as S
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer (decimal, signed)
+import FlatParse.Basic
 
-parseCubes :: String -> [(String, Int, Int, Int, Int, Int, Int)]
-parseCubes = fromJust . parseMaybe @() cubes
-    where int = signed (pure ()) decimal
-          cube = (,,,,,,) <$> some letterChar <* " x="
-                 <*> int <* ".." <*> int <* ",y="
-                 <*> int <* ".." <*> int <* ",z="
-                 <*> int <* ".." <*> int
-          cubes = cube `sepBy` char '\n'
+import Utils
+
+parseCubes :: ByteString -> [(ByteString, Int, Int, Int, Int, Int, Int)]
+parseCubes input = case runParser cubes input of
+                     OK res _ -> res
+                     _ -> error "unreachable"
+    where cube = (,,,,,,) <$> byteStringOf (some $ satisfy isLatinLetter) <* $(string " x=")
+                 <*> signedInt <* $(string "..") <*> signedInt <* $(string ",y=")
+                 <*> signedInt <* $(string "..") <*> signedInt <* $(string ",z=")
+                 <*> signedInt <* $(string "..") <*> signedInt
+          cubes = some $ cube <* optional_ $(char '\n')
 
 data Interval = Interval Int Int
 
@@ -48,7 +49,7 @@ inters (Cube x0 y0 z0) (Cube x1 y1 z1) = intersects x0 x1 && intersects y0 y1 &&
 inter :: Cube -> Cube -> Cube
 inter (Cube x0 y0 z0) (Cube x1 y1 z1) = Cube (intersect x0 x1) (intersect y0 y1) (intersect z0 z1)
 
-solve :: Int -> Int -> String -> Int
+solve :: Int -> Int -> ByteString -> Int
 solve lo hi input = sum $ map (\i -> intersectVolume (cubes ! i) (bs ! i))
                     $ filter (on !) $ [0 .. length cubes - 1]
     where activeCube = Cube (Interval lo hi) (Interval lo hi) (Interval lo hi)
@@ -67,8 +68,8 @@ solve lo hi input = sum $ map (\i -> intersectVolume (cubes ! i) (bs ! i))
                                       int = S.intersection set (bs ! idx)
                                   in vol - intersectVolume common int
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = solve (-50) 51
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = solve minBound maxBound

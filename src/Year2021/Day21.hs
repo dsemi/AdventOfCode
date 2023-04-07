@@ -6,19 +6,23 @@ module Year2021.Day21
     ) where
 
 import Control.Monad.State.Strict
-import Data.Maybe
+import Data.ByteString (ByteString)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer (decimal)
+import FlatParse.Basic
 
-parsePlayers :: String -> (Int, Int)
-parsePlayers = fromJust . parseMaybe @() plrs
-    where plr = fmap pred $ "Player " *> digitChar *> " starting position: " *> decimal
-          plrs = (,) <$> plr <* char '\n' <*> plr
+parsePlayers :: ByteString -> (Int, Int)
+parsePlayers input = case runParser plrs input of
+                       OK res _ -> res
+                       _ -> error "unreachable"
+    where plr = fmap pred $ do
+                  $(string "Player ")
+                  skipSatisfy isDigit
+                  $(string " starting position: ")
+                  anyAsciiDecimalInt
+          plrs = (,) <$> plr <* $(char '\n') <*> plr
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 input = let (p1, p2) = parsePlayers input
               in go p1 p2 0 0 0 $ cycle [1..100]
     where go !p1 !p2 !p1s !p2s !n (a:b:c:gs)
@@ -48,7 +52,7 @@ solve !p1 !p2 !s1 !s2
       modify' $ M.insert (p1, p2, s1, s2) ans
       pure ans
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = let (p1, p2) = parsePlayers input
                   (x, y) = evalState (solve p1 p2 0 0) M.empty
               in max x y

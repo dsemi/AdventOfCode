@@ -5,14 +5,17 @@ module Year2021.Day24
     , part2
     ) where
 
+import Control.Applicative (asum)
 import Control.Lens
 import Control.Monad.State.Strict
-import qualified Data.IntSet as S
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import Data.Bool
+import qualified Data.IntSet as S
 import Data.Maybe
-import Text.Megaparsec
-import Text.Megaparsec.Char (space, spaceChar, string)
-import Text.Megaparsec.Char.Lexer (decimal, signed)
+import FlatParse.Basic
+
+import Utils
 
 type Value = Either Char Int
 
@@ -39,18 +42,20 @@ reg 'y' = y
 reg 'z' = z
 reg _ = error "Invalid register"
 
-parseInstrs :: String -> Prog
-parseInstrs = Prog 0 0 0 0 . map (fromJust . parseMaybe @() instr) . lines
-    where int = signed space decimal
-          register = oneOf "wxyz"
-          value = eitherP register int
-          instr = choice [ string "inp " >> Inp <$> register
-                         , string "add " >> Add <$> register <* spaceChar <*> value
-                         , string "mul " >> Mul <$> register <* spaceChar <*> value
-                         , string "div " >> Div <$> register <* spaceChar <*> value
-                         , string "mod " >> Mod <$> register <* spaceChar <*> value
-                         , string "eql " >> Eql <$> register <* spaceChar <*> value
-                         ]
+parseInstrs :: ByteString -> Prog
+parseInstrs = Prog 0 0 0 0 . map parse . B.lines
+    where register = satisfy (`elem` "wxyz")
+          value = (Left <$> register) <|> (Right <$> signedInt)
+          instr = asum [ $(string "inp ") >> Inp <$> register
+                       , $(string "add ") >> Add <$> register <* $(char ' ') <*> value
+                       , $(string "mul ") >> Mul <$> register <* $(char ' ') <*> value
+                       , $(string "div ") >> Div <$> register <* $(char ' ') <*> value
+                       , $(string "mod ") >> Mod <$> register <* $(char ' ') <*> value
+                       , $(string "eql ") >> Eql <$> register <* $(char ' ') <*> value
+                       ]
+          parse line = case runParser instr line of
+                         OK res _ -> res
+                         _ -> error "unreachable"
 
 val :: Prog -> Value -> Int
 val sim = either ((sim ^.) . reg) id
@@ -87,8 +92,8 @@ dfs p2 program = evalState (go 0 14 program) S.empty
                     key = prog ^. z * 100 + d
           ds = if p2 then [1..9] else [9, 8..1]
 
-part1 :: String -> Maybe Int
+part1 :: ByteString -> Maybe Int
 part1 = dfs False . parseInstrs
 
-part2 :: String -> Maybe Int
+part2 :: ByteString -> Maybe Int
 part2 = dfs True . parseInstrs

@@ -36,9 +36,6 @@ data Sim = Sim { _regs :: UArray Register Int
                }
 makeLenses ''Sim
 
-type Send m = Int -> m ()
-type Recv m = Int -> m Int
-
 parseInstrs :: ByteString -> Sim
 parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
               . map parse . B.lines
@@ -59,6 +56,9 @@ parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
 reg :: Applicative f => Char -> (Int -> f Int) -> Sim -> f Sim
 reg r = regs . ix r
 
+type Send m = Int -> m ()
+type Recv m = Int -> m Int
+
 step :: (Monad m) => Send m -> Recv m -> Sim -> m (Maybe Sim)
 step send recv sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
     where value = either (\v -> sim ^?! (regs . ix v)) id
@@ -74,8 +74,8 @@ step send recv sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
             pure $ sim & f & line +~ 1
 
 run :: (Monad m) => Send m -> Recv m -> Sim -> m ()
-run send recv sim = go
-    where go = step send recv sim >>= maybe (pure ()) (run send recv)
+run send recv = go
+    where go sim = step send recv sim >>= maybe (pure ()) go
 
 part1 :: ByteString -> Int
 part1 input = fromLeft 0 . runExcept $ evalStateT (run send recv (parseInstrs input)) 0

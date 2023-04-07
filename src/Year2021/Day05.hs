@@ -7,17 +7,19 @@ import Control.Monad
 import Data.Array.MArray;
 import Data.Array.ST;
 import Data.Array.Unboxed;
-import Data.Maybe
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
+import FlatParse.Basic
 import Linear.V2
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer
 
-solve :: Bool -> String -> Int
+solve :: Bool -> ByteString -> Int
 solve p2 input = length $ filter (>1) $ elems grid
-    where pair = V2 <$> decimal <* char ',' <*> decimal
-          line = (,) <$> pair <* string " -> " <*> pair
-          lns = map (fromJust . parseMaybe @() line) $ lines input
+    where pair = V2 <$> anyAsciiDecimalInt <* $(char ',') <*> anyAsciiDecimalInt
+          line = (,) <$> pair <* $(string " -> ") <*> pair
+          parse ln = case runParser line ln of
+                       OK res _ -> res
+                       _ -> error "unreachable"
+          lns = map parse $ B.lines input
           maxX = maximum $ map (\(V2 x0 _, V2 x1 _) -> max x0 x1) lns
           maxY = maximum $ map (\(V2 _ y0, V2 _ y1) -> max y0 y1) lns
           grid :: UArray (V2 Int) Int
@@ -31,8 +33,8 @@ solve p2 input = length $ filter (>1) $ elems grid
                   readArray arr p >>= writeArray arr p . (+1)
             pure arr
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 = solve False
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 = solve True
