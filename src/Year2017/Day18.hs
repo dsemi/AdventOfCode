@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, NoFieldSelectors, OverloadedRecordDot #-}
 
 module Year2017.Day18
     ( part1
@@ -6,38 +6,31 @@ module Year2017.Day18
     ) where
 
 import Control.Applicative (asum)
-import Control.Lens
-import Control.Monad.Except
-import Control.Monad.State
-import Control.Monad.Writer
 import Data.Array.Unboxed
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import Data.Either
-import Data.Maybe
-import Data.Vector (Vector, fromList)
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 import FlatParse.Basic
 
 import Utils
 
-type Register = Char
-type Value = Either Register Int
+type Value = Either Char Int
 data Instr = Snd Value
-           | Set Register Value
-           | Add Register Value
-           | Mul Register Value
-           | Mod Register Value
-           | Rcv Register
+           | Set Char Value
+           | Add Char Value
+           | Mul Char Value
+           | Mod Char Value
+           | Rcv Char
            | Jgz Value Value
 
-data Sim = Sim { _regs :: UArray Register Int
-               , _line :: Int
-               , _instrs :: Vector Instr
+data Sim = Sim { regs :: UArray Char Int
+               , line :: Int
+               , instrs :: Vector Instr
                }
-makeLenses ''Sim
 
 parseInstrs :: ByteString -> Sim
-parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
+parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . V.fromList
               . map parse . B.lines
     where parse ln = case runParser instr ln of
                        OK res _ -> res
@@ -53,46 +46,47 @@ parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . fromList
           letterChar = satisfy isLatinLetter
           value = (Left <$> letterChar) <|> (Right <$> signedInt)
 
-reg :: Applicative f => Char -> (Int -> f Int) -> Sim -> f Sim
-reg r = regs . ix r
+set :: Char -> Int -> Sim -> Sim
+set r v sim = sim { regs = sim.regs // [(r, v)] }
 
-type Send m = Int -> m ()
-type Recv m = Int -> m Int
+data Sig = Send Int | Recv Int deriving (Eq)
 
-step :: (Monad m) => Send m -> Recv m -> Sim -> m (Maybe Sim)
-step send recv sim = traverse eval $ sim ^? (instrs . ix (sim ^. line))
-    where value = either (\v -> sim ^?! (regs . ix v)) id
-          eval instr = do
-            f <- case instr of
-                   (Snd v) -> send (value v) >> pure id
-                   (Set r v) -> pure $ reg r .~ value v
-                   (Add r v) -> pure $ reg r +~ value v
-                   (Mul r v) -> pure $ reg r *~ value v
-                   (Mod r v) -> pure $ reg r %~ (`mod` value v)
-                   (Rcv r) -> (reg r .~) <$> recv (value (Left r))
-                   (Jgz a b) -> pure $ if value a > 0 then line +~ value b - 1 else id
-            pure $ sim & f & line +~ 1
+isRecv :: Sig -> Bool
+isRecv (Recv _) = True
+isRecv _ = False
 
-run :: (Monad m) => Send m -> Recv m -> Sim -> m ()
-run send recv = go
-    where go sim = step send recv sim >>= maybe (pure ()) go
+couple :: [Sig] -> [Sig]
+couple [] = []
+couple (x:xs) = if isRecv x then xs else x : couple xs
+
+run :: Sim -> [Sig] -> [Sig]
+run sim inps = case sim.instrs V.! sim.line of
+                 (Snd v) -> Send (value v) : go (couple inps) id
+                 (Set r v) -> go inps $ set r (value v)
+                 (Add r v) -> go inps $ set r (get r + value v)
+                 (Mul r v) -> go inps $ set r (get r * value v)
+                 (Mod r v) -> go inps $ set r (get r `mod` value v)
+                 (Rcv r) -> Recv (value $ Left r) : case inps of
+                                                      Send v : rest -> go rest $ set r v
+                                                      _ -> []
+                 (Jgz a b) -> go inps $ if value a > 0 then advLine (value b - 1) else id
+    where go ins f = run (advLine 1 $ f sim) ins
+          advLine n s = s { line = s.line + n }
+          get r = sim.regs ! r
+          value = either get id
 
 part1 :: ByteString -> Int
-part1 input = fromLeft 0 . runExcept $ evalStateT (run send recv (parseInstrs input)) 0
-    where send = put
-          recv v = when (v /= 0) (get >>= throwError) >> pure 0
+part1 input = go 0 sigs
+    where sigs = run (parseInstrs input) sigs
+          go _ (Send x : xs) = go x xs
+          go v (Recv x : xs)
+              | x /= 0 = v
+              | otherwise = go v xs
+          go _ [] = error "no solution"
 
 part2 :: ByteString -> Int
-part2 input =
-    let sim0 = parseInstrs input
-        sim1 = sim0 & reg 'p' .~ 1
-        send v = modify' (_1 %~ (+1)) >> tell [Just v]
-        recv _ = tell [Nothing] >> get >>= go
-            where go (n, Just v : rest) = put (n, rest) >> pure v
-                  go (n, Nothing : rest) | n > 0 = go (n-1, rest)
-                  go _ = throwError ()
-        runSim sim prog = flip evalState (0 :: Int, prog) . execWriterT . runExceptT
-                          . flip catchError (const $ pure ()) $ run send recv sim
-        p0 = runSim sim0 p1
-        p1 = runSim sim1 p0
-    in length $ catMaybes p1
+part2 input = length $ filter (not . isRecv) p1
+    where sim0 = parseInstrs input
+          sim1 = set 'p' 1 sim0
+          p0 = run sim0 p1
+          p1 = run sim1 p0
