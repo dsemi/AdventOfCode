@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts, NoFieldSelectors, OverloadedRecordDot #-}
-
 module Year2017.Day18
     ( part1
     , part2
@@ -24,14 +22,8 @@ data Instr = Snd Value
            | Rcv Char
            | Jgz Value Value
 
-data Sim = Sim { regs :: UArray Char Int
-               , line :: Int
-               , instrs :: Vector Instr
-               }
-
-parseInstrs :: ByteString -> Sim
-parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . V.fromList
-              . map parse . B.lines
+parseInstrs :: ByteString -> Vector Instr
+parseInstrs = V.fromList . map parse . B.lines
     where parse ln = case runParser instr ln of
                        OK res _ -> res
                        _ -> error "unreachable"
@@ -46,9 +38,6 @@ parseInstrs = Sim (listArray ('a', 'z') $ repeat 0) 0 . V.fromList
           letterChar = satisfy isLatinLetter
           value = (Left <$> letterChar) <|> (Right <$> signedInt)
 
-set :: Char -> Int -> Sim -> Sim
-set r v sim = sim { regs = sim.regs // [(r, v)] }
-
 data Sig = Send Int | Recv Int deriving (Eq)
 
 isRecv :: Sig -> Bool
@@ -59,34 +48,34 @@ couple :: [Sig] -> [Sig]
 couple [] = []
 couple (x:xs) = if isRecv x then xs else x : couple xs
 
-run :: Sim -> [Sig] -> [Sig]
-run sim inps = case sim.instrs V.! sim.line of
-                 (Snd v) -> Send (value v) : go (couple inps) id
-                 (Set r v) -> go inps $ set r (value v)
-                 (Add r v) -> go inps $ set r (get r + value v)
-                 (Mul r v) -> go inps $ set r (get r * value v)
-                 (Mod r v) -> go inps $ set r (get r `mod` value v)
-                 (Rcv r) -> Recv (value $ Left r) : case inps of
-                                                      Send v : rest -> go rest $ set r v
-                                                      _ -> []
-                 (Jgz a b) -> go inps $ if value a > 0 then advLine (value b - 1) else id
-    where go ins f = run (advLine 1 $ f sim) ins
-          advLine n s = s { line = s.line + n }
-          get r = sim.regs ! r
-          value = either get id
+run :: (UArray Char Int -> UArray Char Int) -> Vector Instr -> [Sig] -> [Sig]
+run f instrs = go 0 $ f $ listArray ('a', 'z') $ repeat 0
+    where go :: Int -> UArray Char Int -> [Sig] -> [Sig]
+          go line regs ins =
+              case instrs V.! line of
+                (Snd v) -> Send (value v) : step 1 (couple ins) regs
+                (Set r v) -> step 1 ins $ set r (value v)
+                (Add r v) -> step 1 ins $ set r (get r + value v)
+                (Mul r v) -> step 1 ins $ set r (get r * value v)
+                (Mod r v) -> step 1 ins $ set r (get r `mod` value v)
+                (Rcv r) -> Recv (get r) : case ins of
+                                            Send v : rest -> step 1 rest $ set r v
+                                            _ -> []
+                (Jgz a b) -> step (if value a > 0 then value b else 1) ins regs
+              where get r = regs ! r
+                    set r v = regs // [(r, v)]
+                    value = either get id
+                    step n i r = go (line + n) r i
 
 part1 :: ByteString -> Int
 part1 input = go 0 sigs
-    where sigs = run (parseInstrs input) sigs
+    where sigs = run id (parseInstrs input) sigs
           go _ (Send x : xs) = go x xs
-          go v (Recv x : xs)
-              | x /= 0 = v
-              | otherwise = go v xs
-          go _ [] = error "no solution"
+          go v (Recv 0 : xs) = go v xs
+          go v _ = v
 
 part2 :: ByteString -> Int
 part2 input = length $ filter (not . isRecv) p1
-    where sim0 = parseInstrs input
-          sim1 = set 'p' 1 sim0
-          p0 = run sim0 p1
-          p1 = run sim1 p0
+    where instrs = parseInstrs input
+          p0 = run id instrs p1
+          p1 = run (// [('p', 1)]) instrs p0
