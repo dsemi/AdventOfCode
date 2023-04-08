@@ -28,44 +28,41 @@ parseInstrs = V.fromList . map parse . B.lines
                        OK res _ -> res
                        _ -> error "unreachable"
           instr = asum [ $(string "snd ") >> Snd <$> value
-                       , $(string "set ") >> Set <$> letterChar <* $(char ' ') <*> value
-                       , $(string "add ") >> Add <$> letterChar <* $(char ' ') <*> value
-                       , $(string "mul ") >> Mul <$> letterChar <* $(char ' ') <*> value
-                       , $(string "mod ") >> Mod <$> letterChar <* $(char ' ') <*> value
-                       , $(string "rcv ") >> Rcv <$> letterChar
+                       , $(string "set ") >> Set <$> letter <* $(char ' ') <*> value
+                       , $(string "add ") >> Add <$> letter <* $(char ' ') <*> value
+                       , $(string "mul ") >> Mul <$> letter <* $(char ' ') <*> value
+                       , $(string "mod ") >> Mod <$> letter <* $(char ' ') <*> value
+                       , $(string "rcv ") >> Rcv <$> letter
                        , $(string "jgz ") >> Jgz <$> value <* $(char ' ') <*> value
                        ]
-          letterChar = satisfy isLatinLetter
-          value = (Left <$> letterChar) <|> (Right <$> signedInt)
+          letter = satisfy isLatinLetter
+          value = (Left <$> letter) <|> (Right <$> signedInt)
 
-data Sig = Send Int | Recv Int deriving (Eq)
+data Sig = Send Int | Recv Int
 
-isRecv :: Sig -> Bool
-isRecv (Recv _) = True
-isRecv _ = False
-
-couple :: [Sig] -> [Sig]
-couple [] = []
-couple (x:xs) = if isRecv x then xs else x : couple xs
+isSend :: Sig -> Bool
+isSend (Send _) = True
+isSend _ = False
 
 run :: (UArray Char Int -> UArray Char Int) -> Vector Instr -> [Sig] -> [Sig]
-run f instrs = go 0 $ f $ listArray ('a', 'z') $ repeat 0
-    where go :: Int -> UArray Char Int -> [Sig] -> [Sig]
-          go line regs ins =
+run f instrs = go 0 0 $ f $ listArray ('a', 'z') $ repeat 0
+    where go :: Int -> Int -> UArray Char Int -> [Sig] -> [Sig]
+          go line sends regs ins =
               case instrs V.! line of
-                (Snd v) -> Send (value v) : step 1 (couple ins) regs
-                (Set r v) -> step 1 ins $ set r (value v)
-                (Add r v) -> step 1 ins $ set r (get r + value v)
-                (Mul r v) -> step 1 ins $ set r (get r * value v)
-                (Mod r v) -> step 1 ins $ set r (get r `mod` value v)
-                (Rcv r) -> Recv (get r) : case ins of
-                                            Send v : rest -> step 1 rest $ set r v
-                                            _ -> []
-                (Jgz a b) -> step (if value a > 0 then value b else 1) ins regs
+                (Snd v) -> Send (value v) : step 1 (sends + 1) ins regs
+                (Set r v) -> step 1 sends ins $ set r (value v)
+                (Add r v) -> step 1 sends ins $ set r (get r + value v)
+                (Mul r v) -> step 1 sends ins $ set r (get r * value v)
+                (Mod r v) -> step 1 sends ins $ set r (get r `mod` value v)
+                (Rcv r) -> let nextSend s (Send v : rest) = step 1 s rest $ set r v
+                               nextSend s (Recv _ : rest) | s > 0 = nextSend (s - 1) rest
+                               nextSend _ _ = []
+                           in Recv (get r) : nextSend sends ins
+                (Jgz a b) -> step (if value a > 0 then value b else 1) sends ins regs
               where get r = regs ! r
                     set r v = regs // [(r, v)]
                     value = either get id
-                    step n i r = go (line + n) r i
+                    step n s i r = go (line + n) s r i
 
 part1 :: ByteString -> Int
 part1 input = go 0 sigs
@@ -75,7 +72,7 @@ part1 input = go 0 sigs
           go v _ = v
 
 part2 :: ByteString -> Int
-part2 input = length $ filter (not . isRecv) p1
+part2 input = length $ filter isSend p1
     where instrs = parseInstrs input
           p0 = run id instrs p1
           p1 = run (// [('p', 1)]) instrs p0
