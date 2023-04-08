@@ -1,29 +1,29 @@
+{-# LANGUAGE NegativeLiterals #-}
+
 module Year2017.Day19
     ( part1
     , part2
     ) where
 
-import Control.Lens
 import Data.Array
+import Linear.V2
 
-
-type Coord = (Int, Int)
 data Dir = D | R | U | L deriving (Enum)
 
-parse :: String -> Array Coord Char
-parse input = accumArray (flip const) ' ' ((0, 0), (rows, cols)) grid
+parse :: String -> Array (V2 Int) Char
+parse input = accumArray (flip const) ' ' (V2 0 0, V2 rows cols) grid
     where rows = length (lines input) - 1
           cols = length (head (lines input)) - 1
-          grid = [ ((r, c), v) | (r, line) <- zip [0..] $ lines input
+          grid = [ (V2 r c, v) | (r, line) <- zip [0..] $ lines input
                  , (c, v) <- zip [0..] line ]
 
-move :: Dir -> Coord -> Coord
-move D = over _1 succ
-move R = over _2 succ
-move U = over _1 pred
-move L = over _2 pred
+move :: Dir -> V2 Int -> V2 Int
+move D = (+ V2  1  0)
+move R = (+ V2  0  1)
+move U = (+ V2 -1  0)
+move L = (+ V2  0 -1)
 
-turn :: Array Coord Char -> Dir -> Coord -> Dir
+turn :: Array (V2 Int) Char -> Dir -> V2 Int -> Dir
 turn grid dir coord =
     case dir of
       D -> f R L
@@ -34,9 +34,9 @@ turn grid dir coord =
               | inRange (bounds grid) (move a coord) && grid ! move a coord /= ' ' = a
               | otherwise = b
 
-followPath :: Array Coord Char -> String
+followPath :: Array (V2 Int) Char -> String
 followPath grid = go D firstCoord
-    where firstCoord = fst . head . filter (\((r, _), v) -> r == 0 && v == '|') $ assocs grid
+    where firstCoord = fst . head . filter (\(V2 r _, v) -> r == 0 && v == '|') $ assocs grid
           go dir coord
               | not (inRange (bounds grid) nextCoord) || grid ! nextCoord == ' ' =
                   if grid ! coord /= '+'
