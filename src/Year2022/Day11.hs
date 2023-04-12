@@ -10,6 +10,7 @@ import Control.Monad.ST
 import Data.ByteString (ByteString)
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
+import qualified Data.Vector.Unboxed.Mutable as MVU
 import qualified Data.Vector.Algorithms.Intro as VA
 import FlatParse.Basic
 
@@ -43,18 +44,18 @@ monkeys input = case runParser (some $ monkey <* optional_ $(string "\n\n")) inp
 solve :: Bool -> ByteString -> Int
 solve p2 input = runST $ do
   v <- V.thaw $ V.fromList monks
-  MV.replicate (length monks) 0 >>= go iters v
+  MVU.replicate (length monks) 0 >>= go iters v
     where monks = monkeys input
           mx = length monks - 1
           m = foldr1 lcm $ map (.divisor) monks
           iters = if p2 then 10000 else 20
           go 0 _ ins = do
             VA.sort ins
-            (*) <$> MV.read ins (mx - 1) <*> MV.read ins mx
+            (*) <$> MVU.read ins (mx - 1) <*> MVU.read ins mx
           go c mks ins = do
             forM_ [0 .. mx] $ \i -> do
               mk <- MV.read mks i
-              MV.modify ins (+ length (mk.items)) i
+              MVU.modify ins (+ length (mk.items)) i
               forM_ (mk.items) $ \it -> do
                 let worryLevel = if p2 then mk.op it `mod` m else mk.op it `div` 3
                 if worryLevel `mod` mk.divisor == 0
