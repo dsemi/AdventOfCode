@@ -6,16 +6,19 @@ import Conduit
 import Control.Applicative (liftA2)
 import Control.DeepSeq
 import Control.Monad
+import Control.Monad.ST
+import Data.Array.Unboxed
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.Char
 import Data.Hashable
 import qualified Data.HashMap.Strict as M
 import qualified Data.HashPSQ as Q
+import qualified Data.HashTable.ST.Basic as H
 import Data.IORef
 import Data.IntSet (IntSet)
 import qualified Data.IntSet as I
-import Data.List (foldl', tails)
+import Data.List (foldl', foldl1', tails)
 import Data.Set (Set)
 import qualified Data.Set as S
 import Data.String.Interpolate
@@ -171,3 +174,19 @@ manyTill p o = scan
 
 someTill :: Parser e a -> Parser e b -> Parser e [a]
 someTill p o = liftA2 (:) p $ manyTill p o
+
+heldKarp :: (Int -> Int -> Int) -> UArray (Int, Int) Int -> Int
+heldKarp f adj = runST $ do
+  let hi = fst $ snd $ bounds adj
+  g <- H.new
+  forM_ [1 .. hi] $ \k -> H.insert g ([k], k) (adj ! (0, k))
+  forM_ [2 .. hi] $ \s ->
+      forM_ (combinations [1..hi] s) $ \set ->
+          forM_ set $ \k -> do
+            v <- fmap (foldl1' f) $ forM (filter (/= k) set) $ \m -> do
+                   Just v <- H.lookup g (filter (/= k) set, m)
+                   pure $ v + adj ! (m, k)
+            H.insert g (set, k) v
+  fmap (foldl1' f) $ forM [1..hi] $ \k -> do
+    Just v <- H.lookup g ([1..hi], k)
+    pure $ v + adj ! (k, 0)

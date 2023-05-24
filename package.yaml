@@ -73,6 +73,7 @@ library:
     - Glob
     - groups
     - hashable
+    - hashtables
     - hip
     - linear
     - memoize

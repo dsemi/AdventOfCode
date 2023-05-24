@@ -5,16 +5,16 @@ module Year2015.Day13
     , part2
     ) where
 
+import Data.Array.Unboxed
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import Data.HashMap.Strict (HashMap, (!))
 import qualified Data.HashMap.Strict as M
-import Data.List (permutations)
+import Data.List (nub)
 import FlatParse.Basic
 
-data Edge = Edge Char Char Int
+import Utils
 
-parseLine :: ByteString -> Edge
+parseLine :: ByteString -> ((Char, Char), Int)
 parseLine line = case runParser parser line of
                    OK edge _ -> edge
                    _ -> error "unreachable"
@@ -23,32 +23,25 @@ parseLine line = case runParser parser line of
             op <- ($(string "lose ") *> pure negate)
                   <|> ($(string "gain ") *> pure id)
             i <- anyAsciiDecimalInt
-            return $ op i
+            pure $ op i
           parser = do
             p1 <- letter <* $(string " would ")
             hap <- parseValue <* $(string " happiness units by sitting next to ")
             p2 <- letter <* $(char '.')
-            return $ Edge (B.head p1) (B.head p2) hap
+            pure $ ((B.head p1, B.head p2), hap)
 
-
-constructMap :: [Edge] -> HashMap Char (HashMap Char Int)
-constructMap = foldr addEdgeToMap M.empty
-    where addEdgeToMap (Edge p1 p2 n) m = let m' = M.lookupDefault M.empty p1 m
-                                              m'' = M.insert p1 (M.insertWith (+) p2 n m') m
-                                              m''' = M.lookupDefault M.empty p2 m''
-                                          in M.insert p2 (M.insertWith (+) p1 n m''') m''
-
-maxHappinessOrdering :: Bool -> HashMap Char (HashMap Char Int) -> Int
-maxHappinessOrdering p1 m = maximum $ map happinessDiff $ permutations $ M.keys m
-    where happinessDiff [] = error "No vals"
-          happinessDiff xss@(x:_) = go 0 xss
-              where go _ [] = error "No vals"
-                    go !c [y] = if p1 then c + hd x y else c
-                    go !c (a:b:xs) = go (c + hd a b) (b:xs)
-          hd a b = m ! a ! b
+adjMap :: [((Char, Char), Int)] -> UArray (Int, Int) Int
+adjMap xs = let idx = M.fromList $ zip (nub $ map (fst . fst) xs) [0..]
+                len = maximum $ M.elems idx
+            in accumArray (+) 0 ((0, 0), (len, len)) $
+               concat [[((ka, kb), v), ((kb, ka), v)] | ((a, b), v) <- xs
+                      , let ka = idx M.! a
+                            kb = idx M.! b ]
 
 part1 :: ByteString -> Int
-part1 = maxHappinessOrdering True . constructMap . map parseLine . B.lines
+part1 = heldKarp max . adjMap . map parseLine . B.lines
 
 part2 :: ByteString -> Int
-part2 = maxHappinessOrdering False . constructMap . map parseLine . B.lines
+part2 input = let adj = adjMap $ map parseLine $ B.lines input
+                  a = fst $ snd $ bounds adj
+              in heldKarp max $ array ((0, 0), (a+1, a+1)) $ assocs adj
