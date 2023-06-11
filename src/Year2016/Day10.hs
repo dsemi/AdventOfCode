@@ -19,11 +19,10 @@ num (Output n) = n
 
 parse :: (Node -> [Int]) -> [String] -> [Edge]
 parse f ["bot",n0,_,_,_,o1,n1,_,_,_,o2,n2] =
-    let botNode = Bot $ read n0
+    let [a, b] = f $ Bot $ read n0
         minNode = cns o1 $ read n1
         maxNode = cns o2 $ read n2
-    in [ (minNode, [minimum $ f botNode])
-       , (maxNode, [maximum $ f botNode])]
+    in [ (minNode, [a]), (maxNode, [b]) ]
     where cns "bot" = Bot
           cns _     = Output
 parse _ ["value",v,_,_,_,n] = [(Bot (read n), [read v])]
