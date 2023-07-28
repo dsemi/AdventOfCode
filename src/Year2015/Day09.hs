@@ -9,18 +9,13 @@ import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.List (nub)
 import Data.Tuple
-import FlatParse.Basic
 
+import Scanf
 import Utils
 
 parseLine :: ByteString -> ((ByteString, ByteString), Int)
-parseLine line = case runParser parser line of
-                   OK edge _ -> edge
-                   _ -> error "unreachable"
-    where letter = byteStringOf (some $ satisfy (\x -> isDigit x || isLatinLetter x))
-          parser = (,) <$> ((,) <$> letter <* $(string " to ")
-                           <*> letter <* $(string " = "))
-                   <*> anyAsciiDecimalInt
+parseLine line = let (a :+ b :+ dist :+ ()) = scanf [fmt|%s to %s = %d|] line
+                 in ((a, b), dist)
 
 adjMap :: ByteString -> UArray (Int, Int) Int
 adjMap input = let m = M.fromList $ concatMap (\line -> let (k, v) = parseLine line

@@ -8,6 +8,7 @@ module Scanf
     ) where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.Char (isSpace)
 import Data.Kind
 import FlatParse.Basic
 import Language.Haskell.TH

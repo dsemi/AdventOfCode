@@ -10,25 +10,16 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.HashMap.Strict as M
 import Data.List (nub)
-import FlatParse.Basic
 
+import Scanf
 import Utils
 
 parseLine :: ByteString -> ((Char, Char), Int)
-parseLine line = case runParser parser line of
-                   OK edge _ -> edge
-                   _ -> error "unreachable"
-    where letter = byteStringOf (some $ satisfy (\x -> isDigit x || isLatinLetter x))
-          parseValue = do
-            op <- ($(string "lose ") *> pure negate)
-                  <|> ($(string "gain ") *> pure id)
-            i <- anyAsciiDecimalInt
-            pure $ op i
-          parser = do
-            p1 <- letter <* $(string " would ")
-            hap <- parseValue <* $(string " happiness units by sitting next to ")
-            p2 <- letter <* $(char '.')
-            pure $ ((B.head p1, B.head p2), hap)
+parseLine line =
+    let (a :+ op :+ hap :+ b :+ ()) = scanf [fmt|%s would %s %d happiness units by sitting next to %s|] line
+    in if op == "gain"
+       then ((B.head a, B.head b), hap)
+       else ((B.head a, B.head b), -hap)
 
 adjMap :: [((Char, Char), Int)] -> UArray (Int, Int) Int
 adjMap xs = let idx = M.fromList $ zip (nub $ map (fst . fst) xs) [0..]
