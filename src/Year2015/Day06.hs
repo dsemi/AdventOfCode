@@ -13,9 +13,11 @@ import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as MV
 import FlatParse.Basic
 
+import Scanf
+
 data Action = Off | On | Toggle deriving (Show)
 
-data Command = Command Action (Int, Int) (Int, Int) deriving (Show)
+data Command = Command Action (Int, Int, Int, Int) deriving (Show)
 
 command :: ByteString -> Command
 command s = case runParser parser s of
@@ -24,16 +26,15 @@ command s = case runParser parser s of
     where parseAction = ($(string "toggle") *> pure Toggle)
                         <|> ($(string "turn off") *> pure Off)
                         <|> ($(string "turn on") *> pure On)
-          pair = (,) <$> (anyAsciiDecimalInt <* $(char ',')) <*> anyAsciiDecimalInt
-          parser = Command <$> parseAction <* $(char ' ') <*> pair
-                           <* $(string " through ") <*> pair
+          ns = (,,,) |<$> [fmt|%d,%d through %d,%d|]
+          parser = Command <$> parseAction <* $(char ' ') <*> ns
 
 runCommands :: (Int -> Int) -> (Int -> Int) -> (Int -> Int)
             -> [Command] -> Vector Int
 runCommands f1 f2 f3 commands =
   runST $ do
     arr <- MV.new 1000000
-    forM_ commands $ \(Command a (x1, y1) (x2, y2)) ->
+    forM_ commands $ \(Command a (x1, y1, x2, y2)) ->
         let f = case a of
                   Off    -> f1
                   On     -> f2

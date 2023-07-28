@@ -4,15 +4,12 @@ module Year2015.Day02
     ) where
 
 import Data.ByteString (ByteString)
-import FlatParse.Basic
+import qualified Data.ByteString.Char8 as B
+
+import Scanf
 
 process :: (Int -> Int -> Int -> Int) -> ByteString -> Int
-process f input = case runParser (some line) input of
-                    OK ns _ -> sum ns
-                    _ -> error "unreachable"
-    where line = f <$> anyAsciiDecimalInt <* $(char 'x')
-                 <*> anyAsciiDecimalInt <* $(char 'x')
-                 <*> anyAsciiDecimalInt <* optional_ $(char '\n')
+process f = sum . map (f |. scanf [fmt|%dx%dx%d|]) . B.lines
 
 part1 :: ByteString -> Int
 part1 = process $ \l w h -> 2*l*w + 2*l*h + 2*w*h + minimum [l*w, l*h, w*h]
