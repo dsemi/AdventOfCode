@@ -10,9 +10,11 @@ default-extensions:
   # - ImportQualifiedPost
   - LambdaCase
   - MultiWayIf
+  - QuasiQuotes
   - TemplateHaskell
   - TupleSections
   - TypeApplications
+  - TypeOperators
   - ViewPatterns
 other-extensions:
   - TemplateHaskell

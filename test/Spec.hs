@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, QuasiQuotes, OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts, OverloadedStrings #-}
 
 module Main where
 

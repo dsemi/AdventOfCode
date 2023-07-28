@@ -1,4 +1,4 @@
-{-# LANGUAGE NumericUnderscores, OverloadedStrings, QuasiQuotes, ScopedTypeVariables #-}
+{-# LANGUAGE NumericUnderscores, OverloadedStrings, ScopedTypeVariables #-}
 
 module Utils where
 
