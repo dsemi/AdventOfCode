@@ -12,9 +12,7 @@ allSizes = go 0 [] . tail . lines
               | "$ cd " `isPrefixOf` line = cd (drop 5 line)
               | isDigit (head line) = go (size + read (head (words line))) fstree rest
               | otherwise = go size fstree rest
-              where cd ".." = case fstree of
-                                f : fs -> size : go (size + f) fs rest
-                                [] -> error "Tried to go up from root"
+              where cd ".." = size : go (size + head fstree) (tail fstree) rest
                     cd _ = go 0 (size : fstree) rest
           go size fstree [] = scanl (+) size fstree
 
