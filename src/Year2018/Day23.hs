@@ -8,10 +8,9 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.List (foldl', maximumBy)
 import Data.Ord
-import FlatParse.Basic
 import Linear.V3
 
-import Utils
+import Scanf
 
 type Coord = V3 Int
 
@@ -21,14 +20,8 @@ data Nanobot = Nanobot { pos :: Coord
 
 parseNanobots :: ByteString -> [Nanobot]
 parseNanobots = map parse . B.lines
-    where nanobot = do
-            pt <- V3 <$> ($(string "pos=<") *> signedInt) <* $(char ',') <*>
-                  signedInt <* $(char ',') <*> signedInt
-            r <- $(string ">, r=") *> signedInt
-            pure $ Nanobot pt r
-          parse line = case runParser nanobot line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+    where parse line = let (x :+ y :+ z :+ r :+ ()) = scanf [fmt|pos=<%d,%d,%d>, r=%d|] line
+                       in Nanobot (V3 x y z) r
 
 nanoInRange :: Nanobot -> Coord -> Bool
 nanoInRange (Nanobot p r) p' = sum (abs $ p - p') <= r

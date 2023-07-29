@@ -8,22 +8,14 @@ import Control.Monad
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.List (findIndex)
-import FlatParse.Basic
 import Linear.V1
 import Linear.V3
 
-import Utils
+import Scanf
 
 parseMoons :: ByteString -> [(V3 Int, V3 Int)]
 parseMoons = map parse . B.lines
-    where parser = do
-            x <- $(string "<x=") *> signedInt
-            y <- $(string ", y=") *> signedInt
-            z <- $(string ", z=") *> signedInt <* $(string ">")
-            pure $ (V3 x y z, V3 0 0 0)
-          parse line = case runParser parser line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+    where parse line = (V3 |$ scanf [fmt|<x=%d, y=%d, z=%d>|] line, V3 0 0 0)
 
 applyGravity :: (Monad m, Num (m Int)) => (m Int, m Int) -> (m Int, m Int) -> (m Int, m Int)
 applyGravity (p', _) (p, v) = (p,  v + fmap (pred . fromEnum) (liftM2 compare p' p))

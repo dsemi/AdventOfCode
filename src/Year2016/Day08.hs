@@ -11,6 +11,7 @@ import Data.List (foldl')
 import FlatParse.Basic
 
 import Ocr
+import Scanf
 
 type Coord = (Int, Int)
 
@@ -21,21 +22,18 @@ h = 6
 
 parseRect :: Parser () (HashSet Coord -> HashSet Coord)
 parseRect = do
-  width <- $(string "rect ") *> anyAsciiDecimalInt
-  height <- $(string "x") *> anyAsciiDecimalInt
-  return $ S.union $ S.fromList [(r, c) | c <- [0..width-1], r <- [0..height-1]]
+  (width :+ height :+ ()) <- [fmt|rect %dx%d|]
+  pure $ S.union $ S.fromList [(r, c) | c <- [0..width-1], r <- [0..height-1]]
 
 parseRotateRow :: Parser () (HashSet Coord -> HashSet Coord)
 parseRotateRow = do
-  row <- $(string "rotate row y=") *> anyAsciiDecimalInt
-  amt <- $(string " by ") *> anyAsciiDecimalInt
-  return $ S.map (\rc@(r, c) -> if r == row then (r, (c + amt) `mod` w) else rc)
+  (row :+ amt :+ ()) <- [fmt|rotate row y=%d by %d|]
+  pure $ S.map (\rc@(r, c) -> if r == row then (r, (c + amt) `mod` w) else rc)
 
 parseRotateCol :: Parser () (HashSet Coord -> HashSet Coord)
 parseRotateCol = do
-  col <- $(string "rotate column x=") *> anyAsciiDecimalInt
-  amt <- $(string " by ") *> anyAsciiDecimalInt
-  return $ S.map (\rc@(r, c) -> if c == col then ((r + amt) `mod` h, c) else rc)
+  (col :+ amt :+ ()) <- [fmt|rotate column x=%d by %d|]
+  pure $ S.map (\rc@(r, c) -> if c == col then ((r + amt) `mod` h, c) else rc)
 
 parser :: Parser () (HashSet Coord -> HashSet Coord)
 parser = parseRect <|> parseRotateRow <|> parseRotateCol

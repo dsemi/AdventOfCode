@@ -11,15 +11,15 @@ import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import FlatParse.Basic
 
+import Scanf
+
 parsePlayers :: ByteString -> (Int, Int)
 parsePlayers input = case runParser plrs input of
                        OK res _ -> res
                        _ -> error "unreachable"
-    where plr = fmap pred $ do
-                  $(string "Player ")
-                  skipSatisfy isDigit
-                  $(string " starting position: ")
-                  anyAsciiDecimalInt
+    where plr = do
+            (_ :+ p :+ ()) <- [fmt|Player %d starting position: %d|]
+            pure $ p - 1
           plrs = (,) <$> plr <* $(char '\n') <*> plr
 
 part1 :: ByteString -> Int

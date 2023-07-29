@@ -18,6 +18,7 @@ import Data.Vector (Vector, (!), (//))
 import qualified Data.Vector as V
 import FlatParse.Basic
 
+import Scanf
 import Utils
 
 testSample :: ByteString -> (Int, Set Op)
@@ -26,11 +27,8 @@ testSample input = case runParser parser input of
                      _ -> error "unreachable"
     where parser = do
             bef <- V.fromList <$> ($(string "Before: ") *> arr) <* $(char '\n')
-            (op, a, b, c) <- (,,,) <$> anyAsciiDecimalInt <* $(char ' ') <*>
-                             anyAsciiDecimalInt <* $(char ' ') <*>
-                             anyAsciiDecimalInt <* $(char ' ') <*>
-                             anyAsciiDecimalInt <* $(char '\n')
-            aft <- V.fromList <$> ($(string "After:  ") *> arr)
+            (op :+ a :+ b :+ c :+ ()) <- [fmt|%d %d %d %d|]
+            aft <- V.fromList <$> ($(string "\nAfter:  ") *> arr)
             pure (op, S.fromList $ filter (\cmd -> eval bef cmd a b c == aft) [minBound..])
           num = anyAsciiDecimalInt <* optional_ $(string ", ")
           arr = $(char '[') *> some num <* $(char ']')

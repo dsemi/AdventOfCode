@@ -14,9 +14,8 @@ import Data.Array.ST
 import Data.Array.Unboxed
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import Data.Maybe
-import FlatParse.Basic
 
+import Scanf
 type Coord = (Int, Int)
 
 parseScans :: ByteString -> UArray Coord Char
@@ -24,16 +23,10 @@ parseScans s = let clay = concatMap parse $ B.lines s
                    minCoord = (minimum (map fst clay) - 1, minimum (map snd clay))
                    maxCoord = (maximum (map fst clay) + 1, maximum (map snd clay))
                in accumArray (flip const) '.' (minCoord, maxCoord) $ map (,'#') clay
-    where parseRange = (range <$> ((,) <$> anyAsciiDecimalInt <*> ($(string "..") *> anyAsciiDecimalInt)))
-                       <|> ((:[]) <$> anyAsciiDecimalInt)
-          parseCoord = (,) <$> anyAsciiChar <*> ($(char '=') *> parseRange)
-          parseScan = do
-            ranges <- some $ parseCoord <* optional_ $(string ", ")
-            pure [ (x, y) | x <- fromJust $ lookup 'x' ranges
-                 , y <- fromJust $ lookup 'y' ranges ]
-          parse line = case runParser parseScan line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+    where parse line = let (a :+ av :+ _ :+ blo :+ bhi :+ ()) = scanf [fmt|%c=%d, %c=%d..%d|] line
+                           (xs, ys) = if a == 'x' then ([av], range (blo, bhi))
+                                      else (range (blo, bhi), [av])
+                       in [ (x, y) | x <- xs, y <- ys ]
 
 flood :: forall s. STUArray s Coord Char -> ST s (STUArray s Coord Char)
 flood grid = go (500, 0) >> pure grid

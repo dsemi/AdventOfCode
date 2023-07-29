@@ -13,9 +13,10 @@ import Data.Hashable
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as S
 import Data.Maybe
-import FlatParse.Basic
 import GHC.Generics
 import Linear.V2
+
+import Scanf
 
 type Coord = V2 Int
 
@@ -27,14 +28,8 @@ next ClimbingGear = Neither
 next x = succ x
 
 parseInput :: ByteString -> (Int, Coord)
-parseInput input = case runParser parser input of
-                     OK res _ -> res
-                     _ -> error "unreachable"
-    where parser = do
-            d <- $(string "depth: ") *> anyAsciiDecimalInt <* $(char '\n')
-            pt <- V2 <$> ($(string "target: ") *> anyAsciiDecimalInt) <*>
-                  ($(char ',') *> anyAsciiDecimalInt)
-            pure (d, pt)
+parseInput input = let (d :+ x :+ y :+ ()) = scanf [fmt|depth: %d\ntarget: %d,%d|] input
+                   in (d, V2 x y)
 
 erosionLevels :: Int -> Coord -> Array Coord Tool
 erosionLevels depth target = fmap (toEnum . (`mod` 3)) arr

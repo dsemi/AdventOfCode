@@ -16,7 +16,8 @@ import qualified Data.HashSet as S
 import Data.List (partition, sortBy)
 import Data.Maybe (listToMaybe)
 import Data.Ord (comparing)
-import FlatParse.Basic hiding (take)
+
+import Scanf
 
 type Queue = HashPSQ Char (Int, Char) (HashSet Char)
 
@@ -25,13 +26,7 @@ parseSteps  = foldr (\(k, (p, v)) -> Q.insert k (p, k) v) Q.empty . M.toList
               . M.fromListWith (\(a, b) -> ((a+) *** S.union b))
               . concatMap f . map parse . B.lines
     where f (a, b) = [(a, (0, S.singleton b)), (b, (1, S.empty))]
-          parser = do
-            a <- $(string "Step ") *> anyAsciiChar <* $(string " must be finished before step ")
-            b <- anyAsciiChar <* $(string " can begin.")
-            pure (a, b)
-          parse line = case runParser parser line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+          parse = (,) |. scanf [fmt|Step %c must be finished before step %c can begin.|]
 
 solve :: Int -> Queue -> (Int, [Char])
 solve n = go 0 []

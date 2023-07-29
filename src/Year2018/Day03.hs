@@ -6,7 +6,8 @@ module Year2018.Day03
 import Data.Array.Unboxed
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
-import FlatParse.Basic
+
+import Scanf
 
 type Coord = (Int, Int)
 data Claim = Claim { num :: Int
@@ -15,14 +16,8 @@ data Claim = Claim { num :: Int
 
 parseClaims :: ByteString -> [Claim]
 parseClaims = map parse . B.lines
-    where parseClaim = do
-            n <- $(char '#') *> anyAsciiDecimalInt
-            (x, y) <- (,) <$> ($(string " @ ") *> anyAsciiDecimalInt) <* $(char ',') <*> anyAsciiDecimalInt
-            (w, h) <- (,) <$> ($(string ": ") *> anyAsciiDecimalInt) <* $(char 'x') <*> anyAsciiDecimalInt
-            pure $ Claim n ((x, y), (x+w-1, y+h-1))
-          parse line = case runParser parseClaim line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+    where parse line = let (n :+ x :+ y :+ w :+ h :+ ()) = scanf [fmt|#%d @ %d,%d: %dx%d|] line
+                       in Claim n ((x, y), (x+w-1, y+h-1))
 
 coordFreq :: [Claim] -> UArray (Int, Int) Int
 coordFreq claims = accumArray (+) 0 ((0, 0), (upperX, upperY)) $ zip ranges $ repeat 1

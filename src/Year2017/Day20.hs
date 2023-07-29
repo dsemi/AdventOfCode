@@ -5,16 +5,14 @@ module Year2017.Day20
     , part2
     ) where
 
-import Control.Monad (void)
 import qualified Data.HashSet as S
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import Data.Ord (comparing)
 import Data.List (foldl', minimumBy)
-import FlatParse.Basic
 import Linear.V3
 
-import Utils
+import Scanf
 
 data Particle = Particle { position :: V3 Int
                          , velocity :: V3 Int
@@ -23,17 +21,9 @@ data Particle = Particle { position :: V3 Int
 
 parseParticles :: ByteString -> [Particle]
 parseParticles = map parse . B.lines
-    where parseVector = do
-            void $ anyAsciiChar >> $(string "=<")
-            V3 <$> signedInt <* $(char ',') <*>
-               signedInt <* $(char ',') <*>
-               signedInt <* $(char '>')
-          parseParticle = Particle <$> parseVector <* $(string ", ") <*>
-                          parseVector <* $(string ", ") <*>
-                          parseVector
-          parse line = case runParser parseParticle line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+    where parse line = let (px :+ py :+ pz :+ vx :+ vy :+ vz :+ ax :+ ay :+ az :+ ()) =
+                               scanf [fmt|p=<%d,%d,%d>, v=<%d,%d,%d>, a=<%d,%d,%d>|] line
+                       in Particle (V3 px py pz) (V3 vx vy vz) (V3 ax ay az)
 
 part1 :: ByteString -> Int
 part1 = fst . minimumBy (comparing (sum . abs . acceleration . snd)) . zip [0..] . parseParticles

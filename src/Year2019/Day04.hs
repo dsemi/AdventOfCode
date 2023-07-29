@@ -7,16 +7,14 @@ module Year2019.Day04
 
 import Data.ByteString (ByteString)
 import Data.Ix (range)
-import FlatParse.Basic
 
-parseRange :: ByteString -> Maybe (Int, Int)
-parseRange input = case runParser parser input of
-                     OK res _ -> Just res
-                     _ -> Nothing
-    where parser = (,) <$> anyAsciiDecimalInt <* $(char '-') <*> anyAsciiDecimalInt
+import Scanf
 
-numValid :: (Int -> Bool) -> ByteString -> Maybe Int
-numValid f = fmap (length . filter solve . range) . parseRange
+parseRange :: ByteString -> (Int, Int)
+parseRange = (,) |. scanf [fmt|%d-%d|]
+
+numValid :: (Int -> Bool) -> ByteString -> Int
+numValid f = length . filter solve . range . parseRange
     where solve num = go (num `rem` 10) 1 False (num `quot` 10)
           go _ !c !b 0 = b || f c
           go prev !c !b n =
@@ -27,8 +25,8 @@ numValid f = fmap (length . filter solve . range) . parseRange
               where m = n `rem` 10
                     n' = n `quot` 10
 
-part1 :: ByteString -> Maybe Int
+part1 :: ByteString -> Int
 part1 = numValid (>=2)
 
-part2 :: ByteString -> Maybe Int
+part2 :: ByteString -> Int
 part2 = numValid (==2)

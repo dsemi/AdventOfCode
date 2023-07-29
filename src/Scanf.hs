@@ -14,6 +14,8 @@ import FlatParse.Basic
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 
+import Utils
+
 infixr 1 :+
 data a :+ b = a :+ b deriving (Show)
 
@@ -44,12 +46,16 @@ a |<$> b = apply a <$> b
 
 formatString :: String -> Q Exp
 formatString "" = [|pure ()|]
+formatString ('\\' : s1) =
+    case s1 of
+      'n' : s' -> [|$(char '\n') >> $(formatString s')|]
+      _ -> error "Invalid escape sequence"
 formatString ('%' : s1) =
     case s1 of
       'c' : s' -> [|(:+) <$> anyChar <*> $(formatString s')|]
-      'd' : s' -> [|(:+) <$> anyAsciiDecimalInt <*> $(formatString s')|]
-      'f' : s' -> [|(:+) <$> anyChar <*> $(formatString s')|]
-      'l' : s' -> [|(:+) <$> anyAsciiDecimalInteger <*> $(formatString s')|]
+      'd' : s' -> [|(:+) <$> signedInt <*> $(formatString s')|]
+      -- 'f' : s' -> [|(:+) <$> anyChar <*> $(formatString s')|]
+      'l' : s' -> [|(:+) <$> signedInteger <*> $(formatString s')|]
       's' : s' -> [|(:+) <$> byteStringOf (some $ satisfy $ not . isSpace) <*> $(formatString s')|]
       'u' : s' -> [|(:+) <$> anyAsciiDecimalWord <*> $(formatString s')|]
       'x' : s' -> [|(:+) <$> anyAsciiHexInt <*> $(formatString s')|]

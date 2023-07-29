@@ -4,27 +4,26 @@ module Year2022.Day18
     ) where
 
 import Control.Monad
+import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import qualified Data.HashSet as S
 import Data.Ix
-import Data.List.Split
 import Linear.V3
 
-import Utils hiding (splitOn)
+import Scanf
+import Utils
 
 adj :: V3 Int -> [V3 Int]
 adj c = [ c + d | d <- [V3 1 0 0, V3 (-1) 0 0, V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1)] ]
 
-cubes :: String -> S.HashSet (V3 Int)
-cubes = S.fromList . map f . lines
-    where f line = case map read (splitOn "," line) of
-                     [x, y, z] -> V3 x y z
-                     _ -> error "Malformed input"
+cubes :: ByteString -> S.HashSet (V3 Int)
+cubes = S.fromList . map (V3 |. scanf [fmt|%d,%d,%d|]) . B.lines
 
-part1 :: String -> Int
+part1 :: ByteString -> Int
 part1 input = length [ () | c <- S.toList lava, a <- adj c, not (S.member a lava) ]
     where lava = cubes input
 
-part2 :: String -> Int
+part2 :: ByteString -> Int
 part2 input = length [ () | c <- S.toList lava, a <- adj c, S.member a air ]
     where lava = cubes input
           topLeft = fmap pred $ foldl1 (liftM2 min) lava

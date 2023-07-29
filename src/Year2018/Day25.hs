@@ -8,13 +8,12 @@ import Control.Monad.ST
 import Data.ByteString (ByteString)
 import qualified Data.ByteString.Char8 as B
 import qualified Data.IntSet as S
-import FlatParse.Basic
-import Linear.V4
 import Data.Vector (Vector, (!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
+import Linear.V4
 
-import Utils
+import Scanf
 
 data Node = Node { pt :: V4 Int
                  , parent :: Int
@@ -22,11 +21,7 @@ data Node = Node { pt :: V4 Int
 
 parsePoints :: ByteString -> Vector Node
 parsePoints = V.fromList . zipWith (\i l -> (\p -> Node p i 0) $ parse l) [0..] . B.lines
-    where parser = V4 <$> signedInt <* $(char ',') <*> signedInt <* $(char ',') <*>
-                   signedInt <* $(char ',') <*> signedInt
-          parse line = case runParser parser line of
-                         OK res _ -> res
-                         _ -> error "unreachable"
+    where parse = V4 |. scanf [fmt|%d,%d,%d,%d|]
 
 find :: MV.STVector s Node -> Int -> ST s Int
 find v = go

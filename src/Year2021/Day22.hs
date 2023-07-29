@@ -9,23 +9,17 @@ import Control.Arrow
 import Control.Monad
 import Control.Monad.ST
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Char8 as B
 import qualified Data.IntSet as S
 import Data.Vector ((!))
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
-import FlatParse.Basic
 
-import Utils
+import Scanf
 
 parseCubes :: ByteString -> [(ByteString, Int, Int, Int, Int, Int, Int)]
-parseCubes input = case runParser cubes input of
-                     OK res _ -> res
-                     _ -> error "unreachable"
-    where cube = (,,,,,,) <$> byteStringOf (some $ satisfy isLatinLetter) <* $(string " x=")
-                 <*> signedInt <* $(string "..") <*> signedInt <* $(string ",y=")
-                 <*> signedInt <* $(string "..") <*> signedInt <* $(string ",z=")
-                 <*> signedInt <* $(string "..") <*> signedInt
-          cubes = some $ cube <* optional_ $(char '\n')
+parseCubes = map cube . B.lines
+    where cube = (,,,,,,) |. scanf [fmt|%s x=%d..%d,y=%d..%d,z=%d..%d|]
 
 data Interval = Interval Int Int
 
