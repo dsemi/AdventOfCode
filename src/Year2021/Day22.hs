@@ -19,7 +19,7 @@ import Scanf
 
 parseCubes :: ByteString -> [(ByteString, Int, Int, Int, Int, Int, Int)]
 parseCubes = map cube . B.lines
-    where cube = (,,,,,,) |. scanf [fmt|%s x=%d..%d,y=%d..%d,z=%d..%d|]
+    where cube = apply (,,,,,,) . scanf [fmt|%s x=%d..%d,y=%d..%d,z=%d..%d|]
 
 data Interval = Interval Int Int
 

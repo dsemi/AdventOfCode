@@ -17,7 +17,7 @@ adj :: V3 Int -> [V3 Int]
 adj c = [ c + d | d <- [V3 1 0 0, V3 (-1) 0 0, V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1)] ]
 
 cubes :: ByteString -> S.HashSet (V3 Int)
-cubes = S.fromList . map (V3 |. scanf [fmt|%d,%d,%d|]) . B.lines
+cubes = S.fromList . map (apply V3 . scanf [fmt|%d,%d,%d|]) . B.lines
 
 part1 :: ByteString -> Int
 part1 input = length [ () | c <- S.toList lava, a <- adj c, not (S.member a lava) ]

@@ -21,7 +21,7 @@ data Node = Node { pt :: V4 Int
 
 parsePoints :: ByteString -> Vector Node
 parsePoints = V.fromList . zipWith (\i l -> (\p -> Node p i 0) $ parse l) [0..] . B.lines
-    where parse = V4 |. scanf [fmt|%d,%d,%d,%d|]
+    where parse = apply V4 . scanf [fmt|%d,%d,%d,%d|]
 
 find :: MV.STVector s Node -> Int -> ST s Int
 find v = go

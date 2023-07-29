@@ -11,7 +11,7 @@ import Data.Ix (range)
 import Scanf
 
 parseRange :: ByteString -> (Int, Int)
-parseRange = (,) |. scanf [fmt|%d-%d|]
+parseRange = apply (,) . scanf [fmt|%d-%d|]
 
 numValid :: (Int -> Bool) -> ByteString -> Int
 numValid f = length . filter solve . range . parseRange

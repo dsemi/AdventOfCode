@@ -15,7 +15,7 @@ import Scanf
 
 solve :: Bool -> ByteString -> Int
 solve p2 input = length $ filter (>1) $ elems grid
-    where parse = (\a b c d -> (V2 a b, V2 c d)) |. scanf [fmt|%d,%d -> %d,%d|]
+    where parse = apply (\a b c d -> (V2 a b, V2 c d)) . scanf [fmt|%d,%d -> %d,%d|]
           lns = map parse $ B.lines input
           maxX = maximum $ map (\(V2 x0 _, V2 x1 _) -> max x0 x1) lns
           maxY = maximum $ map (\(V2 _ y0, V2 _ y1) -> max y0 y1) lns

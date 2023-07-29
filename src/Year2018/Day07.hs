@@ -26,7 +26,7 @@ parseSteps  = foldr (\(k, (p, v)) -> Q.insert k (p, k) v) Q.empty . M.toList
               . M.fromListWith (\(a, b) -> ((a+) *** S.union b))
               . concatMap f . map parse . B.lines
     where f (a, b) = [(a, (0, S.singleton b)), (b, (1, S.empty))]
-          parse = (,) |. scanf [fmt|Step %c must be finished before step %c can begin.|]
+          parse = apply (,) . scanf [fmt|Step %c must be finished before step %c can begin.|]
 
 solve :: Int -> Queue -> (Int, [Char])
 solve n = go 0 []

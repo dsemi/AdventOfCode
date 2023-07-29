@@ -15,7 +15,7 @@ import Scanf
 
 parseMoons :: ByteString -> [(V3 Int, V3 Int)]
 parseMoons = map parse . B.lines
-    where parse line = (V3 |$ scanf [fmt|<x=%d, y=%d, z=%d>|] line, V3 0 0 0)
+    where parse line = (V3 $| scanf [fmt|<x=%d, y=%d, z=%d>|] line, V3 0 0 0)
 
 applyGravity :: (Monad m, Num (m Int)) => (m Int, m Int) -> (m Int, m Int) -> (m Int, m Int)
 applyGravity (p', _) (p, v) = (p,  v + fmap (pred . fromEnum) (liftM2 compare p' p))

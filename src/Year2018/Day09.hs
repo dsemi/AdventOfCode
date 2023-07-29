@@ -11,7 +11,7 @@ import qualified Data.IntMap.Strict as M
 import Scanf
 
 parse :: ByteString -> (Int, Int)
-parse = (,) |. scanf [fmt|%d players; last marble is worth %d points|]
+parse = apply (,) . scanf [fmt|%d players; last marble is worth %d points|]
 
 play :: (Int, Int) -> Maybe Int
 play (n, s) = go 1 M.empty (singleton 0)

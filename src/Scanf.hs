@@ -2,7 +2,7 @@
 
 module Scanf
     ( (:+)(..)
-    , (|$), (|.), (|<$>), apply
+    , ($|), apply
     , fmt
     , scanf
     ) where
@@ -31,18 +31,9 @@ instance (Apply r xs, a ~ x) => Apply (a -> r) (x :+ xs) where
     type Ret (a -> r) (x :+ xs) = Ret r xs
     apply f (x :+ xs) = apply (f x) xs
 
-infixl 4 |$
-(|$) :: Apply f a => f -> a -> Ret f a
-a |$ b = apply a b
-
-infixl 4 |.
-(|.) :: Apply f b => f -> (a -> b) -> a -> Ret f b
-a |. b = apply a . b
-
-infixl 4 |<$>
-(|<$>) :: (Functor f, Apply g a) => g -> f a -> f (Ret g a)
-a |<$> b = apply a <$> b
-
+infixl 4 $|
+($|) :: Apply f a => f -> a -> Ret f a
+a $| b = apply a b
 
 formatString :: String -> Q Exp
 formatString "" = [|pure ()|]

@@ -26,7 +26,7 @@ command s = case runParser parser s of
     where parseAction = ($(string "toggle") *> pure Toggle)
                         <|> ($(string "turn off") *> pure Off)
                         <|> ($(string "turn on") *> pure On)
-          ns = (,,,) |<$> [fmt|%d,%d through %d,%d|]
+          ns = apply (,,,) <$> [fmt|%d,%d through %d,%d|]
           parser = Command <$> parseAction <* $(char ' ') <*> ns
 
 runCommands :: (Int -> Int) -> (Int -> Int) -> (Int -> Int)
