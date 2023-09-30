@@ -7,21 +7,19 @@ module Year2015.Day22
 
 import Control.Lens
 import Data.ByteString (ByteString)
-import Data.Graph.AStar
 import Data.Hashable
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as S
+import Data.List (find)
 import Data.Maybe
 import FlatParse.Basic
 import GHC.Generics (Generic)
+
+import Utils (dijkstra)
 
 data GameState = Game { _pHealth :: Int
                       , _pMana :: Int
                       , _pArmor :: Int
                       , _bHealth :: Int
                       , _bDamage :: Int
-                      , _pTurn :: Bool
-                      , _hard :: Bool
                       , _effects :: [(ID, [Effect])]
                       , _spentMana :: Int
                       } deriving (Eq, Ord, Generic)
@@ -65,45 +63,38 @@ applyEffect Poison' = bHealth -~ 3
 applyEffect Recharge' = pMana +~ 101
 applyEffect Nop = id
 
-gameOver :: GameState -> Bool
-gameOver game = game ^. bHealth <= 0 || game ^. pHealth <= 0
-
 applyEffects :: GameState -> GameState
 applyEffects game = foldr ($) (effects %~ (filter (not . null . snd) . map (over _2 tail)) $ game)
                     $ map (applyEffect . head . snd) $ game ^. effects
 
-beginTurn :: GameState -> GameState
-beginTurn st = (if st ^. hard && st ^. pTurn then pHealth -~ 1 else id) $ applyEffects st
-
 bossAttack :: GameState -> GameState
 bossAttack st = pHealth -~ max 1 (st ^. bDamage - st ^. pArmor) $ st
 
-neighbors :: GameState -> HashSet GameState
-neighbors game
-    | gameOver game = S.empty
-    | game ^. pTurn =
-        S.fromList [ beginTurn $ pTurn %~ not $ cast spell game
-                   | spell@(Spell id' cost) <- spells
-                   , game ^. pMana >= cost
-                   , isNothing $ lookup id' (game ^. effects)
-                   ]
-    | otherwise = S.singleton $ beginTurn $ pTurn %~ not $ bossAttack game
+neighbors :: Bool -> GameState -> [(Int, GameState)]
+neighbors hard game
+    | hard && game ^. pHealth <= 1 = []
+    | st ^. bHealth <= 0 = [(0, st)]
+    | otherwise =
+        [ (cost, st')
+        | spell@(Spell id' cost) <- spells
+        , st ^. pMana >= cost
+        , isNothing $ lookup id' (st ^. effects)
+        , let st' = bossAttack $ applyEffects $ cast spell st
+        , st' ^. bHealth <= 0 || st' ^. pHealth > 0
+        ]
+    where st = applyEffects $ (if hard then pHealth -~ 1 else id) game
 
-minCostToWin :: GameState -> Maybe Int
-minCostToWin game = _spentMana . last <$> aStar neighbors dist (const 0) won (beginTurn game)
-    where won g = g ^. bHealth <= 0
-          dist g1 g2 = abs (g1 ^. spentMana - g2 ^. spentMana)
+minCostToWin :: Bool -> GameState -> Maybe Int
+minCostToWin hard game = fmap fst $ find (\(_, s) -> s ^. bHealth <= 0) $ dijkstra game (neighbors hard)
 
-parseBoss :: Bool -> ByteString -> Maybe GameState
-parseBoss hardMode input =
+parseBoss :: ByteString -> Maybe GameState
+parseBoss input =
     case runParser parser input of
       OK (h, d) _ -> Just $ Game { _pHealth = 50
                                  , _pMana = 500
                                  , _pArmor = 0
                                  , _bHealth = h
                                  , _bDamage = d
-                                 , _pTurn = True
-                                 , _hard = hardMode
                                  , _effects = []
                                  , _spentMana = 0
                                  }
@@ -112,7 +103,7 @@ parseBoss hardMode input =
           parser = (,) <$> ($(string "Hit Points: ") *> int) <*> ($(string "\nDamage: ") *> int)
 
 part1 :: ByteString -> Maybe Int
-part1 = (>>= minCostToWin) . parseBoss False
+part1 = (>>= minCostToWin False) . parseBoss
 
 part2 :: ByteString -> Maybe Int
-part2 = (>>= minCostToWin) . parseBoss True
+part2 = (>>= minCostToWin True) . parseBoss
